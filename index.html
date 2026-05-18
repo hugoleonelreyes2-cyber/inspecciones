@@ -755,11 +755,13 @@ async function saveRec(existingId){
   const placa=document.getElementById('placa').value||'SIN_PLACA';
   const rec={id,fecha:old.fecha||new Date().toLocaleDateString('es-GT'),fechaMod:new Date().toLocaleDateString('es-GT'),inspector:document.getElementById('inspector').value,placa,modelo:document.getElementById('modelo').value,color:document.getElementById('color').value,km:document.getElementById('km').value,chasis:document.getElementById('chasis').value,nmotor:document.getElementById('nmotor').value,vtype:ST.vtype,ranking:ST.ranking,totalCost:ST.totalCost,urgCost:ST.urgCost,recCost:ST.recCost,tallerItems:ST.tallerItems,obs:document.getElementById('obs').value,svc:ST.svc,llantas:ST.llantas,imgs:{...IMGS},state:{ident:ST.ident,extD:ST.extD,intD:ST.intD,capoApagado:ST.capoApagado,capoEncendido:ST.capoEncendido,elecExt:ST.elecExt,elecInt:ST.elecInt,dyn:ST.dyn,comp:ST.comp,photos:Array.from(ST.photos),svc:ST.svc,llantas:ST.llantas}};
 
-  // Guardar local SIN fotos para no llenar el localStorage
-  const recLocal={...rec,imgs:{}};
+  // Guardar local SIN fotos estándar pero CON fotos de hallazgos
+  const hallazgoImgsLocal={};
+  Object.entries(IMGS).filter(([k])=>k.startsWith('hallazgo_')).forEach(([k,v])=>hallazgoImgsLocal[k]=v);
+  const recLocal={...rec,imgs:hallazgoImgsLocal};
   try{localStorage.setItem('insp_'+id,JSON.stringify(recLocal));}catch(e){
-    // Si aún falla limpiar imgs del state también
-    try{const r2={...recLocal,state:{...recLocal.state}};delete r2.state;localStorage.setItem('insp_'+id,JSON.stringify(r2));}catch(e2){console.warn('localStorage lleno');}
+    // Si falla con hallazgos intentar sin fotos
+    try{const r2={...rec,imgs:{}};localStorage.setItem('insp_'+id,JSON.stringify(r2));}catch(e2){console.warn('localStorage lleno');}
   }
   showToast('☁ Guardando en Google Drive y Sheets...',false);
 
@@ -1323,12 +1325,20 @@ async function pdfRec(id, enviarCorreo=true){
   document.getElementById('inspector').value=rec.inspector||'';document.getElementById('placa').value=rec.placa||'';document.getElementById('modelo').value=rec.modelo||'';document.getElementById('color').value=rec.color||'';document.getElementById('km').value=rec.km||'';document.getElementById('chasis').value=rec.chasis||'';document.getElementById('nmotor').value=rec.nmotor||'';document.getElementById('obs').value=rec.obs||'';
   const s=rec.state;Object.assign(ST,{extD:{...s.extD},intD:{...s.intD},capoApagado:{...s.capoApagado},capoEncendido:{...s.capoEncendido},elecExt:{...s.elecExt},elecInt:{...s.elecInt},dyn:{...s.dyn},comp:{...s.comp},ident:{...s.ident},vtype:rec.vtype,ranking:rec.ranking,totalCost:rec.totalCost||0,urgCost:rec.urgCost||0,recCost:rec.recCost||0,tallerItems:rec.tallerItems||[],svc:{...(rec.svc||{})},llantas:{...(rec.llantas||{medida:'',precio_unit:0,precio_x4:0})}});
 
-  // Descargar fotos desde Drive si existen
+  // Descargar fotos desde Drive — si hay locales usarlas primero
   const imgsOrig={...IMGS};
   Object.keys(IMGS).forEach(k=>delete IMGS[k]);
 
-  if(rec.photoLinks&&Object.keys(rec.photoLinks).length){
-    // Solo descargar fotos de hallazgos para el PDF
+  // Buscar fotos locales del registro
+  const localImgs=rec.imgs||{};
+  const tieneLocal=Object.keys(localImgs).some(k=>k.startsWith('hallazgo_'));
+
+  if(tieneLocal){
+    // Usar fotos locales directamente
+    Object.entries(localImgs).filter(([k])=>k.startsWith('hallazgo_')).forEach(([k,v])=>IMGS[k]=v);
+    showToast('⏳ Generando PDF con fotos locales...',false);
+  } else if(rec.photoLinks&&Object.keys(rec.photoLinks).length){
+    // Descargar desde Drive
     const hallazgoLinks=Object.entries(rec.photoLinks).filter(([k])=>k.startsWith('hallazgo_'));
     if(hallazgoLinks.length){
       showToast(`⏳ Descargando ${hallazgoLinks.length} foto(s) de hallazgos...`,false);
@@ -1349,9 +1359,6 @@ async function pdfRec(id, enviarCorreo=true){
         }catch(e){console.warn('Error descargando foto',key,e);}
       }
     }
-  } else if(rec.imgs&&Object.keys(rec.imgs).length){
-    // Respaldo: fotos locales — solo hallazgos
-    Object.entries(rec.imgs).filter(([k])=>k.startsWith('hallazgo_')).forEach(([k,v])=>IMGS[k]=v);
   }
 
   genPDF();
