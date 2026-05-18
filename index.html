@@ -893,26 +893,47 @@ function genPDF(){
   if(!allF.length){doc.setFont('helvetica','italic');doc.setTextColor(150);doc.text('Sin hallazgos.',14,y);y+=6;}
   else{doc.setFontSize(8);allF.forEach(f=>{if(y>270){doc.addPage();y=20;}f.t?doc.setFillColor(253,236,235):doc.setFillColor(254,243,226);doc.rect(12,y-3.5,186,6.5,'F');doc.setFont('helvetica','bold');doc.setTextColor(f.t?192:180,f.t?57:83,f.t?43:9);doc.text(f.t?'[COSTO]':'[REGISTR.]',14,y);doc.setFont('helvetica','normal');doc.setTextColor(0);const lines=doc.splitTextToSize(f.l,142);doc.text(lines,38,y);if(f.c>0){doc.setFont('helvetica','bold');doc.text('Q '+f.c.toLocaleString(),195,y,{align:'right'});}y+=lines.length>1?lines.length*4.5+1:6;});}
   const obs=document.getElementById('obs').value;if(obs){y+=4;if(y>260){doc.addPage();y=20;}y=sec('OBSERVACIONES',y);doc.setFontSize(8);doc.setFont('helvetica','normal');doc.setTextColor(0);const lines=doc.splitTextToSize(obs,182);doc.text(lines,14,y);y+=lines.length*4+4;}
-  // ── FOTOS ──
-  const imgKeys=Object.keys(IMGS);
-  if(imgKeys.length){
+
+  // ── FOTOGRAFÍAS DE HALLAZGOS AGRUPADAS POR SECCIÓN ──
+  const hallazgoImgs=Object.entries(IMGS).filter(([k])=>k.startsWith('hallazgo_'));
+  if(hallazgoImgs.length){
     if(y>230){doc.addPage();y=20;}
-    y=sec('FOTOGRAFÍAS REGISTRADAS',y);
-    const colW=89,rowH=62,margin=12,gap=6;
-    let col=0;
-    imgKeys.forEach(k=>{
-      if(y+rowH>280){doc.addPage();y=20;}
-      const x=margin+col*(colW+gap);
-      try{
-        doc.addImage(IMGS[k],'JPEG',x,y,colW,rowH-8);
-        doc.setFontSize(7);doc.setTextColor(80);
-        const lbl=k.replace('hallazgo_','').replace('photo_','Foto ').replace(/_/g,' ');
-        doc.text(lbl,x+colW/2,y+rowH-5,{align:'center'});
-      }catch(e){}
-      col++;if(col>=2){col=0;y+=rowH+2;}
+    y=sec('FOTOGRAFÍAS DE HALLAZGOS',y);
+    // Agrupar por sección
+    const grupos={};
+    hallazgoImgs.forEach(([k,v])=>{
+      let seccion='Otros';
+      if(k.includes('ext_'))seccion='Exterior';
+      else if(k.includes('int_'))seccion='Interior';
+      else if(k.includes('capoApagado')||k.includes('capoEncendido'))seccion='Mecánica';
+      else if(k.includes('elecExt')||k.includes('elecInt'))seccion='Eléctrico';
+      else if(k.includes('dyn')||k.includes('comp'))seccion='Prueba dinámica';
+      if(!grupos[seccion])grupos[seccion]=[];
+      grupos[seccion].push([k,v]);
     });
-    if(col>0)y+=rowH+2;
+    const colW=89,rowH=68,margin=12,gap=6;
+    Object.entries(grupos).forEach(([secNom,imgs])=>{
+      if(y>250){doc.addPage();y=20;}
+      // Subtítulo de sección
+      doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(27,111,216);
+      doc.text(secNom,14,y);y+=6;
+      let col=0;
+      imgs.forEach(([k,v])=>{
+        if(y+rowH>280){doc.addPage();y=20;}
+        const x=margin+col*(colW+gap);
+        try{
+          doc.addImage(v,'JPEG',x,y,colW,rowH-10);
+          doc.setFontSize(7);doc.setTextColor(80);doc.setFont('helvetica','normal');
+          const lbl=k.replace('hallazgo_ext_','').replace('hallazgo_int_','').replace('hallazgo_','').replace(/_/g,' ');
+          doc.text(lbl.substring(0,30),x+colW/2,y+rowH-3,{align:'center'});
+        }catch(e){}
+        col++;if(col>=2){col=0;y+=rowH+2;}
+      });
+      if(col>0)y+=rowH+2;
+      y+=4;
+    });
   }
+
   const pages=doc.internal.getNumberOfPages();for(let p=1;p<=pages;p++){doc.setPage(p);doc.setFontSize(7);doc.setTextColor(160);doc.text(`Pág. ${p} de ${pages}  ·  Sistema Inspección Vehículos Usados  ·  ${fecha}`,105,290,{align:'center'});}
   doc.save('Inspeccion_'+placa.replace(/\s/g,'_')+'_'+fecha.replace(/\//g,'-')+'.pdf');
   showToast('✅ PDF descargado',false);
@@ -1303,30 +1324,30 @@ async function pdfRec(id, enviarCorreo=true){
   Object.keys(IMGS).forEach(k=>delete IMGS[k]);
 
   if(rec.photoLinks&&Object.keys(rec.photoLinks).length){
-    showToast(`⏳ Descargando ${Object.keys(rec.photoLinks).length} foto(s)...`,false);
-    const entries=Object.entries(rec.photoLinks);
-    for(const [key,link] of entries){
-      try{
-        // Extraer fileId — varios formatos posibles de Drive
-        let fileId=null;
-        const m1=link.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
-        const m2=link.match(/id=([a-zA-Z0-9_-]+)/);
-        const m3=link.match(/\/d\/([a-zA-Z0-9_-]+)/);
-        if(m1)fileId=m1[1];
-        else if(m2)fileId=m2[1];
-        else if(m3)fileId=m3[1];
-        if(!fileId){console.warn('No se pudo extraer fileId de:',link);continue;}
-        const result=await gPost({action:'getPhoto',fileId});
-        if(result.status==='OK'&&result.base64){
-          IMGS[key]=`data:${result.mimeType||'image/jpeg'};base64,${result.base64}`;
-        } else {
-          console.warn('Error en getPhoto:',result);
-        }
-      }catch(e){console.warn('Error descargando foto',key,e);}
+    // Solo descargar fotos de hallazgos para el PDF
+    const hallazgoLinks=Object.entries(rec.photoLinks).filter(([k])=>k.startsWith('hallazgo_'));
+    if(hallazgoLinks.length){
+      showToast(`⏳ Descargando ${hallazgoLinks.length} foto(s) de hallazgos...`,false);
+      for(const [key,link] of hallazgoLinks){
+        try{
+          let fileId=null;
+          const m1=link.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+          const m2=link.match(/id=([a-zA-Z0-9_-]+)/);
+          const m3=link.match(/\/d\/([a-zA-Z0-9_-]+)/);
+          if(m1)fileId=m1[1];
+          else if(m2)fileId=m2[1];
+          else if(m3)fileId=m3[1];
+          if(!fileId)continue;
+          const result=await gPost({action:'getPhoto',fileId});
+          if(result.status==='OK'&&result.base64){
+            IMGS[key]=`data:${result.mimeType||'image/jpeg'};base64,${result.base64}`;
+          }
+        }catch(e){console.warn('Error descargando foto',key,e);}
+      }
     }
   } else if(rec.imgs&&Object.keys(rec.imgs).length){
-    // Respaldo: si tiene fotos guardadas localmente usarlas
-    Object.assign(IMGS,rec.imgs);
+    // Respaldo: fotos locales — solo hallazgos
+    Object.entries(rec.imgs).filter(([k])=>k.startsWith('hallazgo_')).forEach(([k,v])=>IMGS[k]=v);
   }
 
   genPDF();
