@@ -846,14 +846,15 @@ async function saveRec(existingId){
       carpetaDrive:folderLink,
     });
 
-    // 7. Guardar estado completo en Drive para acceso desde cualquier dispositivo
+    // 7. Guardar estado completo en Drive — incluyendo photoLinks
     showToast('☁ Guardando estado completo...',false);
     try{
+      const stateConFotos={...rec.state, photoLinks};
       await gPost({
         action:'saveState',
         id:String(id),
         folderId:folderVeh,
-        state:JSON.stringify(rec.state)
+        state:JSON.stringify(stateConFotos)
       });
     }catch(e){console.warn('Error guardando estado en Drive:',e);}
 
@@ -1304,7 +1305,10 @@ async function pdfRec(id, enviarCorreo=true){
         const resp=await gPost({action:'getState',id:String(id),folderId});
         if(resp.status==='OK'&&resp.state){
           const state=JSON.parse(resp.state);
-          rec={...sheetsRec,state,svc:state.svc||{},llantas:state.llantas||{},vtype:sheetsRec.vtype||state.vtype};
+          // Extraer photoLinks del estado si existen
+          const savedPhotoLinks=state.photoLinks||{};
+          delete state.photoLinks;
+          rec={...sheetsRec,state,svc:state.svc||{},llantas:state.llantas||{},vtype:sheetsRec.vtype||state.vtype,photoLinks:{...sheetsRec.photoLinks,...savedPhotoLinks}};
           try{localStorage.setItem('insp_'+id,JSON.stringify(rec));}catch(e){}
         }
       }catch(e){}
