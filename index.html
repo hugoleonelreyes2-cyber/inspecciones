@@ -1220,34 +1220,24 @@ function viewRec(id){
 function loadRec(id){
   let rec=null;
   try{rec=JSON.parse(localStorage.getItem('insp_'+id));}catch(e){}
-  // Si no hay local intentar cargar desde Sheets+Drive
   if(!rec||!rec.state){
     const sheetsRec=SHEETS_RECS[id]||SHEETS_RECS[String(id)];
     const folderId=sheetsRec?.folderVehId||(sheetsRec?.folderLink?.match(/folders\/([a-zA-Z0-9_-]+)/)?.[1]);
     if(sheetsRec&&folderId){
       showToast('⏳ Cargando inspección desde Drive...',false);
       gPost({action:'getState',id:String(id),folderId}).then(resp=>{
-          if(resp.status==='OK'&&resp.state){
-            const state=JSON.parse(resp.state);
-            // Combinar con datos de Sheets
-            const fullRec={...sheetsRec,state,
-              inspector:sheetsRec.inspector,placa:sheetsRec.placa,
-              modelo:sheetsRec.modelo,color:sheetsRec.color,km:sheetsRec.km,
-              obs:sheetsRec.obs,vtype:sheetsRec.vtype||state.vtype,
-              svc:state.svc||{},llantas:state.llantas||{},
-              folderLink:sheetsRec.folderLink,
-            };
-            // Guardar localmente para uso futuro
-            try{localStorage.setItem('insp_'+id,JSON.stringify(fullRec));}catch(e){}
-            _doLoadRec(fullRec);
-          } else {
-            showToast('⚠ No se pudo cargar el estado completo desde Drive',true);
-          }
-        }).catch(()=>showToast('⚠ Error al cargar desde Drive',true));
-        return;
-      }
+        if(resp.status==='OK'&&resp.state){
+          const state=JSON.parse(resp.state);
+          const fullRec={...sheetsRec,state,inspector:sheetsRec.inspector,placa:sheetsRec.placa,modelo:sheetsRec.modelo,color:sheetsRec.color,km:sheetsRec.km,obs:sheetsRec.obs,vtype:sheetsRec.vtype||state.vtype,svc:state.svc||{},llantas:state.llantas||{},folderLink:sheetsRec.folderLink};
+          try{localStorage.setItem('insp_'+id,JSON.stringify(fullRec));}catch(e){}
+          _doLoadRec(fullRec);
+        }else{
+          showToast('⚠ No se pudo cargar el estado desde Drive',true);
+        }
+      }).catch(()=>showToast('⚠ Error al cargar desde Drive',true));
+      return;
     }
-    showToast('⚠ Datos completos no disponibles — inspección no encontrada en Drive',true);
+    showToast('⚠ Datos no disponibles en este dispositivo',true);
     return;
   }
   _doLoadRec(rec);
