@@ -959,6 +959,8 @@ async function sendEmailNotification(data){
     });
   }catch(e){console.warn('Error enviando correo:',e);}
 }
+// ── ADMIN ──
+let adminVT='SUV_COFIÑO';
 function openAdmin(){
   const clave=prompt('Ingrese la clave de acceso:');
   if(clave!=='desarrollohugochoc1982'){showToast('⚠ Clave incorrecta — acceso denegado');return;}
