@@ -1162,59 +1162,63 @@ function delRecSheets(id,btn){
 }
 
 function viewRec(id){
-  // Buscar local primero
-  let rec=null;
-  try{rec=JSON.parse(localStorage.getItem('insp_'+id));}catch(e){}
-  // Si no hay local, usar datos cargados desde Sheets
-  if(!rec) rec=SHEETS_RECS[id]||SHEETS_RECS[String(id)]||null;
-  if(!rec){showToast('⚠ Registro no encontrado — intente reabrir el panel de registros',true);return;}
+  // Siempre usar datos de Sheets como fuente principal
+  const sheetsRec=SHEETS_RECS[id]||SHEETS_RECS[String(id)];
+  const local=(() => { try{return JSON.parse(localStorage.getItem('insp_'+id));}catch(e){return null;} })();
+  const rec=sheetsRec||local;
+  if(!rec){showToast('⚠ Registro no encontrado — intente reabrir el panel',true);return;}
 
   const panel=document.getElementById('records-panel');
-  const s=rec.state||{};
-  const allQ={...s.capoApagado,...s.capoEncendido,...s.elecExt,...s.elecInt,...s.dyn,...s.comp};
-  const extH=Object.values(s.extD||{}).filter(d=>d.tipo&&d.tipo!=='OK');
-  const intH=Object.values(s.intD||{}).filter(d=>d.tipo&&d.tipo!=='OK');
-  const qH=Object.values(allQ).filter(d=>d.val&&d.val!=='NA'&&d.val!=='Bien'&&((d.invertida&&d.val==='Si')||(!d.invertida&&(d.val==='Regular'||d.val==='Mal'))));
-  const fRows=[
-    ...extH.map(d=>({l:`Exterior: ${d.pieza} (${d.tipo}${d.nivel})`,c:d.costo,u:d.costo>0})),
-    ...intH.map(d=>({l:`Interior: ${d.pieza} (${d.tipo}${d.nivel})`,c:d.costo,u:d.costo>0})),
-    ...qH.map(d=>({l:d.l,c:d.costo,u:d.taller&&d.val==='Mal'})),
-    ...(rec.svc?.costo>0?[{l:`Servicio ${rec.svc.tipo}${rec.svc.combustible}`,c:rec.svc.costo,u:false}]:[]),
-    ...(rec.llantas?.precio_x4>0?[{l:`Llantas ${rec.llantas.medida} (x4)`,c:rec.llantas.precio_x4,u:false}]:[]),
-  ];
-
   const fotoLbls={'photo_0':'Portada web','photo_1':'Frente','photo_2':'Lateral izquierdo','photo_3':'Trasero','photo_4':'Lateral derecho','photo_5':'Tablero encendido','photo_6':'Interior frontal','photo_7':'Interior trasero'};
 
   const fotosHtml=(()=>{
-    const imgsLocal=rec.imgs&&Object.keys(rec.imgs).length;
     const links=rec.photoLinks&&Object.keys(rec.photoLinks).length;
+    const imgsLocal=local?.imgs&&Object.keys(local.imgs).length;
     if(imgsLocal){
-      return`<div class="card"><div class="card-title">Fotografías (${Object.keys(rec.imgs).length})</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">${Object.entries(rec.imgs).map(([k,v])=>{const lbl=fotoLbls[k]||k.replace('hallazgo_ext_','Ext: ').replace('hallazgo_int_','Int: ').replace('hallazgo_','').replace(/_/g,' ');return`<div style="border-radius:6px;overflow:hidden;border:1px solid var(--b)"><img src="${v}" style="width:100%;aspect-ratio:4/3;object-fit:cover;display:block"><div style="padding:3px 6px;font-size:9px;color:var(--t2);background:var(--sf2)">${lbl}</div></div>`;}).join('')}</div></div>`;
+      return`<div class="card"><div class="card-title">Fotografías (${Object.keys(local.imgs).length})</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">${Object.entries(local.imgs).map(([k,v])=>{const lbl=fotoLbls[k]||k.replace('hallazgo_ext_','Ext: ').replace('hallazgo_int_','Int: ').replace('hallazgo_','').replace(/_/g,' ');return`<div style="border-radius:6px;overflow:hidden;border:1px solid var(--b)"><img src="${v}" style="width:100%;aspect-ratio:4/3;object-fit:cover;display:block"><div style="padding:3px 6px;font-size:9px;color:var(--t2);background:var(--sf2)">${lbl}</div></div>`;}).join('')}</div></div>`;
     } else if(links){
       return`<div class="card"><div class="card-title">Fotografías — Links Drive (${Object.keys(rec.photoLinks).length})</div>${Object.entries(rec.photoLinks).map(([k,v])=>{const lbl=fotoLbls[k]||k.replace('hallazgo_ext_','Ext: ').replace('hallazgo_int_','Int: ').replace('hallazgo_','').replace(/_/g,' ');return`<div class="f-item"><span style="font-size:12px">📷 ${lbl}</span><a href="${v}" target="_blank" style="font-size:11px;color:var(--blue);text-decoration:none;white-space:nowrap">Ver foto →</a></div>`;}).join('')}</div>`;
     } else if(rec.folderLink){
-      return`<div class="card"><div class="card-title">Fotografías</div><div style="font-size:12px;color:var(--t2);margin-bottom:8px">Las fotos están guardadas en Google Drive.</div><a href="${rec.folderLink}" target="_blank" style="display:inline-flex;align-items:center;gap:5px;padding:8px 12px;background:var(--green-bg);color:var(--green-t);border:1px solid var(--green-b);border-radius:var(--rsm);font-size:12px;font-weight:500;text-decoration:none">📁 Ver carpeta de fotos en Drive</a></div>`;
+      return`<div class="card"><div class="card-title">Fotografías</div><a href="${rec.folderLink}" target="_blank" style="display:inline-flex;align-items:center;gap:5px;padding:8px 12px;background:var(--green-bg);color:var(--green-t);border:1px solid var(--green-b);border-radius:var(--rsm);font-size:12px;font-weight:500;text-decoration:none">📁 Ver carpeta de fotos en Drive</a></div>`;
     } return '';
   })();
 
-  const hasLocal=rec.state!==null;
-
+  // Mostrar estructura base y cargar hallazgos desde Sheets
   panel.querySelector('.panel-body').innerHTML=`
     <button onclick="openRecords()" style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--blue);background:none;border:none;cursor:pointer;padding:0 0 12px;font-family:'DM Sans',sans-serif">← Volver</button>
     <div class="sum-global"><div class="sum-score" style="color:${rc(rec.ranking?.global||3)}">${rec.ranking?.global||'—'}<span style="font-size:22px;color:var(--t3);font-weight:400">/5</span></div><div class="sum-score-lbl">${rl(rec.ranking?.global||3)}</div></div>
-    <div style="font-size:11px;color:var(--t3);font-family:'DM Mono',monospace;margin-bottom:10px;line-height:1.6">${rec.modelo||'—'} · ${rec.placa} · ${rec.color||'—'} · ${rec.km} km<br>${rec.inspector} · ${rec.fecha} · ${VTYPES.find(v=>v.k===rec.vtype)?.l||'—'}</div>
+    <div style="font-size:11px;color:var(--t3);font-family:'DM Mono',monospace;margin-bottom:10px;line-height:1.6">${rec.modelo||'—'} · ${rec.placa} · ${rec.color||'—'} · ${rec.km} km<br>${rec.inspector} · ${rec.fecha}</div>
     <div class="card"><div class="card-title">Ranking</div>${['exterior','interior','mecanica','electrico','dinamica'].map(k=>`<div class="rrow"><span class="rlbl">${k.charAt(0).toUpperCase()+k.slice(1)}</span><div class="rbar"><div class="rbar-f" style="width:${(rec.ranking?.[k]||0)*20}%;background:${rc(rec.ranking?.[k]||0)}"></div></div><span class="rsco">${rec.ranking?.[k]||'—'}/5</span></div>`).join('')}</div>
     <div class="card"><div class="card-title">Estimación de inversión</div><div class="total-cost">Q ${(rec.totalCost||0).toLocaleString()}</div></div>
-    ${rec.tallerItems?.length?`<div class="taller-summary show"><strong>🔧 Puntos taller</strong><br>${rec.tallerItems.map(t=>`<div style="font-size:12px;margin-top:4px">• ${t}</div>`).join('')}</div>`:''}
-    ${fRows.length?`<div class="card"><div class="card-title">Hallazgos</div>${fRows.map(f=>`<div class="f-item"><span><span class="badge ${f.u?'b-u':'b-r'}">${f.u?'COSTO':'RECOM.'}</span>${f.l}</span>${f.c>0?`<span class="fc-u">Q ${f.c.toLocaleString()}</span>`:''}</div>`).join('')}</div>`:''}
-    ${rec.obs?`<div class="card"><div class="card-title">Observaciones</div><div style="font-size:13px;line-height:1.6">${rec.obs}</div></div>`:''}
+    ${rec.tallerItems?.length?`<div class="taller-summary show"><strong>🔧 Puntos taller (${rec.tallerItems.length})</strong><br>${rec.tallerItems.map(t=>`<div style="font-size:12px;margin-top:4px">• ${t}</div>`).join('')}</div>`:''}
+    <div class="card" id="hallazgos-card-${id}"><div class="card-title">Hallazgos</div><div style="font-size:12px;color:var(--t3)">🔄 Cargando hallazgos...</div></div>
+    ${rec.obs&&rec.obs!=='—'?`<div class="card"><div class="card-title">Observaciones</div><div style="font-size:13px;line-height:1.6">${rec.obs}</div></div>`:''}
     ${fotosHtml}
-    ${!hasLocal?`<div class="alert a-amber" style="margin-top:8px">Este registro fue creado en otro dispositivo. Editar y PDF completo solo disponibles desde el dispositivo original.</div>`:''}
     <div style="display:flex;gap:7px;margin-top:8px">
-      ${hasLocal?`<button onclick="loadRec(${id})" style="flex:1;padding:11px;border:none;border-radius:10px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600;background:var(--blue);color:#fff">✏️ Editar</button>`:''}
-      ${hasLocal?`<button onclick="pdfRecSinCorreo(${id})" style="flex:1;padding:11px;border:none;border-radius:10px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600;background:#4B2D9F;color:#fff">📄 PDF</button>`:''}
+      <button onclick="loadRec('${id}')" style="flex:1;padding:11px;border:none;border-radius:10px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600;background:var(--blue);color:#fff">✏️ Editar</button>
+      <button onclick="pdfRecSinCorreo('${id}')" style="flex:1;padding:11px;border:none;border-radius:10px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600;background:#4B2D9F;color:#fff">📄 PDF</button>
       ${rec.folderLink?`<button onclick="window.open('${rec.folderLink}','_blank')" style="flex:1;padding:11px;border:none;border-radius:10px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600;background:var(--green);color:#fff">📁 Drive</button>`:''}
     </div>`;
+
+  // Cargar hallazgos desde Sheets
+  gPost({action:'getHallazgos',id:String(id)}).then(resp=>{
+    const card=document.getElementById('hallazgos-card-'+id);
+    if(!card)return;
+    if(resp.status==='OK'&&resp.data&&resp.data.length){
+      const rows=resp.data;
+      card.innerHTML=`<div class="card-title">Hallazgos (${rows.length})</div>`+
+        rows.map(r=>{
+          const seccion=r[2]||'';const pieza=r[3]||'';const tipo=r[4]||'';const nivel=r[5]||'';
+          const costo=r[6]||'';const urgente=r[7]==='Sí';
+          return`<div class="f-item"><span><span class="badge ${urgente?'b-u':'b-r'}">${urgente?'COSTO':'RECOM.'}</span>${seccion}: ${pieza} ${tipo?'('+tipo+(nivel?'/'+nivel:'')+')'||'':''}</span>${costo&&costo!=='Q 0'?`<span class="fc-u">${costo}</span>`:''}</div>`;
+        }).join('');
+    }else{
+      card.innerHTML=`<div class="card-title">Hallazgos</div><div style="font-size:12px;color:var(--t3)">Sin hallazgos registrados.</div>`;
+    }
+  }).catch(()=>{
+    const card=document.getElementById('hallazgos-card-'+id);
+    if(card)card.innerHTML=`<div class="card-title">Hallazgos</div><div style="font-size:12px;color:var(--t3)">No se pudieron cargar los hallazgos.</div>`;
+  });
 }
 
 function loadRec(id){
