@@ -822,6 +822,7 @@ async function saveRec(existingId){
       alertaIdentidad:identIssue?'SÍ':'No',
       observaciones:rec.obs||'—',
       carpetaDrive:folderLink,
+      folderVehId:folderVeh,
       hallazgos,
     });
 
@@ -1056,6 +1057,7 @@ function openRecords(){
           tallerItems:obj['Puntos Taller']&&obj['Puntos Taller']!=='Ninguno'?obj['Puntos Taller'].split(' | '):[],
           obs:obj['Observaciones']||'',
           folderLink:obj['Carpeta Drive']||'',
+          folderVehId:obj['Folder Veh ID']||'',
           photoLinks:local?.photoLinks||null,
           hasLocal:!!local,
           state:local?.state||null,
@@ -1219,12 +1221,10 @@ function loadRec(id){
   // Si no hay local intentar cargar desde Sheets+Drive
   if(!rec||!rec.state){
     const sheetsRec=SHEETS_RECS[id]||SHEETS_RECS[String(id)];
-    if(sheetsRec?.folderLink){
-      // Extraer folderId del folderLink
-      const match=sheetsRec.folderLink.match(/folders\/([a-zA-Z0-9_-]+)/);
-      if(match&&match[1]){
-        showToast('⏳ Cargando inspección desde Drive...',false);
-        gPost({action:'getState',id:String(id),folderId:match[1]}).then(resp=>{
+    const folderId=sheetsRec?.folderVehId||(sheetsRec?.folderLink?.match(/folders\/([a-zA-Z0-9_-]+)/)?.[1]);
+    if(sheetsRec&&folderId){
+      showToast('⏳ Cargando inspección desde Drive...',false);
+      gPost({action:'getState',id:String(id),folderId}).then(resp=>{
           if(resp.status==='OK'&&resp.state){
             const state=JSON.parse(resp.state);
             // Combinar con datos de Sheets
@@ -1280,19 +1280,17 @@ async function pdfRec(id, enviarCorreo=true){
   // Si no hay estado local cargar desde Drive
   if(!rec||!rec.state){
     const sheetsRec=SHEETS_RECS[id]||SHEETS_RECS[String(id)];
-    if(sheetsRec?.folderLink){
-      const match=sheetsRec.folderLink.match(/folders\/([a-zA-Z0-9_-]+)/);
-      if(match&&match[1]){
-        showToast('⏳ Cargando datos desde Drive...',false);
-        try{
-          const resp=await gPost({action:'getState',id:String(id),folderId:match[1]});
-          if(resp.status==='OK'&&resp.state){
-            const state=JSON.parse(resp.state);
-            rec={...sheetsRec,state,svc:state.svc||{},llantas:state.llantas||{},vtype:sheetsRec.vtype||state.vtype};
-            try{localStorage.setItem('insp_'+id,JSON.stringify(rec));}catch(e){}
-          }
-        }catch(e){}
-      }
+    const folderId=sheetsRec?.folderVehId||(sheetsRec?.folderLink?.match(/folders\/([a-zA-Z0-9_-]+)/)?.[1]);
+    if(sheetsRec&&folderId){
+      showToast('⏳ Cargando datos desde Drive...',false);
+      try{
+        const resp=await gPost({action:'getState',id:String(id),folderId});
+        if(resp.status==='OK'&&resp.state){
+          const state=JSON.parse(resp.state);
+          rec={...sheetsRec,state,svc:state.svc||{},llantas:state.llantas||{},vtype:sheetsRec.vtype||state.vtype};
+          try{localStorage.setItem('insp_'+id,JSON.stringify(rec));}catch(e){}
+        }
+      }catch(e){}
     }
     if(!rec||!rec.state){showToast('⚠ No se pudo cargar el estado — verifique su conexión',true);return;}
   }
