@@ -381,7 +381,14 @@ textarea{resize:vertical;line-height:1.5}
   <div class="panel-body"><div id="records-list"></div></div>
 </div>
 <script>
-// ── LLANTAS (precio promedio por medida) ──
+// ── FORMATO DE NÚMEROS ──
+function fQ(n){
+  if(!n&&n!==0)return'Q 0.00';
+  return'Q '+Number(n).toLocaleString('es-GT',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+function fNum(n){
+  return Number(n).toLocaleString('es-GT',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
 const LLANTAS={"155R12":366,"165/60R14":339,"165/65R14":329,"165/70R14":333,"175/60R15":366,"175/65R14":312,"175/65R15":371,"175/70R13":357,"175/70R14":348,"185/55R15":378,"185/60R13":467,"185/60R14":356,"185/60R15":358,"185/65R14":380,"185/65R15":362,"185/70R14":361,"185R14":549,"195/50R15":732,"195/50R16":461,"195/55R15":388,"195/60R14":391,"195/60R15":413,"195/60R16":505,"195/65R14":365,"195/65R15":408,"195/70R14":393,"195R14":542,"195R15":576,"205/40R17":571,"205/45R17":612,"205/50R15":878,"205/50R16":537,"205/50R17":760,"205/55R16":616,"205/55R17":625,"205/60R15":426,"205/60R16":579,"205/65R15":429,"205/65R16":597,"205/70R15":652,"205/75R15":835,"205R16":922,"215/40R17":1236,"215/40R18":1255,"215/45R16":998,"215/45R17":628,"215/45R18":707,"215/50R17":777,"215/50R18":739,"215/55R16":610,"215/55R17":633,"215/55R18":769,"215/60R16":459,"215/60R17":710,"215/65R16":672,"215/65R17":825,"215/70R15":614,"215/70R16":746,"215/70R17":1158,"225/35R18":707,"225/40R18":1189,"225/40R19":1308,"225/40ZR18":1060,"225/45R17":1112,"225/45R18":936,"225/45R19":916,"225/50R16":1033,"225/50R17":834,"225/50R18":772,"225/55R16":630,"225/55R17":838,"225/55R18":836,"225/55R19":885,"225/60R17":770,"225/60R18":1120,"225/65R17":769,"225/70R15":763,"225/70R16":858,"225/70R17":783,"225/75R16":956,"235/35R19":1534,"235/35ZR19":1109,"235/40R18":1015,"235/45R17":709,"235/45R18":764,"235/45ZR18":893,"235/50R18":820,"235/50R20":1230,"235/50R21":1174,"235/55R17":765,"235/55R18":898,"235/55R19":1008,"235/55R20":1020,"235/60R16":780,"235/60R17":795,"235/60R18":1114,"235/65R16":719,"235/65R17":928,"235/70R16":789,"235/75R15":898,"235/85R16":1063,"245/35R19":1624,"245/40R17":1418,"245/40R18":1448,"245/40ZR18":963,"245/45R18":1067,"245/45R19":1004,"245/45R20":1208,"245/50R19":1299,"245/50R20":1064,"245/55R19":1021,"245/60R18":1090,"245/65R17":900,"245/70R16":816,"245/70R17":1108,"245/75R16":1037,"245/75R17":1100,"255/35R18":1437,"255/35R19":1705,"255/40R17":1518,"255/40R18":1099,"255/40ZR19":1118,"255/45R20":1390,"255/50R19":971,"255/50R20":1114,"255/55R18":1049,"255/55R19":1045,"255/55R20":1291,"255/60R17":954,"255/60R18":894,"255/65R16":1001,"255/70R15":669,"255/70R16":875,"255/75R17":1199,"265/30R20":2341,"265/35R18":1682,"265/35ZR19":1276,"265/35ZR20":1712,"265/45R21":1701,"265/50R19":1312,"265/50R20":1278,"265/50R22":1526,"265/55R19":1085,"265/55R20":1303,"265/60R18":1212,"265/60R20":1357,"265/65R17":959,"265/65R18":1158,"265/70R15":790,"265/70R16":844,"265/70R17":1102,"265/75R16":1140,"275/30R20":2423,"275/35R19":1983,"275/35ZR20":1423,"275/40R20":1395,"275/40R22":1662,"275/45R19":1562,"275/45R20":1403,"275/45R21":1556,"275/50R20":1284,"275/50R21":1336,"275/50R22":1726,"275/55R19":1352,"275/55R20":1407,"275/60R20":1569,"275/65R17":829,"275/65R18":1191,"275/70R16":1063,"275/70R18":1392,"285/30R20":2486,"285/35R18":1295,"285/35R19":1848,"285/35ZR22":1916,"285/40R23":1673,"285/40ZR22":2820,"285/45R20":1550,"285/45R21":1553,"285/45R22":2018,"285/45ZR22":2393,"285/50R20":1541,"285/55R20":1567,"285/60R18":1199,"285/60R20":1644,"285/65R17":1193,"285/65R18":1131,"285/70R17":1342,"285/75R16":1203,"295/30R18":1872,"295/30R19":1994,"295/30R20":2189,"295/30ZR20":1659,"295/30ZR19":1209,"295/35ZR19":1169,"295/35ZR21":1776,"30X950R15":1048,"305/30ZR19":1927,"305/40R22":1633,"31X1050R15":1262,"315/30ZR22":2023,"315/40R21":2655,"32X1150R15":1349,"33X1150R15":1595,"33X1250R17":2326,"33X1250R18":2118,"33X1250R20":2286,"35X1250R15":1886,"35X1250R17":1975,"35X1250R18":1754,"35X1250R20":2094,"255/35ZR19":1105,"255/35ZR21":1251,"255/45ZR19":1121,"265/40ZR20":1179,"265/45R20":1218,"275/30ZR20":1741,"275/35ZR19":1298,"235/50ZR18":1040,"235/65R19":1307,"245/35ZR19":850};
 function buscarLlanta(m){const k=m.trim().toUpperCase().replace(/\s/g,'');return LLANTAS[k]||LLANTAS[k.replace('ZR','R')]||null;}
 
@@ -704,7 +711,7 @@ function buildSummary(){
     <div class="sum-global"><div class="sum-score" style="color:${rc(r.global)}">${r.global}<span style="font-size:22px;color:var(--t3);font-weight:400">/5</span></div><div class="sum-score-lbl">${rl(r.global)} — Ranking general</div></div>
     <div style="font-size:11px;color:var(--t3);font-family:'DM Mono',monospace;margin-bottom:10px;line-height:1.6">${modelo} · ${placa} · ${color} · ${km} km<br>${inspector} · ${fecha}</div>
     <div class="card"><div class="card-title">Ranking por subsistema</div>${['exterior','interior','mecanica','electrico','dinamica'].map(k=>`<div class="rrow"><span class="rlbl">${k.charAt(0).toUpperCase()+k.slice(1)}</span><div class="rbar"><div class="rbar-f" style="width:${r[k]*20}%;background:${rc(r[k])}"></div></div><span class="rsco">${r[k]}/5</span></div>`).join('')}</div>
-    <div class="card"><div class="card-title">Estimación de inversión</div><div class="total-cost">Q ${ST.totalCost.toLocaleString()}</div></div>
+    <div class="card"><div class="card-title">Estimación de inversión</div><div class="total-cost">${fQ(ST.totalCost)}</div></div>
     ${tallerHtml}
     <div class="card"><div class="card-title">Todos los hallazgos</div>${fHtml}</div>
     ${fotoHallazgosHtml()}
@@ -887,7 +894,7 @@ function genPDF(){
   const identIssue=Object.values(ST.ident).some(v=>v.val==='No'||v.val==='NV');
   if(identIssue){y+=2;doc.setFillColor(253,236,235);doc.rect(12,y-3,186,10,'F');doc.setFont('helvetica','bold');doc.setTextColor(192,57,43);doc.text('⚠ ALERTA: Discrepancia en identidad — validar urgente en taller',14,y+3);y+=14;doc.setTextColor(0);}
   y+=3;y=sec('RANKING DE CONDICIÓN',y);doc.setFontSize(9);['exterior','interior','mecanica','electrico','dinamica','global'].forEach(k=>{const v=r[k]||0;doc.setFont('helvetica','bold');doc.setTextColor(0);doc.text((k.charAt(0).toUpperCase()+k.slice(1))+':',14,y);doc.setFont('helvetica','normal');doc.text(v+'/5 — '+rl(v),54,y);y+=5;});
-  y+=3;y=sec('ESTIMACIÓN DE INVERSIÓN',y);doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(0);doc.text('Total:',14,y);doc.text('Q '+ST.totalCost.toLocaleString(),195,y,{align:'right'});y+=8;
+  y+=3;y=sec('ESTIMACIÓN DE INVERSIÓN',y);doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(0);doc.text('Total:',14,y);doc.text(fQ(ST.totalCost),195,y,{align:'right'});y+=8;
   if(ST.tallerItems.length){y=sec('PUNTOS PARA REVISIÓN EN TALLER',y);doc.setFontSize(8);doc.setFont('helvetica','normal');ST.tallerItems.forEach(t=>{if(y>270){doc.addPage();y=20;}doc.setFillColor(255,243,205);doc.rect(12,y-3,186,5.5,'F');doc.text('• '+t,14,y);y+=6;});y+=3;}
   y=sec('HALLAZGOS DETALLADOS',y);
   const extH=Object.values(ST.extD).filter(d=>d.tipo&&d.tipo!=='OK'),intH=Object.values(ST.intD).filter(d=>d.tipo&&d.tipo!=='OK');
@@ -901,7 +908,7 @@ function genPDF(){
     ...(ST.llantas.precio_x4>0?[{l:`Llantas ${ST.llantas.medida} (x4)`,c:ST.llantas.precio_x4}]:[]),
   ];
   if(!allF.length){doc.setFont('helvetica','italic');doc.setTextColor(150);doc.text('Sin hallazgos con costo.',14,y);y+=6;}
-  else{doc.setFontSize(8);allF.forEach(f=>{if(y>270){doc.addPage();y=20;}doc.setFillColor(253,236,235);doc.rect(12,y-3.5,186,6.5,'F');doc.setFont('helvetica','bold');doc.setTextColor(192,57,43);doc.text('[COSTO]',14,y);doc.setFont('helvetica','normal');doc.setTextColor(0);const lines=doc.splitTextToSize(f.l,142);doc.text(lines,38,y);doc.setFont('helvetica','bold');doc.text('Q '+f.c.toLocaleString(),195,y,{align:'right'});y+=lines.length>1?lines.length*4.5+1:6;});}
+  else{doc.setFontSize(8);allF.forEach(f=>{if(y>270){doc.addPage();y=20;}doc.setFillColor(253,236,235);doc.rect(12,y-3.5,186,6.5,'F');doc.setFont('helvetica','bold');doc.setTextColor(192,57,43);doc.text('[COSTO]',14,y);doc.setFont('helvetica','normal');doc.setTextColor(0);const lines=doc.splitTextToSize(f.l,142);doc.text(lines,38,y);doc.setFont('helvetica','bold');doc.text(fQ(f.c),195,y,{align:'right'});y+=lines.length>1?lines.length*4.5+1:6;});}
   const obs=document.getElementById('obs').value;if(obs){y+=4;if(y>260){doc.addPage();y=20;}y=sec('OBSERVACIONES',y);doc.setFontSize(8);doc.setFont('helvetica','normal');doc.setTextColor(0);const lines=doc.splitTextToSize(obs,182);doc.text(lines,14,y);y+=lines.length*4+4;}
 
   // ── FOTOGRAFÍAS DE HALLAZGOS AGRUPADAS POR SECCIÓN ──
@@ -1114,7 +1121,7 @@ function openRecords(){
             <div class="rec-meta">${rec.placa} · ${rec.color||''} · ${rec.km} km · ${rec.inspector}</div>
             <div class="rec-meta">${rec.fecha}${mod}</div>
             <div class="rec-footer">
-              <span class="rec-cost">Q ${(rec.totalCost||0).toLocaleString()}</span>
+              <span class="rec-cost">${fQ(rec.totalCost||0)}</span>
               <span style="font-size:12px;font-weight:500;color:${rc(rec.ranking?.global||3)}">${rec.ranking?.global||'—'}/5 ${tb}</span>
             </div>
             <div style="display:flex;gap:5px;margin-top:9px">
@@ -1221,7 +1228,7 @@ function viewRec(id){
     <div class="sum-global"><div class="sum-score" style="color:${rc(rec.ranking?.global||3)}">${rec.ranking?.global||'—'}<span style="font-size:22px;color:var(--t3);font-weight:400">/5</span></div><div class="sum-score-lbl">${rl(rec.ranking?.global||3)}</div></div>
     <div style="font-size:11px;color:var(--t3);font-family:'DM Mono',monospace;margin-bottom:10px;line-height:1.6">${rec.modelo||'—'} · ${rec.placa} · ${rec.color||'—'} · ${rec.km} km<br>${rec.inspector} · ${rec.fecha}</div>
     <div class="card"><div class="card-title">Ranking</div>${['exterior','interior','mecanica','electrico','dinamica'].map(k=>`<div class="rrow"><span class="rlbl">${k.charAt(0).toUpperCase()+k.slice(1)}</span><div class="rbar"><div class="rbar-f" style="width:${(rec.ranking?.[k]||0)*20}%;background:${rc(rec.ranking?.[k]||0)}"></div></div><span class="rsco">${rec.ranking?.[k]||'—'}/5</span></div>`).join('')}</div>
-    <div class="card"><div class="card-title">Estimación de inversión</div><div class="total-cost">Q ${(rec.totalCost||0).toLocaleString()}</div></div>
+    <div class="card"><div class="card-title">Estimación de inversión</div><div class="total-cost">${fQ(rec.totalCost||0)}</div></div>
     ${rec.tallerItems?.length?`<div class="taller-summary show"><strong>🔧 Puntos taller (${rec.tallerItems.length})</strong><br>${rec.tallerItems.map(t=>`<div style="font-size:12px;margin-top:4px">• ${t}</div>`).join('')}</div>`:''}
     <div class="card" id="hallazgos-card-${id}"><div class="card-title">Hallazgos</div><div style="font-size:12px;color:var(--t3)">🔄 Cargando hallazgos...</div></div>
     ${rec.obs&&rec.obs!=='—'?`<div class="card"><div class="card-title">Observaciones</div><div style="font-size:13px;line-height:1.6">${rec.obs}</div></div>`:''}
@@ -1241,8 +1248,11 @@ function viewRec(id){
       card.innerHTML=`<div class="card-title">Hallazgos (${rows.length})</div>`+
         rows.map(r=>{
           const seccion=r[2]||'';const pieza=r[3]||'';const tipo=r[4]||'';const nivel=r[5]||'';
-          const costo=r[6]||'';const urgente=r[7]==='Sí';
-          return`<div class="f-item"><span><span class="badge ${urgente?'b-u':'b-r'}">${urgente?'COSTO':'RECOM.'}</span>${seccion}: ${pieza} ${tipo?'('+tipo+(nivel?'/'+nivel:'')+')'||'':''}</span>${costo&&costo!=='Q 0'?`<span class="fc-u">${costo}</span>`:''}</div>`;
+          const costoRaw=r[6]||'';const urgente=r[7]==='Sí';
+          // Extraer número del costo y formatearlo
+          const costoNum=parseFloat(String(costoRaw).replace(/[^0-9.]/g,''))||0;
+          const costoStr=costoNum>0?`<span class="fc-u">${fQ(costoNum)}</span>`:'';
+          return`<div class="f-item"><span><span class="badge ${urgente?'b-u':'b-r'}">${urgente?'COSTO':'RECOM.'}</span>${seccion}: ${pieza}${tipo?' ('+tipo+(nivel?'/'+nivel:'')+')'||'':''}</span>${costoStr}</div>`;
         }).join('');
     }else{
       card.innerHTML=`<div class="card-title">Hallazgos</div><div style="font-size:12px;color:var(--t3)">Sin hallazgos registrados.</div>`;
