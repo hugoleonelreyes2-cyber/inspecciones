@@ -795,9 +795,11 @@ async function saveRec(existingId){
     const allQ={...ST.capoApagado,...ST.capoEncendido,...ST.elecExt,...ST.elecInt,...ST.dyn,...ST.comp};
     const qH=Object.values(allQ).filter(d=>d.val&&d.val!=='NA'&&d.val!=='Bien'&&((d.invertida&&d.val==='Si')||(!d.invertida&&(d.val==='Regular'||d.val==='Mal'))));
     const hallazgos=[
-      ...extH.map(d=>[String(id),placa,'Exterior',d.pieza,d.tipo,String(d.nivel),d.costo>0?`Q ${d.costo.toLocaleString()}`:'Q 0',d.urgente?'Sí':'No',photoLinks['hallazgo_ext_'+d.pieza]||'—']),
-      ...intH.map(d=>[String(id),placa,'Interior',d.pieza,d.tipo,String(d.nivel),d.costo>0?`Q ${d.costo.toLocaleString()}`:'Q 0',d.urgente?'Sí':'No','—']),
-      ...qH.map(d=>[String(id),placa,d.taller?'Mecánica/Eléctrico':'Prueba',d.l,d.val,'—',d.costo>0?`Q ${d.costo.toLocaleString()}`:'Q 0',d.taller&&d.val==='Mal'?'Sí':'No','—']),
+      ...extH.map(d=>[String(id),placa,'Exterior',d.pieza,d.tipo,String(d.nivel),d.costo>0?fQ(d.costo):'Q 0.00',d.urgente?'Sí':'No',photoLinks['hallazgo_ext_'+d.pieza]||'—']),
+      ...intH.map(d=>[String(id),placa,'Interior',d.pieza,d.tipo,String(d.nivel),d.costo>0?fQ(d.costo):'Q 0.00',d.urgente?'Sí':'No','—']),
+      ...qH.map(d=>[String(id),placa,d.taller?'Mecánica/Eléctrico':'Prueba',d.l,d.val,'—',d.costo>0?fQ(d.costo):'Q 0.00',d.taller&&d.val==='Mal'?'Sí':'No','—']),
+      ...(ST.svc.costo>0?[[String(id),placa,'Servicio',`Servicio ${ST.svc.tipo}${ST.svc.combustible==='D'?'D':'G'}`,ST.svc.historial,'—',fQ(ST.svc.costo),'No','—']]:[]),
+      ...(ST.llantas.precio_x4>0?[[String(id),placa,'Llantas',`Llantas ${ST.llantas.medida} (x4)`,'Mal','—',fQ(ST.llantas.precio_x4),'No','—']]:[]),
     ];
 
     // 5. Guardar en Sheets
@@ -813,14 +815,14 @@ async function saveRec(existingId){
       combustible:ST.svc.combustible==='D'?'Diésel':'Gasolina',
       historial:{vigente_cofiño:'Vigente Cofiño',vigente_externa:'Vigente Externa',vencido:'Vencido',sin_historial:'Sin historial'}[ST.svc.historial]||'—',
       tipoServicio:ST.svc.tipo||'—',
-      costoServicio:ST.svc.costo>0?`Q ${ST.svc.costo.toLocaleString()}`:'Q 0',
+      costoServicio:ST.svc.costo>0?fQ(ST.svc.costo):'Q 0.00',
       componentePendiente:ST.svc.componente||'—',
       rankingExterior:ST.ranking.exterior,rankingInterior:ST.ranking.interior,
       rankingMecanica:ST.ranking.mecanica,rankingElectrico:ST.ranking.electrico,
       rankingPrueba:ST.ranking.dinamica,rankingGeneral:ST.ranking.global,
-      costoTotal:`Q ${ST.totalCost.toLocaleString()}`,
-      costoUrgente:`Q ${ST.urgCost.toLocaleString()}`,
-      costoRecomendado:`Q ${ST.recCost.toLocaleString()}`,
+      costoTotal:fQ(ST.totalCost),
+      costoUrgente:fQ(ST.urgCost),
+      costoRecomendado:fQ(ST.recCost),
       puntosTaller:ST.tallerItems.join(' | ')||'Ninguno',
       alertaIdentidad:identIssue?'SÍ':'No',
       observaciones:rec.obs||'—',
@@ -829,10 +831,10 @@ async function saveRec(existingId){
       hallazgos,
     });
 
-    // 6. Enviar correo automático
-    showToast('📧 Enviando notificación...',false);
+    // 6. Generar PDF y enviar por correo con adjunto
+    showToast('📧 Generando PDF y enviando correo...',false);
     await gPost({
-      action:'sendEmail',
+      action:'generateAndEmailPDF',
       inspector:rec.inspector,placa,
       modelo:rec.modelo,color:rec.color,km:rec.km,
       tipoVehiculo:VTYPES.find(v=>v.k===ST.vtype)?.l||'—',
@@ -840,13 +842,15 @@ async function saveRec(existingId){
       rankingExterior:ST.ranking.exterior,rankingInterior:ST.ranking.interior,
       rankingMecanica:ST.ranking.mecanica,rankingElectrico:ST.ranking.electrico,
       rankingPrueba:ST.ranking.dinamica,rankingGeneral:ST.ranking.global,
-      costoTotal:`Q ${ST.totalCost.toLocaleString()}`,
-      costoUrgente:`Q ${ST.urgCost.toLocaleString()}`,
-      costoRecomendado:`Q ${ST.recCost.toLocaleString()}`,
+      costoTotal:fQ(ST.totalCost),
+      costoUrgente:fQ(ST.urgCost),
+      costoRecomendado:fQ(ST.recCost),
       puntosTaller:ST.tallerItems.join(' | ')||'Ninguno',
       alertaIdentidad:identIssue?'SÍ — Verificar urgente':'No',
       observaciones:rec.obs||'—',
       carpetaDrive:folderLink,
+      folderId:folderVeh,
+      hallazgos,
     });
 
     // 7. Guardar estado completo en Drive — incluyendo photoLinks
