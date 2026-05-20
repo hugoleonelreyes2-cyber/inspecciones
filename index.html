@@ -755,14 +755,8 @@ async function saveRec(existingId){
   const placa=document.getElementById('placa').value||'SIN_PLACA';
   const rec={id,fecha:old.fecha||new Date().toLocaleDateString('es-GT'),fechaMod:new Date().toLocaleDateString('es-GT'),inspector:document.getElementById('inspector').value,placa,modelo:document.getElementById('modelo').value,color:document.getElementById('color').value,km:document.getElementById('km').value,chasis:document.getElementById('chasis').value,nmotor:document.getElementById('nmotor').value,vtype:ST.vtype,ranking:ST.ranking,totalCost:ST.totalCost,urgCost:ST.urgCost,recCost:ST.recCost,tallerItems:ST.tallerItems,obs:document.getElementById('obs').value,svc:ST.svc,llantas:ST.llantas,imgs:{...IMGS},state:{ident:ST.ident,extD:ST.extD,intD:ST.intD,capoApagado:ST.capoApagado,capoEncendido:ST.capoEncendido,elecExt:ST.elecExt,elecInt:ST.elecInt,dyn:ST.dyn,comp:ST.comp,photos:Array.from(ST.photos),svc:ST.svc,llantas:ST.llantas}};
 
-  // Guardar local SIN fotos estándar pero CON fotos de hallazgos
-  const hallazgoImgsLocal={};
-  Object.entries(IMGS).filter(([k])=>k.startsWith('hallazgo_')).forEach(([k,v])=>hallazgoImgsLocal[k]=v);
-  const recLocal={...rec,imgs:hallazgoImgsLocal};
-  try{localStorage.setItem('insp_'+id,JSON.stringify(recLocal));}catch(e){
-    // Si falla con hallazgos intentar sin fotos
-    try{const r2={...rec,imgs:{}};localStorage.setItem('insp_'+id,JSON.stringify(r2));}catch(e2){console.warn('localStorage lleno');}
-  }
+  // Guardar local básico como respaldo inmediato (sin fotos)
+  try{localStorage.setItem('insp_'+id,JSON.stringify({...rec,imgs:{}}));}catch(e){}
   showToast('☁ Guardando en Google Drive y Sheets...',false);
 
   try{
@@ -860,9 +854,16 @@ async function saveRec(existingId){
       });
     }catch(e){console.warn('Error guardando estado en Drive:',e);}
 
-    // 8. Actualizar local con links
+    // 8. Actualizar local con links Y fotos de hallazgos
     rec.photoLinks=photoLinks;rec.folderLink=folderLink;rec.folderVehId=folderVeh;
-    try{localStorage.setItem('insp_'+id,JSON.stringify(rec));}catch(e){}
+    // Guardar fotos de hallazgos localmente — todas excepto fotos estándar
+    const hallazgoImgsLocal={};
+    Object.entries(IMGS).filter(([k])=>!k.startsWith('photo_')).forEach(([k,v])=>hallazgoImgsLocal[k]=v);
+    rec.imgs=hallazgoImgsLocal;
+    try{localStorage.setItem('insp_'+id,JSON.stringify(rec));}catch(e){
+      // Si falla por espacio, guardar sin fotos
+      try{const r2={...rec,imgs:{}};localStorage.setItem('insp_'+id,JSON.stringify(r2));}catch(e2){console.warn('localStorage lleno');}
+    }
     showToast('✅ Guardado en Drive y Sheets — '+placa,false);
   }catch(e){
     console.error('Error Google:',e);
@@ -892,43 +893,50 @@ function genPDF(){
   const extH=Object.values(ST.extD).filter(d=>d.tipo&&d.tipo!=='OK'),intH=Object.values(ST.intD).filter(d=>d.tipo&&d.tipo!=='OK');
   const allQ={...ST.capoApagado,...ST.capoEncendido,...ST.elecExt,...ST.elecInt,...ST.dyn,...ST.comp};
   const qH=Object.values(allQ).filter(d=>d.val&&d.val!=='NA'&&d.val!=='Bien'&&((d.invertida&&d.val==='Si')||(!d.invertida&&(d.val==='Regular'||d.val==='Mal'))));
-  const allF=[...extH.map(d=>({l:`Exterior: ${d.pieza} (${d.tipo}${d.nivel})`,c:d.costo,t:d.costo>0})),...intH.map(d=>({l:`Interior: ${d.pieza} (${d.tipo}${d.nivel})`,c:d.costo,t:d.costo>0})),...qH.map(d=>({l:d.l,c:d.costo,t:d.taller})),...(ST.svc.costo>0?[{l:`Servicio ${ST.svc.tipo}${ST.svc.combustible}`,c:ST.svc.costo,t:false}]:[]),...(ST.llantas.precio_x4>0?[{l:`Llantas ${ST.llantas.medida} (x4)`,c:ST.llantas.precio_x4,t:false}]:[])];
-  if(!allF.length){doc.setFont('helvetica','italic');doc.setTextColor(150);doc.text('Sin hallazgos.',14,y);y+=6;}
-  else{doc.setFontSize(8);allF.forEach(f=>{if(y>270){doc.addPage();y=20;}f.t?doc.setFillColor(253,236,235):doc.setFillColor(254,243,226);doc.rect(12,y-3.5,186,6.5,'F');doc.setFont('helvetica','bold');doc.setTextColor(f.t?192:180,f.t?57:83,f.t?43:9);doc.text(f.t?'[COSTO]':'[REGISTR.]',14,y);doc.setFont('helvetica','normal');doc.setTextColor(0);const lines=doc.splitTextToSize(f.l,142);doc.text(lines,38,y);if(f.c>0){doc.setFont('helvetica','bold');doc.text('Q '+f.c.toLocaleString(),195,y,{align:'right'});}y+=lines.length>1?lines.length*4.5+1:6;});}
+  const allF=[
+    ...extH.filter(d=>d.costo>0).map(d=>({l:`Exterior: ${d.pieza} (${d.tipo}${d.nivel})`,c:d.costo})),
+    ...intH.filter(d=>d.costo>0).map(d=>({l:`Interior: ${d.pieza} (${d.tipo}${d.nivel})`,c:d.costo})),
+    ...qH.filter(d=>d.costo>0).map(d=>({l:d.l,c:d.costo})),
+    ...(ST.svc.costo>0?[{l:`Servicio ${ST.svc.tipo}${ST.svc.combustible}`,c:ST.svc.costo}]:[]),
+    ...(ST.llantas.precio_x4>0?[{l:`Llantas ${ST.llantas.medida} (x4)`,c:ST.llantas.precio_x4}]:[]),
+  ];
+  if(!allF.length){doc.setFont('helvetica','italic');doc.setTextColor(150);doc.text('Sin hallazgos con costo.',14,y);y+=6;}
+  else{doc.setFontSize(8);allF.forEach(f=>{if(y>270){doc.addPage();y=20;}doc.setFillColor(253,236,235);doc.rect(12,y-3.5,186,6.5,'F');doc.setFont('helvetica','bold');doc.setTextColor(192,57,43);doc.text('[COSTO]',14,y);doc.setFont('helvetica','normal');doc.setTextColor(0);const lines=doc.splitTextToSize(f.l,142);doc.text(lines,38,y);doc.setFont('helvetica','bold');doc.text('Q '+f.c.toLocaleString(),195,y,{align:'right'});y+=lines.length>1?lines.length*4.5+1:6;});}
   const obs=document.getElementById('obs').value;if(obs){y+=4;if(y>260){doc.addPage();y=20;}y=sec('OBSERVACIONES',y);doc.setFontSize(8);doc.setFont('helvetica','normal');doc.setTextColor(0);const lines=doc.splitTextToSize(obs,182);doc.text(lines,14,y);y+=lines.length*4+4;}
 
   // ── FOTOGRAFÍAS DE HALLAZGOS AGRUPADAS POR SECCIÓN ──
-  const hallazgoImgs=Object.entries(IMGS).filter(([k])=>k.startsWith('hallazgo_'));
+  // Incluir todas las fotos excepto las fotos estándar (photo_0 a photo_7)
+  const hallazgoImgs=Object.entries(IMGS).filter(([k])=>!k.startsWith('photo_'));
   if(hallazgoImgs.length){
     if(y>230){doc.addPage();y=20;}
     y=sec('FOTOGRAFÍAS DE HALLAZGOS',y);
-    // Agrupar por sección
     const grupos={};
     hallazgoImgs.forEach(([k,v])=>{
       let seccion='Otros';
-      if(k.includes('ext_'))seccion='Exterior';
-      else if(k.includes('int_'))seccion='Interior';
-      else if(k.includes('capoApagado')||k.includes('capoEncendido'))seccion='Mecánica';
-      else if(k.includes('elecExt')||k.includes('elecInt'))seccion='Eléctrico';
+      if(k.includes('ext_')||k.includes('guardaf')||k.includes('bumper')||k.includes('lamp')||k.includes('puerta')||k.includes('capot')||k.includes('techo')||k.includes('vid')||k.includes('llanta'))seccion='Exterior';
+      else if(k.includes('int_')||k.includes('asiento')||k.includes('tablero')||k.includes('consola')||k.includes('alfombra')||k.includes('tap')||k.includes('timon')||k.includes('baul'))seccion='Interior';
+      else if(k.includes('capoApagado')||k.includes('capoEncendido')||k.includes('capo'))seccion='Mecánica';
+      else if(k.includes('elecExt')||k.includes('elecInt')||k.includes('elec'))seccion='Eléctrico';
       else if(k.includes('dyn')||k.includes('comp'))seccion='Prueba dinámica';
+      else if(k.includes('hallazgo_ext'))seccion='Exterior';
+      else if(k.includes('hallazgo_int'))seccion='Interior';
       if(!grupos[seccion])grupos[seccion]=[];
       grupos[seccion].push([k,v]);
     });
-    const colW=89,rowH=68,margin=12,gap=6;
+    const colW=88,rowH=72,margin=12,gap=5;
     Object.entries(grupos).forEach(([secNom,imgs])=>{
       if(y>250){doc.addPage();y=20;}
-      // Subtítulo de sección
       doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(27,111,216);
-      doc.text(secNom,14,y);y+=6;
+      doc.text(secNom,14,y);y+=7;
       let col=0;
       imgs.forEach(([k,v])=>{
-        if(y+rowH>280){doc.addPage();y=20;}
+        if(y+rowH>280){doc.addPage();y=20;col=0;}
         const x=margin+col*(colW+gap);
         try{
           doc.addImage(v,'JPEG',x,y,colW,rowH-10);
           doc.setFontSize(7);doc.setTextColor(80);doc.setFont('helvetica','normal');
-          const lbl=k.replace('hallazgo_ext_','').replace('hallazgo_int_','').replace('hallazgo_','').replace(/_/g,' ');
-          doc.text(lbl.substring(0,30),x+colW/2,y+rowH-3,{align:'center'});
+          const lbl=k.replace(/hallazgo_ext_|hallazgo_int_|hallazgo_|qfo_/g,'').replace(/_/g,' ');
+          doc.text(lbl.substring(0,32),x+colW/2,y+rowH-3,{align:'center'});
         }catch(e){}
         col++;if(col>=2){col=0;y+=rowH+2;}
       });
@@ -1221,7 +1229,7 @@ function viewRec(id){
     <div style="display:flex;gap:7px;margin-top:8px">
       <button onclick="loadRec('${id}')" style="flex:1;padding:11px;border:none;border-radius:10px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600;background:var(--blue);color:#fff">✏️ Editar</button>
       <button onclick="pdfRecSinCorreo('${id}')" style="flex:1;padding:11px;border:none;border-radius:10px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600;background:#4B2D9F;color:#fff">📄 PDF</button>
-      ${rec.folderLink?`<button onclick="window.open('${rec.folderLink}','_blank')" style="flex:1;padding:11px;border:none;border-radius:10px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600;background:var(--green);color:#fff">📁 Drive</button>`:''}
+      ${(rec.folderLink&&rec.folderLink!=='—')?`<button onclick="window.open('${rec.folderLink}','_blank')" style="flex:1;padding:11px;border:none;border-radius:10px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600;background:var(--green);color:#fff">📁 Drive</button>`:rec.folderVehId?`<button onclick="window.open('https://drive.google.com/drive/folders/${rec.folderVehId}','_blank')" style="flex:1;padding:11px;border:none;border-radius:10px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600;background:var(--green);color:#fff">📁 Drive</button>`:''}
     </div>`;
 
   // Cargar hallazgos desde Sheets
@@ -1329,17 +1337,17 @@ async function pdfRec(id, enviarCorreo=true){
   const imgsOrig={...IMGS};
   Object.keys(IMGS).forEach(k=>delete IMGS[k]);
 
-  // Buscar fotos locales del registro
+  // Buscar fotos locales del registro (excluir fotos estándar photo_0 a photo_7)
   const localImgs=rec.imgs||{};
-  const tieneLocal=Object.keys(localImgs).some(k=>k.startsWith('hallazgo_'));
+  const tieneLocal=Object.keys(localImgs).some(k=>!k.startsWith('photo_'));
 
   if(tieneLocal){
-    // Usar fotos locales directamente
-    Object.entries(localImgs).filter(([k])=>k.startsWith('hallazgo_')).forEach(([k,v])=>IMGS[k]=v);
+    // Usar fotos locales directamente — excluir fotos estándar
+    Object.entries(localImgs).filter(([k])=>!k.startsWith('photo_')).forEach(([k,v])=>IMGS[k]=v);
     showToast('⏳ Generando PDF con fotos locales...',false);
   } else if(rec.photoLinks&&Object.keys(rec.photoLinks).length){
-    // Descargar desde Drive
-    const hallazgoLinks=Object.entries(rec.photoLinks).filter(([k])=>k.startsWith('hallazgo_'));
+    // Descargar desde Drive — excluir fotos estándar
+    const hallazgoLinks=Object.entries(rec.photoLinks).filter(([k])=>!k.startsWith('photo_'));
     if(hallazgoLinks.length){
       showToast(`⏳ Descargando ${hallazgoLinks.length} foto(s) de hallazgos...`,false);
       for(const [key,link] of hallazgoLinks){
