@@ -290,8 +290,9 @@ textarea{resize:vertical;line-height:1.5}
     </div>
     <div id="ext-chip"></div>
     <div id="ext-foto-wrap" class="hidden">
-      <button class="foto-btn" onclick="document.getElementById('ext-cam').click()">📸 Fotografiar hallazgo</button>
-      <input type="file" id="ext-cam" class="cam-input" accept="image/*" onchange="handleFotoHallazgo(this,'ext-foto-ok','hallazgo_ext_'+(extActivePiece?extActivePiece.id:''))">
+      <button class="foto-btn" onclick="showPhotoMenu('ext-cam','ext-cam-gal')">📸 Fotografiar hallazgo</button>
+      <input type="file" id="ext-cam" class="cam-input" accept="image/*" capture="environment" onchange="handleFotoHallazgo(this,'ext-foto-ok','hallazgo_ext_'+(extActivePiece?extActivePiece.id:''))">
+      <input type="file" id="ext-cam-gal" class="cam-input" accept="image/*" onchange="handleFotoHallazgo(this,'ext-foto-ok','hallazgo_ext_'+(extActivePiece?extActivePiece.id:''))">
       <div class="foto-ok" id="ext-foto-ok"></div>
     </div>
   </div>
@@ -325,8 +326,9 @@ textarea{resize:vertical;line-height:1.5}
     </div>
     <div id="int-chip"></div>
     <div id="int-foto-wrap" class="hidden">
-      <button class="foto-btn" onclick="document.getElementById('int-cam').click()">📸 Fotografiar hallazgo</button>
-      <input type="file" id="int-cam" class="cam-input" accept="image/*" onchange="handleFotoHallazgo(this,'int-foto-ok','hallazgo_int_'+(intActivePiece?intActivePiece.id:''))">
+      <button class="foto-btn" onclick="showPhotoMenu('int-cam','int-cam-gal')">📸 Fotografiar hallazgo</button>
+      <input type="file" id="int-cam" class="cam-input" accept="image/*" capture="environment" onchange="handleFotoHallazgo(this,'int-foto-ok','hallazgo_int_'+(intActivePiece?intActivePiece.id:''))">
+      <input type="file" id="int-cam-gal" class="cam-input" accept="image/*" onchange="handleFotoHallazgo(this,'int-foto-ok','hallazgo_int_'+(intActivePiece?intActivePiece.id:''))">
       <div class="foto-ok" id="int-foto-ok"></div>
     </div>
   </div>
@@ -639,6 +641,17 @@ async function ocrLlanta(input,qId){
   }catch(e){res.innerHTML='⚠ Error al leer imagen — ingrésela manualmente';}
 }
 
+function showHallazgoMenu(camId,galId,okId,imgKey){
+  showPhotoMenu(camId,galId);
+  // Reasignar handlers después de que el usuario elija
+  setTimeout(()=>{
+    const ci=document.getElementById(camId);
+    const gi=document.getElementById(galId);
+    if(ci)ci.onchange=()=>handleFotoHallazgo(ci,okId,imgKey);
+    if(gi)gi.onchange=()=>handleFotoHallazgo(gi,okId,imgKey);
+  },100);
+}
+
 async function handleFotoHallazgo(input,okId,imgKey){
   if(!input.files||!input.files[0])return;
   const dataURL=await fileToDataURL(input.files[0]);
@@ -662,7 +675,7 @@ function buildQList(contId,questions,stateKey){
     const btns=q.invertida?`<div class="srow"><button class="sbtn" onclick="setQ(this,'${q.id}','${stateKey}','Si','s-mal')">Sí / Presenta</button><button class="sbtn" onclick="setQ(this,'${q.id}','${stateKey}','No','s-bien')">No / Sin problema</button><button class="sbtn" onclick="setQ(this,'${q.id}','${stateKey}','NA','s-na')">N/A</button></div>`:
       `<div class="srow"><button class="sbtn" onclick="setQ(this,'${q.id}','${stateKey}','Bien','s-bien')">✓ Bien</button><button class="sbtn" onclick="setQ(this,'${q.id}','${stateKey}','Regular','s-reg')">⚠ Regular</button><button class="sbtn" onclick="setQ(this,'${q.id}','${stateKey}','Mal','s-mal')">✗ Mal</button><button class="sbtn" onclick="setQ(this,'${q.id}','${stateKey}','NA','s-na')">— N/A</button></div>`;
     const llf=q.hasLlanta?`<div id="llf-${q.id}" class="hidden" style="margin-top:8px"><div class="rl">Medida de la llanta</div><div style="display:flex;gap:6px;align-items:center"><input type="text" id="llm-${q.id}" placeholder="Ej. 265/65R17" oninput="bLL('${q.id}')" style="flex:1"><button class="foto-btn" onclick="document.getElementById('llc-${q.id}').click()" style="margin-top:0;flex-shrink:0">📸 Leer medida</button><input type="file" id="llc-${q.id}" class="cam-input" accept="image/*" onchange="ocrLlanta(this,'${q.id}')"></div><div class="llanta-result" id="llr-${q.id}"></div></div>`:'';
-    div.innerHTML=`<div class="sc-name">${q.l}</div>${btns}<div id="qchip_${q.id}"></div><div class="alert-taller" id="qtaller_${q.id}">🔧 Requiere revisión técnica en taller — agendar cita.</div><div id="qfoto_${q.id}" class="hidden"><button class="foto-btn" onclick="document.getElementById('qcam_${q.id}').click()">📸 Fotografiar hallazgo</button><input type="file" id="qcam_${q.id}" class="cam-input" accept="image/*" onchange="handleFotoHallazgo(this,'qfo_${q.id}','hallazgo_${stateKey}_${q.id}')"><div class="foto-ok" id="qfo_${q.id}">✓ Foto registrada</div></div>${llf}`;
+    div.innerHTML=`<div class="sc-name">${q.l}</div>${btns}<div id="qchip_${q.id}"></div><div class="alert-taller" id="qtaller_${q.id}">🔧 Requiere revisión técnica en taller — agendar cita.</div><div id="qfoto_${q.id}" class="hidden"><button class="foto-btn" onclick="showPhotoMenu('qcam_${q.id}','qcam_${q.id}_gal')">📸 Fotografiar hallazgo</button><input type="file" id="qcam_${q.id}" class="cam-input" accept="image/*" capture="environment" onchange="handleFotoHallazgo(this,'qfo_${q.id}','hallazgo_${stateKey}_${q.id}')"><input type="file" id="qcam_${q.id}_gal" class="cam-input" accept="image/*" onchange="handleFotoHallazgo(this,'qfo_${q.id}','hallazgo_${stateKey}_${q.id}')"><div class="foto-ok" id="qfo_${q.id}">✓ Foto registrada</div></div>${llf}`;
     cont.appendChild(div);
   });
 }
@@ -1095,6 +1108,18 @@ async function saveEmailsToSheets(){
 function saveCosts(){try{localStorage.setItem('ce',JSON.stringify(costsExt));localStorage.setItem('ci',JSON.stringify(costsInt));localStorage.setItem('cv',JSON.stringify(COSTS));localStorage.setItem('sv',JSON.stringify(SVC_COSTS));localStorage.setItem('ll',JSON.stringify(LLANTAS));}catch(e){}showToast('✅ Costos guardados',false);closeAdmin();}
 function loadCosts(){try{const ce=localStorage.getItem('ce');if(ce)costsExt=JSON.parse(ce);const ci=localStorage.getItem('ci');if(ci)costsInt=JSON.parse(ci);const cv=localStorage.getItem('cv');if(cv)Object.assign(COSTS,JSON.parse(cv));const sv=localStorage.getItem('sv');if(sv)Object.assign(SVC_COSTS,JSON.parse(sv));const ll=localStorage.getItem('ll');if(ll)Object.assign(LLANTAS,JSON.parse(ll));}catch(e){}}
 
+// Menú de opciones de foto
+function showPhotoMenu(camId, galId){
+  const existing=document.getElementById('photo-menu-overlay');
+  if(existing)existing.remove();
+  const overlay=document.createElement('div');
+  overlay.id='photo-menu-overlay';
+  overlay.style.cssText='position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;height:100%;background:rgba(0,0,0,0.5);z-index:400;display:flex;align-items:flex-end';
+  overlay.innerHTML=`<div style="background:var(--sf);border-radius:16px 16px 0 0;padding:20px 16px 32px;width:100%"><div style="font-size:14px;font-weight:600;color:var(--t);margin-bottom:16px;text-align:center">Seleccionar fotografía</div><button onclick="document.getElementById('${camId}').click();document.getElementById('photo-menu-overlay').remove()" style="width:100%;padding:14px;margin-bottom:10px;background:var(--blue);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">📷 Tomar foto con cámara</button><button onclick="document.getElementById('${galId}').click();document.getElementById('photo-menu-overlay').remove()" style="width:100%;padding:14px;margin-bottom:10px;background:var(--sf2);color:var(--t);border:1px solid var(--b2);border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">🖼 Elegir de galería o archivos</button><button onclick="document.getElementById('photo-menu-overlay').remove()" style="width:100%;padding:12px;background:none;color:var(--t3);border:none;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif">Cancelar</button></div>`;
+  overlay.addEventListener('click',(e)=>{if(e.target===overlay)overlay.remove();});
+  document.body.appendChild(overlay);
+}
+
 // Almacén temporal de registros cargados desde Sheets
 const SHEETS_RECS={};
 function openRecords(){
@@ -1440,18 +1465,36 @@ function init(){
     const slotId='photo-slot-'+idx;const camId='photo-cam-'+idx;const imgKey='photo_'+idx;
     const d=document.createElement('div');d.className='pslot'+(p.portada?' portada':'');d.id=slotId;
     d.innerHTML=p.portada?`<span style="font-size:18px">📷</span><span class="pl">${p.l}</span><span class="portada-tag">WEB</span>`:`<span style="font-size:18px">📷</span><span class="pl">${p.l}</span>`;
-    // input file oculto para cámara
-    const camInput=document.createElement('input');camInput.type='file';camInput.accept='image/*';camInput.className='cam-input';camInput.id=camId;
-    camInput.addEventListener('change',async()=>{
-      if(!camInput.files||!camInput.files[0])return;
-      const dataURL=await fileToDataURL(camInput.files[0]);
+    // Input cámara
+    const camInput=document.createElement('input');camInput.type='file';camInput.accept='image/*';camInput.setAttribute('capture','environment');camInput.className='cam-input';camInput.id=camId;
+    // Input galería
+    const galInput=document.createElement('input');galInput.type='file';galInput.accept='image/*';galInput.className='cam-input';galInput.id=camId+'-gal';
+    const handler=async(input)=>{
+      if(!input.files||!input.files[0])return;
+      const dataURL=await fileToDataURL(input.files[0]);
       IMGS[imgKey]=dataURL;ST.photos.add(p.l);
       d.classList.add('taken');
       d.innerHTML=`<img src="${dataURL}" alt="${p.l}">`;
       if(p.portada){const tag=document.createElement('span');tag.className='portada-tag';tag.textContent='WEB';d.appendChild(tag);}
-    });
+      // Botones para retomar/cambiar
+      const btns=document.createElement('div');
+      btns.style.cssText='position:absolute;bottom:4px;left:0;right:0;display:flex;gap:4px;padding:0 4px';
+      btns.innerHTML=`<button onclick="event.stopPropagation();document.getElementById('${camId}').click()" style="flex:1;font-size:9px;padding:3px;background:rgba(0,0,0,0.6);color:#fff;border:none;border-radius:3px;cursor:pointer">📷 Cámara</button><button onclick="event.stopPropagation();document.getElementById('${camId}-gal').click()" style="flex:1;font-size:9px;padding:3px;background:rgba(0,0,0,0.6);color:#fff;border:none;border-radius:3px;cursor:pointer">🖼 Galería</button>`;
+      d.style.position='relative';
+      d.appendChild(btns);
+    };
+    camInput.addEventListener('change',()=>handler(camInput));
+    galInput.addEventListener('change',()=>handler(galInput));
     d.appendChild(camInput);
-    d.addEventListener('click',()=>camInput.click());
+    d.appendChild(galInput);
+    // Click en el slot abre menú de opciones
+    d.addEventListener('click',(e)=>{
+      if(e.target.tagName==='BUTTON'||e.target.tagName==='INPUT')return;
+      if(!d.classList.contains('taken')){
+        // Mostrar opciones
+        showPhotoMenu(camId,camId+'-gal');
+      }
+    });
     pg.appendChild(d);
   });
   buildIdentList();
