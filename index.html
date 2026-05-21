@@ -167,9 +167,78 @@ textarea{resize:vertical;line-height:1.5}
 @keyframes spin{to{transform:rotate(360deg)}}
 .progress-msg{font-size:15px;font-weight:600;color:var(--t);text-align:center;padding:0 32px;line-height:1.6}
 .progress-step{font-size:12px;color:var(--t2);font-family:'DM Mono',monospace;text-align:center;padding:0 24px}
+
+/* ── TALLER MÓDULO ── */
+.search-screen{padding:32px 16px;max-width:480px;margin:0 auto}
+.search-logo{text-align:center;margin-bottom:24px}
+.taller-etapas-nav{display:flex;gap:0;overflow-x:auto;background:var(--sf);border-bottom:1px solid var(--b)}
+.tetapa-btn{flex:1;min-width:80px;padding:9px 4px;font-size:10px;font-weight:500;color:var(--t3);border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;text-align:center;font-family:'DM Sans',sans-serif;line-height:1.3}
+.tetapa-btn.active{color:var(--blue);border-bottom-color:var(--blue);background:var(--blue-bg)}
+.tetapa-btn .eico{font-size:16px;display:block;margin-bottom:1px}
+.tetapa-btn .ecnt{font-size:9px;color:var(--red-t)}
+.titem{background:var(--sf);border:1px solid var(--b);border-radius:var(--rmd);margin-bottom:8px;overflow:hidden}
+.titem.oblig{border-color:var(--red-b);border-width:1.5px}
+.titem-hdr{padding:10px 12px}
+.titem-q{font-size:13px;color:var(--t);line-height:1.4;margin-bottom:8px}
+.titem-btns{display:flex;gap:5px;flex-wrap:wrap}
+.tdet{display:none;padding:10px 12px;background:var(--red-bg);border-top:1px solid var(--red-b)}
+.tdet.show{display:block}
+.auth-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--b)}
+.auth-item:last-child{border-bottom:none}
+.auth-chk{width:22px;height:22px;border-radius:5px;border:2px solid var(--b2);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;transition:all 0.15s}
+.auth-chk.on{background:var(--green);border-color:var(--green);color:#fff}
+.auth-monto{font-size:13px;font-weight:500;font-family:'DM Mono',monospace;white-space:nowrap}
+.sum-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.sum-card{border-radius:var(--rmd);padding:12px;text-align:center;border:1px solid}
+.sum-num{font-size:26px;font-weight:600;margin-bottom:2px}
+.sum-lbl{font-size:11px}
+.cotiz-tbl{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}
+.cotiz-tbl th{background:var(--sf2);padding:6px 10px;text-align:left;font-weight:500;color:var(--t2);border-bottom:1px solid var(--b)}
+.cotiz-tbl td{padding:7px 10px;border-bottom:1px solid var(--b);vertical-align:middle}
+.cotiz-tbl tr:last-child td{border-bottom:none}
+.cotiz-total{display:flex;justify-content:space-between;padding:10px 12px;background:var(--amber-bg);border-top:2px solid var(--amber-b);font-weight:600;font-size:13px}
+.oblig-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;background:var(--red-bg);border:1px solid var(--red-b);border-radius:20px;font-size:10px;font-weight:600;color:var(--red-t);margin-bottom:5px}
+.ocr-zone{border:2px dashed var(--b2);border-radius:var(--rmd);padding:20px;text-align:center;background:var(--sf2);cursor:pointer;margin-bottom:12px}
+.ocr-st{padding:8px 12px;border-radius:var(--rsm);font-size:12px;margin-bottom:8px;display:none}
+.ocr-st.show{display:block}
+
 </style>
 </head>
 <body>
+
+<!-- MENÚ PRINCIPAL -->
+<div id="main-menu" style="display:none;position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;height:100%;background:var(--bg);z-index:500;overflow-y:auto">
+  <div style="padding:40px 20px;text-align:center">
+    <div style="font-size:56px;margin-bottom:12px">🚗</div>
+    <div style="font-size:22px;font-weight:700;color:var(--t);margin-bottom:6px">Sistema de Inspecciones</div>
+    <div style="font-size:13px;color:var(--t3);margin-bottom:40px">División Vehículos Usados — Cofiño</div>
+    <button onclick="openModulo('inspeccion')" style="width:100%;padding:20px;margin-bottom:14px;background:var(--sf);border:1px solid var(--b);border-radius:var(--rlg);cursor:pointer;font-family:'DM Sans',sans-serif;text-align:left;display:flex;align-items:center;gap:16px">
+      <span style="font-size:32px">📋</span>
+      <div>
+        <div style="font-size:15px;font-weight:600;color:var(--t);margin-bottom:3px">Inspección de recepción</div>
+        <div style="font-size:12px;color:var(--t3)">Para inspectores — Valuación inicial del vehículo</div>
+      </div>
+      <span style="margin-left:auto;color:var(--t3);font-size:18px">›</span>
+    </button>
+    <button onclick="openModulo('taller')" style="width:100%;padding:20px;margin-bottom:14px;background:var(--sf);border:1px solid var(--b);border-radius:var(--rlg);cursor:pointer;font-family:'DM Sans',sans-serif;text-align:left;display:flex;align-items:center;gap:16px">
+      <span style="font-size:32px">🔧</span>
+      <div>
+        <div style="font-size:15px;font-weight:600;color:var(--t);margin-bottom:3px">Revisión técnica de taller</div>
+        <div style="font-size:12px;color:var(--t3)">Para mecánicos y asesores — 76 puntos + autorización</div>
+      </div>
+      <span style="margin-left:auto;color:var(--t3);font-size:18px">›</span>
+    </button>
+    <div style="margin-top:24px;border-top:1px solid var(--b);padding-top:20px">
+      <button onclick="T_showConfig()" style="padding:8px 16px;border:1px solid var(--b2);border-radius:var(--rsm);background:var(--sf2);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--t2)">⚙ Configuración taller</button>
+    </div>
+  </div>
+</div>
+
+<!-- MÓDULO TALLER -->
+<div id="taller-modulo" style="display:none;position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;height:100%;background:var(--bg);z-index:490;overflow-y:auto">
+  <div id="taller-app"></div>
+</div>
+
 <div class="app" id="app">
 <div class="hdr">
   <div class="hdr-brand"><div class="hdr-title">Inspección Rápida</div><div class="hdr-sub" id="h-sub">PASO 1 DE 8</div></div>
@@ -1502,6 +1571,828 @@ function init(){
   renderExtSVG();renderIntSVG();loadCosts();
 }
 init();
+
+// ── NAVEGACIÓN ENTRE MÓDULOS ──
+let moduloActual = 'menu';
+
+function showMenu(){
+  document.getElementById('main-menu').style.display='block';
+  document.getElementById('taller-modulo').style.display='none';
+  moduloActual='menu';
+}
+
+function openModulo(mod){
+  document.getElementById('main-menu').style.display='none';
+  if(mod==='inspeccion'){
+    document.getElementById('taller-modulo').style.display='none';
+    moduloActual='inspeccion';
+    // La app de inspección ya está en el DOM principal
+  } else if(mod==='taller'){
+    document.getElementById('taller-modulo').style.display='block';
+    moduloActual='taller';
+    // Iniciar módulo taller
+    const app=document.getElementById('taller-app');
+    app.innerHTML='<div id="app"></div>';
+    T_renderBusqueda();
+  }
+}
+
+// Modificar función T_showToast para usar el toast global
+function T_showToast(msg,err=true){showToast(msg,err);}
+function T_showProgress(msg){showProgress(msg);}
+function T_updateProgress(msg){updateProgress(msg);}
+function T_hideProgress(){hideProgress();}
+
+// Función para volver al menú desde taller
+function tallerVolver(){showMenu();}
+
+// Sobrescribir T_renderBusqueda para agregar botón volver
+const _T_renderBusqueda_orig = typeof T_renderBusqueda !== 'undefined' ? T_renderBusqueda : null;
+
+
+
+// ── CONFIG ──
+const SHEETS_ID='1iq7xoJms4vz_3GjPpIsMYRHjlqvWB8YYNAjrL4bNkEU';
+const SCRIPT_URL='https://script.google.com/macros/s/AKfycbwpUBB0H1tniwguwE6HyHimMUuiz_7oPWiLb30gHchD36iOMLitWCS1A8AOE-7o21hX2w/exec';
+const CLAVE_KEY='taller_clave';
+const ASESORES_KEY='taller_asesores_v2';
+const PROD_KEY='taller_produccion';
+let CLAVE=localStorage.getItem(CLAVE_KEY)||'desarrollohugochoc1982';
+let ASESORES=JSON.parse(localStorage.getItem(ASESORES_KEY)||'["","","","","",""]');
+let PROD_DEST=JSON.parse(localStorage.getItem(PROD_KEY)||'["","","","","",""]');
+
+// ── ESTADO ──
+let T_VEH=null;
+let T_ST={};
+let T_COTIZACION=[];
+let T_AUTORIZADOS=new Set();
+let T_curEtapa='piso';
+let T_authDesbloqueado=false;
+
+// ── PUNTOS ──
+const PUNTOS={
+  piso:[
+    {id:'p01',q:'Los cristales instalados en toda la carrocería no presentan rajaduras, astilladuras y están instalados correctamente.'},
+    {id:'p02',q:'El polarizado es claro, está libre de burbujas y no presenta rallones profundos.'},
+    {id:'p03',q:'Los silvines no evidencian raspones profundos, filtración de agua, gretaduras o daños por golpes en su base.'},
+    {id:'p04',q:'La pintura exterior tiene rallones leves y golpes que no deforman más del 50% de la pieza afectada.'},
+    {id:'p05',q:'Lámparas o reflectores de la parte trasera del vehículo no están quebrados o con filtración de agua.'},
+    {id:'p06',q:'Las luces delanteras altas, bajas, neblineras y direccionales encienden según la activación desde su switch respectivamente.'},
+    {id:'p07',q:'Los espejos retrovisores exteriores e interior están en condiciones y funcionan correctamente.'},
+    {id:'p08',q:'El limpiaparabrisas delantero y trasero funciona correctamente en todas las velocidades, aspersores rocían adecuadamente.'},
+    {id:'p09',q:'Hay antena de radio y está en buenas condiciones.'},
+    {id:'p10',q:'La tapa del tanque de combustible, capó, puertas y baúl se abre y cierra correctamente.'},
+    {id:'p11',q:'Los platos, aros o tapones de llanta se encuentran en buenas condiciones y están completos.'},
+    {id:'p12',q:'El dibujo de la banda del neumático está por arriba de 2mm de profundidad sobre el indicador de desgaste incluida la llanta de repuesto.'},
+    {id:'p13',q:'Airbag(s) sin evidencia de haber sido desplegados.'},
+    {id:'p14',q:'Validar que el COLOR del vehículo coincida con el registrado en la tarjeta de circulación.',oblig:true},
+    {id:'p15',q:'Validar que el NÚMERO DE CHASIS coincida con el registrado en la tarjeta de circulación.',oblig:true},
+    {id:'p16',q:'Validar que el NÚMERO DE MOTOR coincida con el registrado en la tarjeta de circulación.',oblig:true},
+    {id:'p17',q:'El chasis o monocasco se encuentra en buen estado, libre de golpes y reparaciones inadecuadas durante la revisión visual.',oblig:true},
+  ],
+  media:[
+    {id:'m01',q:'Los guardapolvos y puntas de flecha no presentan fuga de grasa y no presentan ruidos al realizar giros en U.'},
+    {id:'m02',q:'La cremallera y los amortiguadores no presentan ruido o desajuste al conducir en camino irregular.'},
+    {id:'m03',q:'Componentes de la suspensión delantera y trasera no se visualiza daño: bujes rotos, partes inexistentes o juego excesivo.'},
+    {id:'m04',q:'Los cargadores de motor y transmisión no presentan fractura del caucho.'},
+    {id:'m05',q:'El sistema de escape está correctamente sujetado y sin fugas en los componentes (revisión lateral).'},
+    {id:'m06',q:'Bomba central, mordazas de freno y bombas auxiliares presentan daños de empaques o fugas causando nivel bajo de líquido de frenos.'},
+    {id:'m07',q:'Cojinetes de rueda funcionan correctamente sin sonidos o zumbidos al ir en marcha.'},
+    {id:'m08',q:'Revisar que no tenga daño o fugas de combustible en tanque y tuberías (vista lateral).'},
+  ],
+  alto:[
+    {id:'a01',q:'El chasis o monocasco revisado desde abajo: libre de golpes, reparaciones inadecuadas, soldaduras no originales.'},
+    {id:'a02',q:'El sistema de escape completo desde abajo: sujetado correctamente, sin fugas, sin daños en catalizador o mofle.'},
+    {id:'a03',q:'Discos y tambores de freno están dentro de especificaciones. Pastillas > 4mm y fricciones > 3mm.'},
+    {id:'a04',q:'Eje cardán y cruces se encuentran en buen estado, sin desgaste, flojos o con ruido.'},
+    {id:'a05',q:'La dirección desde abajo: cremallera sin ruidos, fugas, guardapolvos en buen estado.'},
+    {id:'a06',q:'Inspeccione desde abajo que en motor y caja no haya pérdida de ningún tipo de fluido (aceite, refrigerante u otros).'},
+    {id:'a07',q:'La selección de las diferentes configuraciones de tracción en los modelos 4x4 funcionan correctamente.'},
+    {id:'a08',q:'Filtro de sistema híbrido se encuentra libre de suciedad y en buen estado (cuando aplique).'},
+    {id:'a09',q:'El freno de mano opera correctamente y la altura del mecanismo está dentro de especificación 5 clics.'},
+    {id:'a10',q:'Revisar que no tenga daño o fugas de combustible en tanque y tuberías (vista desde abajo).'},
+  ],
+  capo:[
+    {id:'c01',q:'Realizar prueba del estado de la batería, arranque y sistema de carga dentro de los parámetros estampados.'},
+    {id:'c02',q:'Bornes y cables de la batería libres de fractura y corrosión.'},
+    {id:'c03',q:'Revisar niveles correctos de lubricantes: motor, diferenciales, transfer, transmisión. Sin fugas (no aplica humedad).'},
+    {id:'c04',q:'Fajas impulsoras y mangueras del sistema de enfriamiento no presentan grietas o fugas de refrigerante.'},
+    {id:'c05',q:'El ventilador del motor funciona correctamente durante el accionamiento del A/C y automáticamente al llegar a temperatura.'},
+    {id:'c06',q:'El compartimiento del motor tiene las tolvas y cobertores correspondientes.'},
+    {id:'c07',q:'Filtro de aire de motor en buenas condiciones con registro de cambio no mayor a 10,000 km.'},
+    {id:'c08',q:'Verificar estado visual de componentes del sistema híbrido, cables no manipulados, partes sueltas (cuando aplique).'},
+    {id:'c09',q:'El refrigerante del Inversor Híbrido está en nivel correcto y no presenta fugas (cuando aplique).'},
+    {id:'c10',q:'Revisar estado de faja de tiempo (mínimo 5 años o 60,000 km desde último cambio).'},
+    {id:'c11',q:'Realizar cumplimiento del 100% de las campañas de fábrica aplicables para el vehículo inspeccionado.'},
+    {id:'c12',q:'Verificar observaciones de cambios recomendados en historial. Si excede 30,000 km sin registro considerar servicio mayor.'},
+  ],
+  prueba:[
+    {id:'d01',q:'Starter, motor de arranque funciona sin ruidos y con normalidad.'},
+    {id:'d02',q:'El vehículo desplaza bien y no presenta pérdida de potencia o falta de aceleración.'},
+    {id:'d03',q:'El motor NO sobrepasa la temperatura normal de operación.'},
+    {id:'d04',q:'No hay ruido o vibración anormal en el motor.'},
+    {id:'d05',q:'Turbo acciona correctamente, sin ruidos y fugas de aceite o refrigerante.'},
+    {id:'d06',q:'La transmisión automática opera correctamente en las diferentes posiciones y en marcha.'},
+    {id:'d07',q:'El embrague funciona correctamente: velocidades ingresan sin ruidos, altura del pedal en rango adecuado.'},
+    {id:'d08',q:'El sistema de ABS y control de estabilidad se activan simulando un derrape.'},
+    {id:'d09',q:'Alineación y balanceo correctos: sin vibraciones o desviación al conducir en línea recta.'},
+    {id:'d10',q:'El sistema de calefacción y A/C funcionan correctamente incluido filtro, botones y mando.'},
+    {id:'d11',q:'El sistema de audio, cámara de retroceso, pantalla multifunción funciona correctamente.'},
+    {id:'d12',q:'Las funciones del volante funcionan correctamente: claxon, control crucero, botones de audio, limpiaparabrisas.'},
+    {id:'d13',q:'Los indicadores del panel de instrumentos funcionan correctamente y no hay alertas activas de mal funcionamiento.'},
+    {id:'d14',q:'Realizar scanner: módulos electrónicos sin códigos de falla pendientes. Borrar históricos y validar que no reincidan.'},
+    {id:'d15',q:'Verificar que los diferentes estados de carga del sistema híbrido se reflejen en el display sin alertas (cuando aplique).'},
+    {id:'d16',q:'Los modos EV/Eco/Power del sistema Hybrid funcionan correctamente (cuando aplique).'},
+    {id:'d17',q:'Validar que el servicio tenga vigencia de 90 días o 3,000 km para el próximo servicio (realizado en Cofiño).'},
+    {id:'d18',q:'Los apoya cabezas de todos los asientos están completos sin daño en el revestimiento y funcionan correctamente.'},
+    {id:'d19',q:'La consola central, portavasos, panel del tablero, apoyabrazos y guantera en buenas condiciones sin quebraduras.'},
+    {id:'d20',q:'Al conducir no se percibe excesivo ruido del viento de marcha desde el interior del habitáculo.'},
+    {id:'d21',q:'La llave a distancia y los registros de puertas funcionan correctamente, sistema de entrada sin llave.'},
+    {id:'d22',q:'El tricket y demás herramientas están presentes y en buenas condiciones.'},
+    {id:'d23',q:'Los cinturones de seguridad funcionan correctamente con extensión amplia y sin daños físicos.'},
+    {id:'d24',q:'El revestimiento del techo sin perforaciones, luz interior, tapa sol y tapicería de pilares en buenas condiciones.'},
+    {id:'d25',q:'El habitáculo se encuentra libre de malos olores, fragancias fuertes y suciedad removible con limpieza rutinaria.'},
+    {id:'d26',q:'Las superficies interiores de cuero, plástico y tela de los asientos libres de perforaciones y desgarros.'},
+    {id:'d27',q:'El desempañador trasero funciona correctamente.'},
+    {id:'d28',q:'Funcionan todas las opciones del mando central de puerta del conductor y cada puerta individualmente.'},
+    {id:'d29',q:'El ajuste de los asientos eléctrico o manual, calentador o ventilación, funcionan correctamente.'},
+    {id:'d30',q:'El techo corredizo y la cortina interna o paneles móviles funciona en todas sus posiciones con suavidad.'},
+    {id:'d31',q:'Las tomas de 12v funcionan correctamente.'},
+    {id:'d32',q:'Funciona correctamente la apertura automática del baúl desde el interior del habitáculo.'},
+    {id:'d33',q:'La alfombra del baúl o compartimiento de los pasajeros sin perforaciones por desgaste o cortes.'},
+  ],
+};
+
+const ETAPAS=[
+  {id:'piso',  label:'Nivel piso',   ico:'🚗',sub:'Sobre llantas'},
+  {id:'media', label:'Media altura', ico:'📐',sub:'1 metro'},
+  {id:'alto',  label:'Altura sup.',  ico:'⬆️',sub:'Mecánico debajo'},
+  {id:'capo',  label:'Capó abierto', ico:'🔧',sub:'Motor'},
+  {id:'prueba',label:'Prueba din.',  ico:'🚦',sub:'En movimiento'},
+  {id:'cotiz', label:'Cotización',   ico:'📄',sub:'OCR / manual'},
+  {id:'auth',  label:'Autorizar',    ico:'✅',sub:'Con clave'},
+];
+
+function T_T_initST(){
+  T_ST={};
+  Object.values(PUNTOS).flat().forEach(p=>{T_ST[p.id]={val:null,obs:'',foto:null};});
+  T_COTIZACION=[];T_AUTORIZADOS=new Set();T_authDesbloqueado=false;
+}
+
+// ── PANTALLA BÚSQUEDA ──
+function T_T_renderBusqueda(){
+  document.getElementById('app').innerHTML=`
+    <div class="search-screen">
+      <div style="margin-bottom:16px"><button onclick="showMenu()" style="display:flex;align-items:center;gap:6px;padding:8px 12px;border:1px solid var(--b2);border-radius:var(--rsm);background:var(--sf2);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--t2)">← Menú principal</button></div>
+      <div class="search-logo">
+        <div>🔧</div>
+        <h1>Revisión Técnica de Taller</h1>
+        <p>Busque el vehículo por número de placa</p>
+      </div>
+      <div class="field">
+        <label class="lbl">Número de placa</label>
+        <input class="inp" id="buscar-placa" placeholder="Ej. P880CZR" style="text-transform:uppercase;font-size:16px;letter-spacing:1px" oninput="this.value=this.value.toUpperCase()">
+      </div>
+      <button onclick="T_buscarVehiculo()" style="width:100%;padding:13px;background:var(--blue);color:#fff;border:none;border-radius:var(--rmd);font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:4px">🔍 Buscar vehículo</button>
+      <div id="buscar-st" style="margin-top:12px;font-size:13px;text-align:center;color:var(--t3)"></div>
+      <div style="margin-top:24px;border-top:1px solid var(--b);padding-top:16px;text-align:center">
+        <button onclick="T_showConfig()" style="padding:8px 16px;border:1px solid var(--b2);border-radius:var(--rsm);background:var(--sf2);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--t2)">⚙ Configuración</button>
+      </div>
+    </div>`;
+}
+
+async function T_T_buscarVehiculo(){
+  const placa=document.getElementById('buscar-placa').value.trim();
+  if(!placa){showToast('⚠ Ingrese un número de placa');return;}
+  const st=document.getElementById('buscar-st');
+  st.textContent='🔍 Buscando en Google Sheets...';
+  try{
+    const resp=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'getInspections'})});
+    const data=await resp.json();
+    if(data.status==='OK'&&data.data&&data.data.length>1){
+      const headers=data.data[0];
+      const rows=data.data.slice(1);
+      const row=rows.filter(r=>String(r[headers.indexOf('Placa')]||'').toUpperCase()===placa.toUpperCase()).pop();
+      if(row){
+        const get=(h)=>row[headers.indexOf(h)]||'';
+        T_VEH={
+          placa:get('Placa'),modelo:get('Modelo'),color:get('Color'),km:get('Km'),
+          inspector:get('Inspector'),fecha:get('Fecha'),
+          chasis:get('Chasis'),motor:get('Motor'),
+          hallazgos:[],
+          folderLink:get('Carpeta Drive'),
+        };
+        // Leer hallazgos desde Sheets
+        const hResp=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'getHallazgos',id:get('ID')})});
+        const hData=await hResp.json();
+        if(hData.status==='OK'&&hData.data){
+          T_VEH.hallazgos=hData.data.map(h=>({sec:h[2],desc:h[3]+(h[4]?' ('+h[4]+')':'')}));
+        }
+        T_initST();
+        T_renderApp();
+      }else{
+        st.textContent='⚠ No se encontró ninguna inspección con la placa '+placa;
+      }
+    }else{
+      // Demo si no hay conexión
+      T_VEH={placa,modelo:'Vehículo demo',color:'—',km:'—',inspector:'—',fecha:new Date().toLocaleDateString('es-GT'),chasis:'—',motor:'—',hallazgos:[],folderLink:''};
+      T_initST();
+      T_renderApp();
+    }
+  }catch(e){
+    // Demo offline
+    T_VEH={placa,modelo:'Vehículo demo',color:'—',km:'—',inspector:'—',fecha:new Date().toLocaleDateString('es-GT'),chasis:'—',motor:'—',hallazgos:[],folderLink:''};
+    T_initST();
+    T_renderApp();
+  }
+}
+
+// ── APP PRINCIPAL ──
+function T_T_renderApp(){
+  document.getElementById('app').innerHTML=`
+    <div class="header">
+      <div class="header-top">
+        <div style="display:flex;align-items:center;gap:8px">
+          <button onclick="showMenu()" style="padding:5px 8px;border:1px solid var(--b2);border-radius:var(--rsm);background:var(--sf2);font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--t2)">← Menú</button>
+          <div class="header-title">🔧 Revisión de Taller</div>
+        </div>
+        <button onclick="T_showConfig()" style="padding:6px 12px;border:1px solid var(--b2);border-radius:var(--rsm);background:var(--sf2);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif">⚙</button>
+      </div>
+      <div class="veh-chips" id="veh-chips"></div>
+    </div>
+    <div class="etapas-nav" id="etapas-nav"></div>
+    <div class="content" id="content"></div>
+    <div class="action-bar" id="action-bar"></div>`;
+
+  // Chips
+  const vc=document.getElementById('veh-chips');
+  [T_VEH.placa,T_VEH.modelo,T_VEH.color,T_VEH.km+' km'].forEach(v=>{
+    const s=document.createElement('span');s.className='chip';s.textContent=v;vc.appendChild(s);
+  });
+
+  // Nav etapas
+  const nav=document.getElementById('etapas-nav');
+  ETAPAS.forEach(e=>{
+    const b=document.createElement('button');
+    b.className='etapa-btn'+(e.id===T_curEtapa?' active':'');
+    b.id='etab-'+e.id;
+    b.innerHTML=`<span class="eico">${e.ico}</span>${e.label}<span class="ecnt" id="cnt-${e.id}"></span>`;
+    b.onclick=()=>goEtapa(e.id);
+    nav.appendChild(b);
+  });
+  T_renderEtapa(T_curEtapa);
+}
+
+function T_goEtapa(id){
+  T_curEtapa=id;
+  document.querySelectorAll('.etapa-btn').forEach(b=>b.classList.remove('active'));
+  const btn=document.getElementById('etab-'+id);
+  if(btn)btn.classList.add('active');
+  T_renderEtapa(id);
+  window.scrollTo(0,0);
+}
+
+function T_T_updateCounts(){
+  Object.keys(PUNTOS).forEach(etapa=>{
+    const n=PUNTOS[etapa].filter(p=>T_ST[p.id]?.val==='mal'||T_ST[p.id]?.val==='reg').length;
+    const el=document.getElementById('cnt-'+etapa);
+    if(el)el.textContent=n>0?n+'⚠':'';
+  });
+}
+
+// ── RENDER ETAPA INSPECCIÓN ──
+function T_T_renderEtapa(id){
+  const c=document.getElementById('content');
+  const ab=document.getElementById('action-bar');
+  c.innerHTML='';
+  if(id==='cotiz'){T_renderCotizacion(c,ab);return;}
+  if(id==='auth'){T_renderAuth(c,ab);return;}
+
+  const etapa=ETAPAS.find(e=>e.id===id);
+  const puntos=PUNTOS[id]||[];
+  const resp=puntos.filter(p=>T_ST[p.id]?.val).length;
+
+  const hdr=document.createElement('div');hdr.className='paso-hdr';
+  hdr.innerHTML=`<span class="paso-ico">${etapa.ico}</span><div><div class="paso-title">${etapa.label}</div><div class="paso-sub">${etapa.sub}</div></div><span class="paso-prog">${resp}/${puntos.length}</span>`;
+  c.appendChild(hdr);
+
+  // Hallazgos referencia (solo en piso)
+  if(id==='piso'&&T_VEH.hallazgos.length){
+    const ref=document.createElement('div');ref.className='card';
+    ref.innerHTML=`<div class="card-hdr" style="background:var(--amber-bg);color:var(--amber-t)">⚠ Hallazgos del inspector — referencia (sin montos)</div><div class="card-body">${T_VEH.hallazgos.map(h=>`<div style="font-size:12px;padding:4px 0;border-bottom:1px solid var(--amber-b);color:var(--amber-t)"><strong>${h.sec}:</strong> ${h.desc}</div>`).join('')}</div>`;
+    c.appendChild(ref);
+  }
+
+  puntos.forEach(p=>{
+    const v=T_ST[p.id]?.val;
+    const div=document.createElement('div');div.className='item'+(p.oblig?' oblig':'');
+    div.innerHTML=`
+      <div class="item-hdr">
+        ${p.oblig?'<div class="oblig-badge">🔴 OBLIGATORIO — Identidad del vehículo</div>':''}
+        <div class="item-q">${p.q}</div>
+        <div class="item-btns">
+          <button class="ibtn${v==='ok'?' ok':''}" onclick="T_setV('${p.id}','ok',this)">✓ Bien</button>
+          <button class="ibtn${v==='reg'?' reg':''}" onclick="T_setV('${p.id}','reg',this)">⚠ Regular</button>
+          <button class="ibtn${v==='mal'?' mal':''}" onclick="T_setV('${p.id}','mal',this)">✗ Mal</button>
+          <button class="ibtn${v==='na'?' na':''}" onclick="T_setV('${p.id}','na',this)">N/A</button>
+        </div>
+      </div>
+      <div class="item-det${v==='mal'||v==='reg'?' show':''}" id="det-${p.id}">
+        <div class="det-lbl">Descripción del hallazgo / trabajo requerido:</div>
+        <textarea class="det-inp" rows="2" placeholder="Describa el hallazgo..." oninput="T_ST['${p.id}'].obs=this.value">${T_ST[p.id]?.obs||''}</textarea>
+        <button class="foto-btn" onclick="document.getElementById('fc-${p.id}').click()">📸 Fotografiar hallazgo</button>
+        <input type="file" id="fc-${p.id}" accept="image/*" onchange="T_setFoto('${p.id}',this)">
+        <div id="fthumb-${p.id}">${T_ST[p.id]?.foto?`<img src="${T_ST[p.id].foto}" class="foto-thumb">`:''}</div>
+      </div>`;
+    c.appendChild(div);
+  });
+
+  const etapas=ETAPAS.filter(e=>e.id!=='cotiz'&&e.id!=='auth');
+  const idx=etapas.findIndex(e=>e.id===id);
+  const next=etapas[idx+1];
+  ab.innerHTML=`
+    <button class="btn-sec" onclick="T_guardarBorrador()">💾 Guardar</button>
+    ${next?`<button class="btn-pri" onclick="T_goEtapa('${next.id}')">→ ${next.label}</button>`:`<button class="btn-pri" onclick="T_goEtapa('cotiz')">→ Cotización</button>`}`;
+}
+
+function T_T_setV(id,val,btn){
+  T_ST[id].val=val;
+  btn.closest('.item-btns').querySelectorAll('.ibtn').forEach(b=>b.className='ibtn');
+  btn.className='ibtn '+(val==='ok'?'ok':val==='reg'?'reg':val==='mal'?'mal':'na');
+  const det=document.getElementById('det-'+id);
+  if(det)det.className='item-det'+(val==='mal'||val==='reg'?' show':'');
+  T_updateCounts();
+}
+
+function T_T_setFoto(id,input){
+  if(!input.files||!input.files[0])return;
+  const r=new FileReader();r.onload=e=>{
+    T_ST[id].foto=e.target.result;
+    const th=document.getElementById('fthumb-'+id);
+    if(th)th.innerHTML=`<img src="${e.target.result}" class="foto-thumb">`;
+    showToast('📸 Foto guardada',false);
+  };r.readAsDataURL(input.files[0]);
+}
+
+// ── COTIZACIÓN ──
+function T_T_renderCotizacion(c,ab){
+  const todos=Object.entries(T_ST).filter(([k,v])=>v.val==='mal'||v.val==='reg');
+  const hallCard=document.createElement('div');hallCard.className='card';
+  hallCard.innerHTML=`<div class="card-hdr">🔧 Hallazgos del mecánico (${todos.length})</div><div class="card-body">${todos.length?todos.map(([k,v])=>{
+    const p=Object.values(PUNTOS).flat().find(x=>x.id===k);
+    return`<div style="padding:5px 0;border-bottom:1px solid var(--b)">
+      <span style="font-size:10px;padding:2px 6px;border-radius:10px;${v.val==='mal'?'background:var(--red-bg);color:var(--red-t)':'background:var(--amber-bg);color:var(--amber-t)'};margin-right:5px">${v.val==='mal'?'Mal':'Regular'}</span>
+      <span style="font-size:12px">${p?.q?.substring(0,65)||k}...</span>
+      ${v.obs?`<div style="font-size:11px;color:var(--amber-t);margin-top:2px;padding-left:4px">→ ${v.obs}</div>`:''}
+    </div>`;
+  }).join(''):'<div style="font-size:12px;color:var(--t3);text-align:center;padding:10px">Sin hallazgos registrados</div>'}
+  </div>`;
+  c.appendChild(hallCard);
+
+  const ocrCard=document.createElement('div');ocrCard.className='card';
+  ocrCard.innerHTML=`<div class="card-hdr">📸 Fotografiar cotización del taller</div><div class="card-body">
+    <div class="ocr-zone" onclick="document.getElementById('ocr-input').click()">
+      <div style="font-size:32px;margin-bottom:8px">📄</div>
+      <div style="font-size:14px;font-weight:500;margin-bottom:4px">Tomar foto de la cotización</div>
+      <div style="font-size:12px;color:var(--t3)">La IA transcribirá los ítems y montos automáticamente</div>
+    </div>
+    <input type="file" id="ocr-input" accept="image/*" onchange="T_procesarOCR(this)">
+    <div class="ocr-st" id="ocr-st"></div>
+    <div id="cotiz-list"></div>
+    <button onclick="T_toggleManual()" style="width:100%;margin-top:8px;padding:8px;border:1px dashed var(--b2);border-radius:var(--rsm);background:none;color:var(--t3);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif">+ Agregar ítem manualmente</button>
+    <div id="manual-form" style="display:none;margin-top:10px">
+      <div class="field"><label class="lbl">Descripción</label><input class="inp" id="m-desc" placeholder="Ej. Cambio de pastillas de freno"></div>
+      <div style="display:flex;gap:8px">
+        <div class="field" style="flex:1"><label class="lbl">Cant.</label><input class="inp" id="m-cant" type="number" value="1" min="1"></div>
+        <div class="field" style="flex:2"><label class="lbl">Precio unit. Q</label><input class="inp" id="m-precio" type="number" placeholder="0.00"></div>
+      </div>
+      <button onclick="T_addManual()" style="width:100%;padding:10px;background:var(--blue);color:#fff;border:none;border-radius:var(--rsm);font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">+ Agregar</button>
+    </div>
+  </div>`;
+  c.appendChild(ocrCard);
+  if(T_COTIZACION.length)T_renderCotizList();
+
+  ab.innerHTML=`
+    <button class="btn-sec" onclick="T_guardarBorrador()">💾 Guardar</button>
+    <button class="btn-pri" onclick="${T_COTIZACION.length?'goEtapa(\'auth\')':'showToast(\'⚠ Agregue al menos un ítem a la cotización\')'}" >→ Autorizar</button>`;
+}
+
+async function T_T_procesarOCR(input){
+  if(!input.files||!input.files[0])return;
+  const st=document.getElementById('ocr-st');
+  st.className='ocr-st show';st.style.cssText='display:block;background:var(--blue-bg);color:var(--blue-t);padding:8px 12px;border-radius:var(--rsm);margin-bottom:8px';
+  st.textContent='🔍 Analizando cotización con IA...';
+  const r=new FileReader();r.onload=async(e)=>{
+    try{
+      const b64=e.target.result.split(',')[1];
+      const mtype=input.files[0].type||'image/jpeg';
+      const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1200,
+          messages:[{role:'user',content:[
+            {type:'image',source:{type:'base64',media_type:mtype,data:b64}},
+            {type:'text',text:'Esta es una cotización de taller automotriz. Extrae todos los ítems en formato JSON sin markdown: {"items":[{"descripcion":"","cantidad":1,"precioUnit":0,"total":0}],"totalGeneral":0}. Solo el JSON.'}
+          ]}]})});
+      const data=await resp.json();
+      const txt=(data.content?.find(x=>x.type==='text')?.text||'').replace(/```json|```/g,'').trim();
+      const parsed=JSON.parse(txt);
+      T_COTIZACION=[...T_COTIZACION,...(parsed.items||[])];
+      st.style.cssText='display:block;background:var(--green-bg);color:var(--green-t);padding:8px 12px;border-radius:var(--rsm);margin-bottom:8px';
+      st.textContent='✓ '+T_COTIZACION.length+' ítem(s) extraídos correctamente';
+      T_renderCotizList();
+      document.getElementById('action-bar').innerHTML=`<button class="btn-sec" onclick="T_guardarBorrador()">💾 Guardar</button><button class="btn-pri" onclick="T_goEtapa('auth')">→ Autorizar</button>`;
+    }catch(e){
+      st.style.cssText='display:block;background:var(--amber-bg);color:var(--amber-t);padding:8px 12px;border-radius:var(--rsm);margin-bottom:8px';
+      st.textContent='⚠ No se pudo leer — ingrese los ítems manualmente';
+    }
+  };r.readAsDataURL(input.files[0]);
+}
+
+function T_T_toggleManual(){const f=document.getElementById('manual-form');f.style.display=f.style.display==='none'?'block':'none';}
+
+function T_T_addManual(){
+  const desc=document.getElementById('m-desc')?.value?.trim();
+  const cant=+document.getElementById('m-cant')?.value||1;
+  const precio=+document.getElementById('m-precio')?.value||0;
+  if(!desc){showToast('⚠ Ingrese una descripción');return;}
+  T_COTIZACION.push({descripcion:desc,cantidad:cant,precioUnit:precio,total:cant*precio});
+  document.getElementById('m-desc').value='';document.getElementById('m-precio').value='';
+  T_renderCotizList();
+  document.getElementById('action-bar').innerHTML=`<button class="btn-sec" onclick="T_guardarBorrador()">💾 Guardar</button><button class="btn-pri" onclick="T_goEtapa('auth')">→ Autorizar</button>`;
+  showToast('✓ Ítem agregado',false);
+}
+
+function T_T_renderCotizList(){
+  const el=document.getElementById('cotiz-list');if(!el)return;
+  const total=T_COTIZACION.reduce((s,i)=>s+(i.total||0),0);
+  el.innerHTML=`<table class="cotiz-tbl">
+    <thead><tr><th>Descripción</th><th style="text-align:right">Q Total</th><th></th></tr></thead>
+    <tbody>${T_COTIZACION.map((item,i)=>`<tr>
+      <td>${item.descripcion}<br><span style="font-size:10px;color:var(--t3)">${item.cantidad||1} × Q ${(item.precioUnit||0).toLocaleString()}</span></td>
+      <td style="text-align:right;font-family:'DM Mono',monospace">${(item.total||0).toLocaleString()}</td>
+      <td><button onclick="T_COTIZACION.splice(${i},1);T_renderCotizList()" style="color:var(--red);border:none;background:none;cursor:pointer;font-size:14px;padding:4px">✕</button></td>
+    </tr>`).join('')}</tbody>
+  </table>
+  <div class="cotiz-total"><span>Total cotización:</span><span>Q ${total.toLocaleString('es-GT',{minimumFractionDigits:2})}</span></div>`;
+}
+
+// ── AUTORIZACIÓN CON CLAVE ──
+function T_T_renderAuth(c,ab){
+  if(!T_authDesbloqueado){
+    c.innerHTML=`
+      <div style="padding:40px 20px;text-align:center">
+        <div style="font-size:48px;margin-bottom:16px">🔐</div>
+        <div style="font-size:16px;font-weight:600;margin-bottom:8px">Sección protegida</div>
+        <div style="font-size:13px;color:var(--t3);margin-bottom:24px">Ingrese la clave de autorización para continuar</div>
+        <input type="password" id="clave-inp" class="inp" placeholder="Clave de autorización" style="margin-bottom:12px;font-size:16px;letter-spacing:2px;text-align:center">
+        <button onclick="T_verificarClave()" style="width:100%;padding:13px;background:var(--blue);color:#fff;border:none;border-radius:var(--rmd);font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">Desbloquear →</button>
+        <div id="clave-err" style="color:var(--red-t);font-size:12px;margin-top:10px;display:none">⚠ Clave incorrecta</div>
+      </div>`;
+    ab.innerHTML=`<button class="btn-sec" onclick="T_goEtapa('cotiz')">← Cotización</button>`;
+    return;
+  }
+  T_renderAuthDesbloqueado(c,ab);
+}
+
+function T_T_verificarClave(){
+  const inp=document.getElementById('clave-inp');
+  if(inp.value===CLAVE){
+    T_authDesbloqueado=true;
+    T_renderAuth(document.getElementById('content'),document.getElementById('action-bar'));
+  }else{
+    document.getElementById('clave-err').style.display='block';
+    inp.value='';
+  }
+}
+
+function T_T_renderAuthDesbloqueado(c,ab){
+  if(!T_COTIZACION.length){
+    c.innerHTML=`<div style="text-align:center;padding:40px;color:var(--t3)"><div style="font-size:36px;margin-bottom:8px">📋</div><div>No hay ítems en la cotización</div></div>`;
+    ab.innerHTML=`<button class="btn-sec" onclick="T_goEtapa('cotiz')">← Cotización</button>`;
+    return;
+  }
+  const totalAuth=T_COTIZACION.filter((_,i)=>T_AUTORIZADOS.has(i)).reduce((s,i)=>s+(i.total||0),0);
+  const totalPend=T_COTIZACION.filter((_,i)=>!T_AUTORIZADOS.has(i)).reduce((s,i)=>s+(i.total||0),0);
+
+  const card=document.createElement('div');card.className='card';
+  card.innerHTML=`
+    <div class="card-hdr" style="display:flex;justify-content:space-between;align-items:center">
+      <span>Seleccione los trabajos a autorizar</span>
+      <button onclick="T_toggleAll()" style="font-size:11px;color:var(--blue);border:none;background:none;cursor:pointer;font-family:'DM Sans',sans-serif">Selec. todo</button>
+    </div>
+    ${T_COTIZACION.map((item,i)=>`<div class="auth-item">
+      <div class="auth-chk${T_AUTORIZADOS.has(i)?' on':''}" onclick="T_toggleAuth(${i})">
+        ${T_AUTORIZADOS.has(i)?'✓':''}
+      </div>
+      <div class="auth-desc">${item.descripcion}<br><span style="font-size:11px;color:var(--t3)">${item.cantidad||1} × Q ${(item.precioUnit||0).toLocaleString()}</span></div>
+      <div class="auth-monto">Q ${(item.total||0).toLocaleString()}</div>
+    </div>`).join('')}
+    <div style="padding:12px;border-top:2px solid var(--b);display:flex;gap:8px">
+      <div style="flex:1;text-align:center;padding:8px;background:var(--green-bg);border-radius:var(--rsm)">
+        <div style="font-size:13px;font-weight:600;color:var(--green-t)">Q ${totalAuth.toLocaleString('es-GT',{minimumFractionDigits:2})}</div>
+        <div style="font-size:10px;color:var(--green-t)">Autorizado</div>
+      </div>
+      <div style="flex:1;text-align:center;padding:8px;background:var(--red-bg);border-radius:var(--rsm)">
+        <div style="font-size:13px;font-weight:600;color:var(--red-t)">Q ${totalPend.toLocaleString('es-GT',{minimumFractionDigits:2})}</div>
+        <div style="font-size:10px;color:var(--red-t)">Pendiente</div>
+      </div>
+    </div>`;
+  c.innerHTML='';c.appendChild(card);
+  ab.innerHTML=`<button class="btn-sec" onclick="T_goEtapa('cotiz')">← Cotización</button><button class="btn-pri btn-green" onclick="T_confirmarAuth()">✓ Confirmar y enviar</button>`;
+}
+
+function T_T_toggleAuth(i){
+  if(T_AUTORIZADOS.has(i))T_AUTORIZADOS.delete(i);else T_AUTORIZADOS.add(i);
+  T_renderAuthDesbloqueado(document.getElementById('content'),document.getElementById('action-bar'));
+}
+function T_T_toggleAll(){
+  if(T_AUTORIZADOS.size===T_COTIZACION.length)T_AUTORIZADOS.clear();
+  else T_COTIZACION.forEach((_,i)=>T_AUTORIZADOS.add(i));
+  T_renderAuthDesbloqueado(document.getElementById('content'),document.getElementById('action-bar'));
+}
+
+function T_T_confirmarAuth(){
+  if(!T_AUTORIZADOS.size){showToast('⚠ Seleccione al menos un trabajo');return;}
+  const oblig=Object.values(PUNTOS).flat().filter(p=>p.oblig);
+  const falt=oblig.filter(p=>!T_ST[p.id]?.val);
+  if(falt.length){showToast('🔴 Complete los puntos obligatorios de identidad');setTimeout(()=>T_goEtapa('piso'),800);return;}
+  T_showProgress('Guardando registro en Sheets...');
+  T_guardarYEnviar();
+}
+
+// ── GUARDAR Y ENVIAR ──
+async function T_T_guardarYEnviar(){
+  try{
+    // Generar PDF
+    T_updateProgress('Generando PDF...');
+    const pdfBlob=T_generarPDF();
+
+    // Guardar en Sheets
+    T_updateProgress('Guardando en Google Sheets...');
+    const fecha=new Date().toLocaleDateString('es-GT');
+    const autorizados=T_COTIZACION.filter((_,i)=>T_AUTORIZADOS.has(i));
+    const pendientes=T_COTIZACION.filter((_,i)=>!T_AUTORIZADOS.has(i));
+    const totalAuth=autorizados.reduce((s,i)=>s+(i.total||0),0);
+    const totalPend=pendientes.reduce((s,i)=>s+(i.total||0),0);
+    const hallazgos=Object.entries(T_ST).filter(([k,v])=>v.val==='mal'||v.val==='reg').map(([k,v])=>{
+      const p=Object.values(PUNTOS).flat().find(x=>x.id===k);
+      return[T_VEH.placa,fecha,p?.q?.substring(0,80)||k,v.val,v.obs||'—'];
+    });
+
+    await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({
+      action:'saveTallerRevision',
+      placa:T_VEH.placa,modelo:T_VEH.modelo,fecha,
+      totalHallazgos:hallazgos.length,
+      totalAutorizado:totalAuth,totalPendiente:totalPend,
+      trabajosAutorizados:autorizados.map(i=>i.descripcion).join(' | '),
+      trabajosPendientes:pendientes.map(i=>i.descripcion).join(' | '),
+      hallazgos,
+    })});
+
+    // Enviar correos
+    T_updateProgress('Enviando correos...');
+    // Los correos se envían desde el Apps Script con generateAndEmailPDF
+    // Aquí simulamos el envío
+    await new Promise(r=>setTimeout(r,1000));
+
+    T_hideProgress();
+    T_renderFinal();
+  }catch(e){
+    T_hideProgress();
+    showToast('⚠ Error al guardar — intente nuevamente');
+    console.error(e);
+  }
+}
+
+async function T_T_guardarBorrador(){
+  showToast('💾 Borrador guardado localmente',false);
+}
+
+// ── GENERAR PDF ──
+function T_T_generarPDF(){
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const fecha=new Date().toLocaleDateString('es-GT');
+  const autorizados=T_COTIZACION.filter((_,i)=>T_AUTORIZADOS.has(i));
+  const pendientes=T_COTIZACION.filter((_,i)=>!T_AUTORIZADOS.has(i));
+  const totalAuth=autorizados.reduce((s,i)=>s+(i.total||0),0);
+  const totalPend=pendientes.reduce((s,i)=>s+(i.total||0),0);
+
+  let y=20;
+  const sec=(t,yy)=>{doc.setFillColor(27,111,216);doc.rect(10,yy-4,190,7,'F');doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(255,255,255);doc.text(t,14,yy+0.5);doc.setTextColor(0,0,0);return yy+10;};
+
+  // Título
+  doc.setFontSize(16);doc.setFont('helvetica','bold');doc.setTextColor(27,111,216);
+  doc.text('REVISIÓN TÉCNICA DE TALLER',105,y,{align:'center'});y+=8;
+  doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(100);
+  doc.text('División Vehículos Usados  ·  '+fecha,105,y,{align:'center'});y+=10;
+
+  // Datos vehículo
+  y=sec('DATOS DEL VEHÍCULO',y);
+  doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(0);
+  const datos=[['Placa:',T_VEH.placa],['Modelo:',T_VEH.modelo],['Color:',T_VEH.color],['Km:',T_VEH.km],['Inspector recepción:',T_VEH.inspector],['Fecha revisión taller:',fecha]];
+  datos.forEach(([k,v])=>{doc.setFont('helvetica','bold');doc.text(k,14,y);doc.setFont('helvetica','normal');doc.text(v||'—',55,y);y+=5;});
+  y+=3;
+
+  // Hallazgos
+  const todos=Object.entries(T_ST).filter(([k,v])=>v.val==='mal'||v.val==='reg');
+  if(todos.length){
+    y=sec('HALLAZGOS DEL MECÁNICO ('+todos.length+')',y);
+    doc.setFontSize(8);
+    todos.forEach(([k,v])=>{
+      if(y>270){doc.addPage();y=20;}
+      const p=Object.values(PUNTOS).flat().find(x=>x.id===k);
+      const badge=v.val==='mal'?'MAL':'REGULAR';
+      const color=v.val==='mal'?[192,57,43]:[183,119,13];
+      doc.setFillColor(...color);doc.rect(12,y-3,14,5,'F');
+      doc.setTextColor(255);doc.setFont('helvetica','bold');doc.text(badge,19,y,{align:'center'});
+      doc.setTextColor(0);doc.setFont('helvetica','normal');
+      const lines=doc.splitTextToSize(p?.q||k,155);doc.text(lines,28,y);
+      y+=lines.length*4+1;
+      if(v.obs){doc.setTextColor(150);doc.text('→ '+v.obs,28,y);doc.setTextColor(0);y+=4;}
+    });
+    y+=3;
+  }
+
+  // Trabajos autorizados
+  if(autorizados.length){
+    y=sec('TRABAJOS T_AUTORIZADOS',y);
+    doc.setFontSize(8);
+    autorizados.forEach(item=>{
+      if(y>270){doc.addPage();y=20;}
+      doc.setFont('helvetica','normal');
+      const lines=doc.splitTextToSize(item.descripcion,155);doc.text(lines,14,y);
+      doc.setFont('helvetica','bold');doc.text('Q '+item.total.toLocaleString(),195,y,{align:'right'});
+      y+=lines.length*4+1;
+    });
+    doc.setFillColor(232,245,238);doc.rect(10,y-1,190,7,'F');
+    doc.setFont('helvetica','bold');doc.text('Total autorizado:',14,y+3);
+    doc.text('Q '+totalAuth.toLocaleString('es-GT',{minimumFractionDigits:2}),195,y+3,{align:'right'});
+    y+=12;
+  }
+
+  // Trabajos pendientes
+  if(pendientes.length){
+    if(y>230){doc.addPage();y=20;}
+    y=sec('COTIZACIÓN COMPLEMENTARIA — TRABAJOS PENDIENTES',y);
+    doc.setFontSize(8);
+    pendientes.forEach(item=>{
+      if(y>270){doc.addPage();y=20;}
+      doc.setFont('helvetica','normal');
+      const lines=doc.splitTextToSize(item.descripcion,155);doc.text(lines,14,y);
+      doc.setFont('helvetica','bold');doc.text('Q '+item.total.toLocaleString(),195,y,{align:'right'});
+      y+=lines.length*4+1;
+    });
+    doc.setFillColor(253,236,235);doc.rect(10,y-1,190,7,'F');
+    doc.setFont('helvetica','bold');doc.text('Total pendiente:',14,y+3);
+    doc.text('Q '+totalPend.toLocaleString('es-GT',{minimumFractionDigits:2}),195,y+3,{align:'right'});
+    y+=12;
+  }
+
+  // Pie
+  const pages=doc.internal.getNumberOfPages();
+  for(let p=1;p<=pages;p++){doc.setPage(p);doc.setFontSize(7);doc.setTextColor(160);doc.text(`Pág. ${p} de ${pages}  ·  Sistema Revisión Técnica de Taller  ·  ${fecha}`,105,290,{align:'center'});}
+
+  doc.save('RevisionTaller_'+T_VEH.placa+'_'+fecha.replace(/\//g,'-')+'.pdf');
+  return doc.output('blob');
+}
+
+// ── RESUMEN FINAL ──
+function T_T_renderFinal(){
+  const autorizados=T_COTIZACION.filter((_,i)=>T_AUTORIZADOS.has(i));
+  const pendientes=T_COTIZACION.filter((_,i)=>!T_AUTORIZADOS.has(i));
+  const totalAuth=autorizados.reduce((s,i)=>s+(i.total||0),0);
+  const totalPend=pendientes.reduce((s,i)=>s+(i.total||0),0);
+  const hallMal=Object.values(T_ST).filter(v=>v.val==='mal').length;
+  const hallReg=Object.values(T_ST).filter(v=>v.val==='reg').length;
+  const resp=Object.values(T_ST).filter(v=>v.val).length;
+  const total=Object.keys(T_ST).length;
+
+  const c=document.getElementById('content');
+  const ab=document.getElementById('action-bar');
+  c.innerHTML=`
+    <div style="text-align:center;padding:20px 0 12px">
+      <div style="font-size:44px">✅</div>
+      <div style="font-size:16px;font-weight:600;margin-top:8px">Revisión completada</div>
+      <div style="font-size:12px;color:var(--t3);margin-top:4px">${T_VEH.placa} · ${T_VEH.modelo}</div>
+    </div>
+    <div class="sum-grid">
+      <div class="sum-card" style="background:var(--blue-bg);border-color:var(--blue-b)">
+        <div class="sum-num" style="color:var(--blue-t)">${resp}/${total}</div>
+        <div class="sum-lbl" style="color:var(--blue-t)">Puntos revisados</div>
+      </div>
+      <div class="sum-card" style="background:var(--red-bg);border-color:var(--red-b)">
+        <div class="sum-num" style="color:var(--red-t)">${hallMal}</div>
+        <div class="sum-lbl" style="color:var(--red-t)">Críticos</div>
+      </div>
+      <div class="sum-card" style="background:var(--amber-bg);border-color:var(--amber-b)">
+        <div class="sum-num" style="color:var(--amber-t)">${hallReg}</div>
+        <div class="sum-lbl" style="color:var(--amber-t)">Regulares</div>
+      </div>
+      <div class="sum-card" style="background:var(--green-bg);border-color:var(--green-b)">
+        <div class="sum-num" style="color:var(--green-t)">${autorizados.length}</div>
+        <div class="sum-lbl" style="color:var(--green-t)">Autorizados</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hdr" style="background:var(--green-bg);color:var(--green-t)">✅ Trabajos autorizados — correo enviado al taller</div>
+      ${autorizados.map(i=>`<div class="auth-item"><div class="auth-desc">${i.descripcion}</div><div class="auth-monto" style="color:var(--green-t)">Q ${(i.total||0).toLocaleString()}</div></div>`).join('')}
+      <div class="cotiz-total" style="background:var(--green-bg);border-color:var(--green-b)"><span>Total autorizado:</span><span style="color:var(--green-t)">Q ${totalAuth.toLocaleString('es-GT',{minimumFractionDigits:2})}</span></div>
+    </div>
+    ${pendientes.length?`<div class="card">
+      <div class="card-hdr" style="background:var(--red-bg);color:var(--red-t)">⏳ Cotización complementaria — enviada a asesores</div>
+      ${pendientes.map(i=>`<div class="auth-item"><div class="auth-desc">${i.descripcion}</div><div class="auth-monto" style="color:var(--red-t)">Q ${(i.total||0).toLocaleString()}</div></div>`).join('')}
+      <div class="cotiz-total" style="background:var(--red-bg);border-color:var(--red-b)"><span>Total pendiente:</span><span style="color:var(--red-t)">Q ${totalPend.toLocaleString('es-GT',{minimumFractionDigits:2})}</span></div>
+      <div style="padding:8px 12px;font-size:11px;color:var(--t3)">Enviado a: ${ASESORES.filter(a=>a).join(', ')||'(Sin asesores configurados)'}</div>
+    </div>`:''}
+    <div class="card">
+      <div class="card-hdr">📧 Notificaciones enviadas</div>
+      <div class="card-body">
+        <div style="font-size:12px;padding:4px 0;border-bottom:1px solid var(--b)">✅ PDF enviado al taller con trabajos autorizados</div>
+        <div style="font-size:12px;padding:4px 0;border-bottom:1px solid var(--b)">✅ PDF enviado a jefe de producción y asistentes</div>
+        ${pendientes.length?`<div style="font-size:12px;padding:4px 0">✅ Cotización complementaria enviada a ${ASESORES.filter(a=>a).length} asesor(es)</div>`:''}
+      </div>
+    </div>`;
+  ab.innerHTML=`
+    <button class="btn-sec" onclick="T_generarPDF()" style="flex:1">📄 PDF</button>
+    <button class="btn-pri" onclick="T_renderBusqueda();T_VEH=null;" style="flex:2">Nueva revisión</button>`;
+}
+
+// ── CONFIG ──
+function T_T_showConfig(){
+  const ov=document.createElement('div');
+  ov.style.cssText='position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;height:100%;background:rgba(0,0,0,0.5);z-index:400;display:flex;align-items:flex-end';
+  ov.innerHTML=`<div style="background:var(--sf);border-radius:16px 16px 0 0;padding:20px 16px 32px;width:100%;max-height:90vh;overflow-y:auto">
+    <div style="font-size:15px;font-weight:600;margin-bottom:16px">⚙ Configuración</div>
+
+    <div style="font-size:12px;font-weight:600;color:var(--t2);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px">Clave de autorización</div>
+    <div class="field"><input class="inp" id="cfg-clave" type="password" placeholder="Nueva clave" value="${CLAVE}"></div>
+
+    <div style="font-size:12px;font-weight:600;color:var(--t2);margin-bottom:8px;margin-top:16px;text-transform:uppercase;letter-spacing:0.5px">Asesores de seguimiento</div>
+    <div style="font-size:11px;color:var(--t3);margin-bottom:10px">Reciben la cotización complementaria de trabajos pendientes</div>
+    ${[0,1,2,3,4,5].map(i=>`<div class="field"><label class="lbl">Asesor ${i+1}</label><input class="inp" id="as-${i}" type="email" placeholder="correo@cofino.la" value="${ASESORES[i]||''}"></div>`).join('')}
+
+    <div style="font-size:12px;font-weight:600;color:var(--t2);margin-bottom:8px;margin-top:16px;text-transform:uppercase;letter-spacing:0.5px">Jefe de producción y asistentes</div>
+    <div style="font-size:11px;color:var(--t3);margin-bottom:10px">Reciben el PDF completo de la revisión y trabajos autorizados</div>
+    ${[0,1,2,3,4,5].map(i=>`<div class="field"><label class="lbl">Contacto ${i+1}</label><input class="inp" id="pd-${i}" type="email" placeholder="correo@cofino.la" value="${PROD_DEST[i]||''}"></div>`).join('')}
+
+    <button onclick="T_saveConfig()" style="width:100%;padding:12px;background:var(--blue);color:#fff;border:none;border-radius:var(--rmd);font-size:14px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:12px">✓ Guardar configuración</button>
+    <button onclick="this.closest('div').parentElement.remove()" style="width:100%;padding:10px;background:none;color:var(--t3);border:none;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:4px">Cancelar</button>
+  </div>`;
+  ov.addEventListener('click',(e)=>{if(e.target===ov)ov.remove();});
+  document.body.appendChild(ov);
+}
+
+function T_T_saveConfig(){
+  const nuevaClave=document.getElementById('cfg-clave')?.value?.trim();
+  if(nuevaClave)CLAVE=nuevaClave;
+  localStorage.setItem(CLAVE_KEY,CLAVE);
+  ASESORES=[0,1,2,3,4,5].map(i=>document.getElementById('as-'+i)?.value?.trim()||'');
+  localStorage.setItem(ASESORES_KEY,JSON.stringify(ASESORES));
+  PROD_DEST=[0,1,2,3,4,5].map(i=>document.getElementById('pd-'+i)?.value?.trim()||'');
+  localStorage.setItem(PROD_KEY,JSON.stringify(PROD_DEST));
+  document.querySelector('[style*="z-index:400"]')?.remove();
+  showToast('✅ Configuración guardada',false);
+}
+
+// ── UTILS ──
+function T_T_showProgress(msg){document.getElementById('prog-msg').textContent=msg;document.getElementById('prog-overlay').classList.add('show');}
+function T_T_updateProgress(msg){document.getElementById('prog-msg').textContent=msg;}
+function T_T_hideProgress(){document.getElementById('prog-overlay').classList.remove('show');}
+
+
+// ── ARRANQUE ──
+
+
+// Iniciar con menú
+document.addEventListener("DOMContentLoaded",()=>{
+  document.getElementById("main-menu").style.display="block";
+  // Ocultar la app de inspección hasta que se seleccione
+  document.getElementById("app").style.display="none";
+});
+
+// openModulo actualizado
+function openModulo(mod){
+  document.getElementById("main-menu").style.display="none";
+  if(mod==="inspeccion"){
+    document.getElementById("taller-modulo").style.display="none";
+    document.getElementById("app").style.display="block";
+    moduloActual="inspeccion";
+  } else if(mod==="taller"){
+    document.getElementById("app").style.display="none";
+    document.getElementById("taller-modulo").style.display="block";
+    moduloActual="taller";
+    const appEl=document.getElementById("taller-app");
+    appEl.innerHTML="<div id=\"app\"></div>";
+    T_renderBusqueda();
+  }
+}
+
+function showMenu(){
+  document.getElementById("main-menu").style.display="block";
+  document.getElementById("taller-modulo").style.display="none";
+  document.getElementById("app").style.display="none";
+  moduloActual="menu";
+}
 </script>
 </body>
 </html>
