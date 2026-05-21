@@ -188,7 +188,7 @@ textarea{resize:vertical;line-height:1.5}
   <div class="field">
     <label class="lbl">Leer tarjeta de circulación</label>
     <button class="ocr-btn" onclick="document.getElementById('ocr-cam').click()">📷 Fotografiar tarjeta de circulación</button>
-    <input type="file" id="ocr-cam" class="cam-input" accept="image/*" capture="environment" onchange="handleOCR(this)">
+    <input type="file" id="ocr-cam" class="cam-input" accept="image/*" onchange="handleOCR(this)">
     <div class="ocr-st" id="ocr-st"></div>
   </div>
   <div class="field"><label class="lbl">Placa <span class="req">*</span></label><input type="text" id="placa" placeholder="Ej. P123ABC"></div>
@@ -291,7 +291,7 @@ textarea{resize:vertical;line-height:1.5}
     <div id="ext-chip"></div>
     <div id="ext-foto-wrap" class="hidden">
       <button class="foto-btn" onclick="document.getElementById('ext-cam').click()">📸 Fotografiar hallazgo</button>
-      <input type="file" id="ext-cam" class="cam-input" accept="image/*" capture="environment" onchange="handleFotoHallazgo(this,'ext-foto-ok','hallazgo_ext_'+(extActivePiece?extActivePiece.id:''))">
+      <input type="file" id="ext-cam" class="cam-input" accept="image/*" onchange="handleFotoHallazgo(this,'ext-foto-ok','hallazgo_ext_'+(extActivePiece?extActivePiece.id:''))">
       <div class="foto-ok" id="ext-foto-ok"></div>
     </div>
   </div>
@@ -326,7 +326,7 @@ textarea{resize:vertical;line-height:1.5}
     <div id="int-chip"></div>
     <div id="int-foto-wrap" class="hidden">
       <button class="foto-btn" onclick="document.getElementById('int-cam').click()">📸 Fotografiar hallazgo</button>
-      <input type="file" id="int-cam" class="cam-input" accept="image/*" capture="environment" onchange="handleFotoHallazgo(this,'int-foto-ok','hallazgo_int_'+(intActivePiece?intActivePiece.id:''))">
+      <input type="file" id="int-cam" class="cam-input" accept="image/*" onchange="handleFotoHallazgo(this,'int-foto-ok','hallazgo_int_'+(intActivePiece?intActivePiece.id:''))">
       <div class="foto-ok" id="int-foto-ok"></div>
     </div>
   </div>
@@ -606,7 +606,10 @@ async function handleOCR(input){
   if(!input.files||!input.files[0])return;
   const s=document.getElementById('ocr-st');s.style.display='block';s.style.color='var(--t3)';s.textContent='🔍 Analizando tarjeta de circulación con IA...';
   try{
-    const b64=await fileToB64(input.files[0]);
+    // Guardar foto de tarjeta como parte de las fotos de llegada
+    const dataURL=await fileToDataURL(input.files[0]);
+    IMGS['photo_tarjeta']=dataURL;
+    const b64=dataURL.split(',')[1];
     const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:500,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:input.files[0].type||'image/jpeg',data:b64}},{type:'text',text:'Esta es una tarjeta de circulación de Guatemala. Extrae exactamente estos datos en formato JSON sin markdown ni explicación: {"placa":"","modelo":"","año":"","color":"","chasis":"","motor":""}. Si no encuentras un dato deja el campo vacío.'}]}]})});
     const data=await resp.json();
     const txt=data.content?.find(c=>c.type==='text')?.text||'';
@@ -658,8 +661,8 @@ function buildQList(contId,questions,stateKey){
     const div=document.createElement('div');div.className='sc-grp';div.id='qg_'+q.id;
     const btns=q.invertida?`<div class="srow"><button class="sbtn" onclick="setQ(this,'${q.id}','${stateKey}','Si','s-mal')">Sí / Presenta</button><button class="sbtn" onclick="setQ(this,'${q.id}','${stateKey}','No','s-bien')">No / Sin problema</button><button class="sbtn" onclick="setQ(this,'${q.id}','${stateKey}','NA','s-na')">N/A</button></div>`:
       `<div class="srow"><button class="sbtn" onclick="setQ(this,'${q.id}','${stateKey}','Bien','s-bien')">✓ Bien</button><button class="sbtn" onclick="setQ(this,'${q.id}','${stateKey}','Regular','s-reg')">⚠ Regular</button><button class="sbtn" onclick="setQ(this,'${q.id}','${stateKey}','Mal','s-mal')">✗ Mal</button><button class="sbtn" onclick="setQ(this,'${q.id}','${stateKey}','NA','s-na')">— N/A</button></div>`;
-    const llf=q.hasLlanta?`<div id="llf-${q.id}" class="hidden" style="margin-top:8px"><div class="rl">Medida de la llanta</div><div style="display:flex;gap:6px;align-items:center"><input type="text" id="llm-${q.id}" placeholder="Ej. 265/65R17" oninput="bLL('${q.id}')" style="flex:1"><button class="foto-btn" onclick="document.getElementById('llc-${q.id}').click()" style="margin-top:0;flex-shrink:0">📸 Leer medida</button><input type="file" id="llc-${q.id}" class="cam-input" accept="image/*" capture="environment" onchange="ocrLlanta(this,'${q.id}')"></div><div class="llanta-result" id="llr-${q.id}"></div></div>`:'';
-    div.innerHTML=`<div class="sc-name">${q.l}</div>${btns}<div id="qchip_${q.id}"></div><div class="alert-taller" id="qtaller_${q.id}">🔧 Requiere revisión técnica en taller — agendar cita.</div><div id="qfoto_${q.id}" class="hidden"><button class="foto-btn" onclick="document.getElementById('qcam_${q.id}').click()">📸 Fotografiar hallazgo</button><input type="file" id="qcam_${q.id}" class="cam-input" accept="image/*" capture="environment" onchange="handleFotoHallazgo(this,'qfo_${q.id}','hallazgo_${stateKey}_${q.id}')"><div class="foto-ok" id="qfo_${q.id}">✓ Foto registrada</div></div>${llf}`;
+    const llf=q.hasLlanta?`<div id="llf-${q.id}" class="hidden" style="margin-top:8px"><div class="rl">Medida de la llanta</div><div style="display:flex;gap:6px;align-items:center"><input type="text" id="llm-${q.id}" placeholder="Ej. 265/65R17" oninput="bLL('${q.id}')" style="flex:1"><button class="foto-btn" onclick="document.getElementById('llc-${q.id}').click()" style="margin-top:0;flex-shrink:0">📸 Leer medida</button><input type="file" id="llc-${q.id}" class="cam-input" accept="image/*" onchange="ocrLlanta(this,'${q.id}')"></div><div class="llanta-result" id="llr-${q.id}"></div></div>`:'';
+    div.innerHTML=`<div class="sc-name">${q.l}</div>${btns}<div id="qchip_${q.id}"></div><div class="alert-taller" id="qtaller_${q.id}">🔧 Requiere revisión técnica en taller — agendar cita.</div><div id="qfoto_${q.id}" class="hidden"><button class="foto-btn" onclick="document.getElementById('qcam_${q.id}').click()">📸 Fotografiar hallazgo</button><input type="file" id="qcam_${q.id}" class="cam-input" accept="image/*" onchange="handleFotoHallazgo(this,'qfo_${q.id}','hallazgo_${stateKey}_${q.id}')"><div class="foto-ok" id="qfo_${q.id}">✓ Foto registrada</div></div>${llf}`;
     cont.appendChild(div);
   });
 }
@@ -714,7 +717,7 @@ function buildSummary(){
   const fotoHallazgosHtml=()=>{
     const keys=Object.keys(IMGS);
     if(!keys.length)return'';
-    const fotoLbls={'photo_0':'Portada web','photo_1':'Frente','photo_2':'Lateral izquierdo','photo_3':'Trasero','photo_4':'Lateral derecho','photo_5':'Tablero encendido','photo_6':'Interior frontal','photo_7':'Interior trasero'};
+    const fotoLbls={'photo_0':'Portada web','photo_1':'Frente','photo_2':'Lateral izquierdo','photo_3':'Trasero','photo_4':'Lateral derecho','photo_5':'Tablero encendido','photo_6':'Interior frontal','photo_7':'Interior trasero','photo_tarjeta':'Tarjeta de circulación'};
     return`<div class="card"><div class="card-title">Fotografías registradas (${keys.length})</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:7px">${keys.map(k=>{const lbl=fotoLbls[k]||k.replace('hallazgo_ext_','Ext: ').replace('hallazgo_int_','Int: ').replace('hallazgo_','').replace(/_/g,' ');return`<div style="border-radius:var(--rsm);overflow:hidden;border:1px solid var(--b)"><img src="${IMGS[k]}" style="width:100%;aspect-ratio:4/3;object-fit:cover;display:block"><div style="padding:3px 6px;font-size:9px;color:var(--t2);background:var(--sf2);border-top:1px solid var(--b)">${lbl}</div></div>`;}).join('')}</div></div>`;
   };
   document.getElementById('sum-content').innerHTML=`
@@ -1239,7 +1242,7 @@ function viewRec(id){
   if(!rec){showToast('⚠ Registro no encontrado — intente reabrir el panel',true);return;}
 
   const panel=document.getElementById('records-panel');
-  const fotoLbls={'photo_0':'Portada web','photo_1':'Frente','photo_2':'Lateral izquierdo','photo_3':'Trasero','photo_4':'Lateral derecho','photo_5':'Tablero encendido','photo_6':'Interior frontal','photo_7':'Interior trasero'};
+  const fotoLbls={'photo_0':'Portada web','photo_1':'Frente','photo_2':'Lateral izquierdo','photo_3':'Trasero','photo_4':'Lateral derecho','photo_5':'Tablero encendido','photo_6':'Interior frontal','photo_7':'Interior trasero','photo_tarjeta':'Tarjeta de circulación'};
 
   const fotosHtml=(()=>{
     const links=rec.photoLinks&&Object.keys(rec.photoLinks).length;
@@ -1438,7 +1441,7 @@ function init(){
     const d=document.createElement('div');d.className='pslot'+(p.portada?' portada':'');d.id=slotId;
     d.innerHTML=p.portada?`<span style="font-size:18px">📷</span><span class="pl">${p.l}</span><span class="portada-tag">WEB</span>`:`<span style="font-size:18px">📷</span><span class="pl">${p.l}</span>`;
     // input file oculto para cámara
-    const camInput=document.createElement('input');camInput.type='file';camInput.accept='image/*';camInput.setAttribute('capture','environment');camInput.className='cam-input';camInput.id=camId;
+    const camInput=document.createElement('input');camInput.type='file';camInput.accept='image/*';camInput.className='cam-input';camInput.id=camId;
     camInput.addEventListener('change',async()=>{
       if(!camInput.files||!camInput.files[0])return;
       const dataURL=await fileToDataURL(camInput.files[0]);
