@@ -1733,14 +1733,14 @@ const ETAPAS=[
   {id:'auth',  label:'Autorizar',    ico:'✅',sub:'Con clave'},
 ];
 
-function T_T_initST(){
+function T_initST(){
   T_ST={};
   Object.values(PUNTOS).flat().forEach(p=>{T_ST[p.id]={val:null,obs:'',foto:null};});
   T_COTIZACION=[];T_AUTORIZADOS=new Set();T_authDesbloqueado=false;
 }
 
 // ── PANTALLA BÚSQUEDA ──
-function T_T_renderBusqueda(){
+function T_renderBusqueda(){
   document.getElementById('app').innerHTML=`
     <div class="search-screen">
       <div style="margin-bottom:16px"><button onclick="showMenu()" style="display:flex;align-items:center;gap:6px;padding:8px 12px;border:1px solid var(--b2);border-radius:var(--rsm);background:var(--sf2);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--t2)">← Menú principal</button></div>
@@ -1761,7 +1761,7 @@ function T_T_renderBusqueda(){
     </div>`;
 }
 
-async function T_T_buscarVehiculo(){
+async function T_buscarVehiculo(){
   const placa=document.getElementById('buscar-placa').value.trim();
   if(!placa){showToast('⚠ Ingrese un número de placa');return;}
   const st=document.getElementById('buscar-st');
@@ -1808,7 +1808,7 @@ async function T_T_buscarVehiculo(){
 }
 
 // ── APP PRINCIPAL ──
-function T_T_renderApp(){
+function T_renderApp(){
   document.getElementById('app').innerHTML=`
     <div class="header">
       <div class="header-top">
@@ -1852,7 +1852,7 @@ function T_goEtapa(id){
   window.scrollTo(0,0);
 }
 
-function T_T_updateCounts(){
+function T_updateCounts(){
   Object.keys(PUNTOS).forEach(etapa=>{
     const n=PUNTOS[etapa].filter(p=>T_ST[p.id]?.val==='mal'||T_ST[p.id]?.val==='reg').length;
     const el=document.getElementById('cnt-'+etapa);
@@ -1861,7 +1861,7 @@ function T_T_updateCounts(){
 }
 
 // ── RENDER ETAPA INSPECCIÓN ──
-function T_T_renderEtapa(id){
+function T_renderEtapa(id){
   const c=document.getElementById('content');
   const ab=document.getElementById('action-bar');
   c.innerHTML='';
@@ -1915,7 +1915,7 @@ function T_T_renderEtapa(id){
     ${next?`<button class="btn-pri" onclick="T_goEtapa('${next.id}')">→ ${next.label}</button>`:`<button class="btn-pri" onclick="T_goEtapa('cotiz')">→ Cotización</button>`}`;
 }
 
-function T_T_setV(id,val,btn){
+function T_setV(id,val,btn){
   T_ST[id].val=val;
   btn.closest('.item-btns').querySelectorAll('.ibtn').forEach(b=>b.className='ibtn');
   btn.className='ibtn '+(val==='ok'?'ok':val==='reg'?'reg':val==='mal'?'mal':'na');
@@ -1924,7 +1924,7 @@ function T_T_setV(id,val,btn){
   T_updateCounts();
 }
 
-function T_T_setFoto(id,input){
+function T_setFoto(id,input){
   if(!input.files||!input.files[0])return;
   const r=new FileReader();r.onload=e=>{
     T_ST[id].foto=e.target.result;
@@ -1935,7 +1935,7 @@ function T_T_setFoto(id,input){
 }
 
 // ── COTIZACIÓN ──
-function T_T_renderCotizacion(c,ab){
+function T_renderCotizacion(c,ab){
   const todos=Object.entries(T_ST).filter(([k,v])=>v.val==='mal'||v.val==='reg');
   const hallCard=document.createElement('div');hallCard.className='card';
   hallCard.innerHTML=`<div class="card-hdr">🔧 Hallazgos del mecánico (${todos.length})</div><div class="card-body">${todos.length?todos.map(([k,v])=>{
@@ -1977,7 +1977,7 @@ function T_T_renderCotizacion(c,ab){
     <button class="btn-pri" onclick="${T_COTIZACION.length?'goEtapa(\'auth\')':'showToast(\'⚠ Agregue al menos un ítem a la cotización\')'}" >→ Autorizar</button>`;
 }
 
-async function T_T_procesarOCR(input){
+async function T_procesarOCR(input){
   if(!input.files||!input.files[0])return;
   const st=document.getElementById('ocr-st');
   st.className='ocr-st show';st.style.cssText='display:block;background:var(--blue-bg);color:var(--blue-t);padding:8px 12px;border-radius:var(--rsm);margin-bottom:8px';
@@ -2007,9 +2007,9 @@ async function T_T_procesarOCR(input){
   };r.readAsDataURL(input.files[0]);
 }
 
-function T_T_toggleManual(){const f=document.getElementById('manual-form');f.style.display=f.style.display==='none'?'block':'none';}
+function T_toggleManual(){const f=document.getElementById('manual-form');f.style.display=f.style.display==='none'?'block':'none';}
 
-function T_T_addManual(){
+function T_addManual(){
   const desc=document.getElementById('m-desc')?.value?.trim();
   const cant=+document.getElementById('m-cant')?.value||1;
   const precio=+document.getElementById('m-precio')?.value||0;
@@ -2021,7 +2021,7 @@ function T_T_addManual(){
   showToast('✓ Ítem agregado',false);
 }
 
-function T_T_renderCotizList(){
+function T_renderCotizList(){
   const el=document.getElementById('cotiz-list');if(!el)return;
   const total=T_COTIZACION.reduce((s,i)=>s+(i.total||0),0);
   el.innerHTML=`<table class="cotiz-tbl">
@@ -2036,7 +2036,7 @@ function T_T_renderCotizList(){
 }
 
 // ── AUTORIZACIÓN CON CLAVE ──
-function T_T_renderAuth(c,ab){
+function T_renderAuth(c,ab){
   if(!T_authDesbloqueado){
     c.innerHTML=`
       <div style="padding:40px 20px;text-align:center">
@@ -2053,7 +2053,7 @@ function T_T_renderAuth(c,ab){
   T_renderAuthDesbloqueado(c,ab);
 }
 
-function T_T_verificarClave(){
+function T_verificarClave(){
   const inp=document.getElementById('clave-inp');
   if(inp.value===CLAVE){
     T_authDesbloqueado=true;
@@ -2064,7 +2064,7 @@ function T_T_verificarClave(){
   }
 }
 
-function T_T_renderAuthDesbloqueado(c,ab){
+function T_renderAuthDesbloqueado(c,ab){
   if(!T_COTIZACION.length){
     c.innerHTML=`<div style="text-align:center;padding:40px;color:var(--t3)"><div style="font-size:36px;margin-bottom:8px">📋</div><div>No hay ítems en la cotización</div></div>`;
     ab.innerHTML=`<button class="btn-sec" onclick="T_goEtapa('cotiz')">← Cotización</button>`;
@@ -2100,17 +2100,17 @@ function T_T_renderAuthDesbloqueado(c,ab){
   ab.innerHTML=`<button class="btn-sec" onclick="T_goEtapa('cotiz')">← Cotización</button><button class="btn-pri btn-green" onclick="T_confirmarAuth()">✓ Confirmar y enviar</button>`;
 }
 
-function T_T_toggleAuth(i){
+function T_toggleAuth(i){
   if(T_AUTORIZADOS.has(i))T_AUTORIZADOS.delete(i);else T_AUTORIZADOS.add(i);
   T_renderAuthDesbloqueado(document.getElementById('content'),document.getElementById('action-bar'));
 }
-function T_T_toggleAll(){
+function T_toggleAll(){
   if(T_AUTORIZADOS.size===T_COTIZACION.length)T_AUTORIZADOS.clear();
   else T_COTIZACION.forEach((_,i)=>T_AUTORIZADOS.add(i));
   T_renderAuthDesbloqueado(document.getElementById('content'),document.getElementById('action-bar'));
 }
 
-function T_T_confirmarAuth(){
+function T_confirmarAuth(){
   if(!T_AUTORIZADOS.size){showToast('⚠ Seleccione al menos un trabajo');return;}
   const oblig=Object.values(PUNTOS).flat().filter(p=>p.oblig);
   const falt=oblig.filter(p=>!T_ST[p.id]?.val);
@@ -2120,7 +2120,7 @@ function T_T_confirmarAuth(){
 }
 
 // ── GUARDAR Y ENVIAR ──
-async function T_T_guardarYEnviar(){
+async function T_guardarYEnviar(){
   try{
     // Generar PDF
     T_updateProgress('Generando PDF...');
@@ -2163,12 +2163,12 @@ async function T_T_guardarYEnviar(){
   }
 }
 
-async function T_T_guardarBorrador(){
+async function T_guardarBorrador(){
   showToast('💾 Borrador guardado localmente',false);
 }
 
 // ── GENERAR PDF ──
-function T_T_generarPDF(){
+function T_generarPDF(){
   const {jsPDF}=window.jspdf;
   const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
   const fecha=new Date().toLocaleDateString('es-GT');
@@ -2257,7 +2257,7 @@ function T_T_generarPDF(){
 }
 
 // ── RESUMEN FINAL ──
-function T_T_renderFinal(){
+function T_renderFinal(){
   const autorizados=T_COTIZACION.filter((_,i)=>T_AUTORIZADOS.has(i));
   const pendientes=T_COTIZACION.filter((_,i)=>!T_AUTORIZADOS.has(i));
   const totalAuth=autorizados.reduce((s,i)=>s+(i.total||0),0);
@@ -2318,7 +2318,7 @@ function T_T_renderFinal(){
 }
 
 // ── CONFIG ──
-function T_T_showConfig(){
+function T_showConfig(){
   const ov=document.createElement('div');
   ov.style.cssText='position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;height:100%;background:rgba(0,0,0,0.5);z-index:400;display:flex;align-items:flex-end';
   ov.innerHTML=`<div style="background:var(--sf);border-radius:16px 16px 0 0;padding:20px 16px 32px;width:100%;max-height:90vh;overflow-y:auto">
@@ -2342,7 +2342,7 @@ function T_T_showConfig(){
   document.body.appendChild(ov);
 }
 
-function T_T_saveConfig(){
+function T_saveConfig(){
   const nuevaClave=document.getElementById('cfg-clave')?.value?.trim();
   if(nuevaClave)CLAVE=nuevaClave;
   localStorage.setItem(CLAVE_KEY,CLAVE);
@@ -2355,9 +2355,9 @@ function T_T_saveConfig(){
 }
 
 // ── UTILS ──
-function T_T_showProgress(msg){document.getElementById('prog-msg').textContent=msg;document.getElementById('prog-overlay').classList.add('show');}
-function T_T_updateProgress(msg){document.getElementById('prog-msg').textContent=msg;}
-function T_T_hideProgress(){document.getElementById('prog-overlay').classList.remove('show');}
+function T_showProgress(msg){document.getElementById('prog-msg').textContent=msg;document.getElementById('prog-overlay').classList.add('show');}
+function T_updateProgress(msg){document.getElementById('prog-msg').textContent=msg;}
+function T_hideProgress(){document.getElementById('prog-overlay').classList.remove('show');}
 
 
 // ── ARRANQUE ──
