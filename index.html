@@ -1978,7 +1978,7 @@ function T_renderCotizacion(c,ab){
       <div style="font-size:14px;font-weight:500;margin-bottom:4px">Tomar foto de la cotización</div>
       <div style="font-size:12px;color:var(--t3)">La IA transcribirá los ítems y montos automáticamente</div>
     </div>
-    <input type="file" id="ocr-input" accept="image/*" onchange="T_procesarOCR(this)">
+    <input type="file" id="ocr-input" accept="image/*,application/pdf" onchange="T_procesarOCR(this)">
     <div class="ocr-st" id="ocr-st"></div>
     <div id="cotiz-list"></div>
     <button onclick="T_toggleManual()" style="width:100%;margin-top:8px;padding:8px;border:1px dashed var(--b2);border-radius:var(--rsm);background:none;color:var(--t3);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif">+ Agregar ítem manualmente</button>
@@ -2003,15 +2003,20 @@ async function T_procesarOCR(input){
   if(!input.files||!input.files[0])return;
   const st=document.getElementById('ocr-st');
   st.className='ocr-st show';st.style.cssText='display:block;background:var(--blue-bg);color:var(--blue-t);padding:8px 12px;border-radius:var(--rsm);margin-bottom:8px';
-  st.textContent='🔍 Analizando cotización con IA...';
+  
+  const file=input.files[0];
+  const isPDF=file.type==='application/pdf';
+  st.textContent=isPDF?'🔍 Analizando PDF de cotización con IA...':'🔍 Analizando imagen de cotización con IA...';
+  
   const r=new FileReader();r.onload=async(e)=>{
+    // Para PDF usar tipo de documento especial
+    const mediaType=isPDF?'application/pdf':file.type||'image/jpeg';
     try{
       const b64=e.target.result.split(',')[1];
-      const mtype=input.files[0].type||'image/jpeg';
       const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1200,
           messages:[{role:'user',content:[
-            {type:'image',source:{type:'base64',media_type:mtype,data:b64}},
+            isPDF?{type:'document',source:{type:'base64',media_type:'application/pdf',data:b64}}:{type:'image',source:{type:'base64',media_type:mediaType,data:b64}},
             {type:'text',text:'Esta es una cotización de taller automotriz. Extrae todos los ítems en formato JSON sin markdown: {"items":[{"descripcion":"","cantidad":1,"precioUnit":0,"total":0}],"totalGeneral":0}. Solo el JSON.'}
           ]}]})});
       const data=await resp.json();
