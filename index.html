@@ -170,37 +170,59 @@ textarea{resize:vertical;line-height:1.5}
 
 /* ── TALLER MÓDULO ── */
 .search-screen{padding:32px 16px;max-width:480px;margin:0 auto}
-.search-logo{text-align:center;margin-bottom:24px}
-.taller-etapas-nav{display:flex;gap:0;overflow-x:auto;background:var(--sf);border-bottom:1px solid var(--b)}
-.tetapa-btn{flex:1;min-width:80px;padding:9px 4px;font-size:10px;font-weight:500;color:var(--t3);border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;text-align:center;font-family:'DM Sans',sans-serif;line-height:1.3}
+.search-logo{text-align:center;margin-bottom:28px}
+.search-logo h1{font-size:20px;font-weight:600;color:var(--t);margin-bottom:4px}
+.search-logo p{font-size:13px;color:var(--t3)}
+.taller-etapas-nav{display:flex;gap:0;overflow-x:auto;background:var(--sf);border-bottom:1px solid var(--b);scrollbar-width:none}
+.taller-etapas-nav::-webkit-scrollbar{display:none}
+.tetapa-btn{flex:1;min-width:72px;padding:9px 4px;font-size:10px;font-weight:500;color:var(--t3);border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;text-align:center;font-family:'DM Sans',sans-serif;line-height:1.3;white-space:nowrap}
 .tetapa-btn.active{color:var(--blue);border-bottom-color:var(--blue);background:var(--blue-bg)}
-.tetapa-btn .eico{font-size:16px;display:block;margin-bottom:1px}
-.tetapa-btn .ecnt{font-size:9px;color:var(--red-t)}
-.titem{background:var(--sf);border:1px solid var(--b);border-radius:var(--rmd);margin-bottom:8px;overflow:hidden}
-.titem.oblig{border-color:var(--red-b);border-width:1.5px}
-.titem-hdr{padding:10px 12px}
-.titem-q{font-size:13px;color:var(--t);line-height:1.4;margin-bottom:8px}
-.titem-btns{display:flex;gap:5px;flex-wrap:wrap}
-.tdet{display:none;padding:10px 12px;background:var(--red-bg);border-top:1px solid var(--red-b)}
+.tetapa-btn.done{color:var(--green)}
+.tetapa-btn .eico{font-size:15px;display:block;margin-bottom:2px}
+.tetapa-btn .ecnt{font-size:9px;color:var(--red-t);font-family:'DM Mono',monospace}
+.titem{background:var(--sf);border:1px solid var(--b);border-radius:var(--rmd);margin-bottom:8px;overflow:hidden;transition:border-color 0.15s}
+.titem.oblig{border-color:var(--red-b);border-left:3px solid var(--red)}
+.titem-hdr{padding:12px 14px}
+.titem-q{font-size:13px;color:var(--t);line-height:1.5;margin-bottom:10px}
+.titem-btns{display:flex;gap:6px;flex-wrap:wrap}
+.tdet{display:none;padding:12px 14px;background:var(--red-bg);border-top:1px solid var(--red-b)}
 .tdet.show{display:block}
-.auth-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--b)}
+.tdet-lbl{font-size:11px;font-weight:500;color:var(--red-t);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.4px}
+.tdet-inp{width:100%;padding:8px 10px;border:1px solid var(--red-b);border-radius:var(--rsm);font-size:13px;font-family:'DM Sans',sans-serif;background:var(--sf);color:var(--t);resize:none;line-height:1.4}
+.auth-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--b)}
 .auth-item:last-child{border-bottom:none}
 .auth-chk{width:22px;height:22px;border-radius:5px;border:2px solid var(--b2);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;transition:all 0.15s}
 .auth-chk.on{background:var(--green);border-color:var(--green);color:#fff}
-.auth-monto{font-size:13px;font-weight:500;font-family:'DM Mono',monospace;white-space:nowrap}
+.auth-desc{flex:1;font-size:13px;color:var(--t);line-height:1.4}
+.auth-monto{font-size:13px;font-weight:600;font-family:'DM Mono',monospace;white-space:nowrap;color:var(--t)}
 .sum-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
-.sum-card{border-radius:var(--rmd);padding:12px;text-align:center;border:1px solid}
-.sum-num{font-size:26px;font-weight:600;margin-bottom:2px}
-.sum-lbl{font-size:11px}
+.sum-card{border-radius:var(--rmd);padding:14px;text-align:center;border:1px solid}
+.sum-num{font-size:28px;font-weight:700;margin-bottom:3px;font-family:'DM Mono',monospace}
+.sum-lbl{font-size:11px;font-weight:500}
 .cotiz-tbl{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}
-.cotiz-tbl th{background:var(--sf2);padding:6px 10px;text-align:left;font-weight:500;color:var(--t2);border-bottom:1px solid var(--b)}
-.cotiz-tbl td{padding:7px 10px;border-bottom:1px solid var(--b);vertical-align:middle}
+.cotiz-tbl th{background:var(--sf2);padding:7px 12px;text-align:left;font-weight:500;color:var(--t2);border-bottom:1px solid var(--b);font-size:11px;text-transform:uppercase;letter-spacing:0.4px}
+.cotiz-tbl td{padding:8px 12px;border-bottom:1px solid var(--b);vertical-align:middle;color:var(--t)}
 .cotiz-tbl tr:last-child td{border-bottom:none}
-.cotiz-total{display:flex;justify-content:space-between;padding:10px 12px;background:var(--amber-bg);border-top:2px solid var(--amber-b);font-weight:600;font-size:13px}
-.oblig-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;background:var(--red-bg);border:1px solid var(--red-b);border-radius:20px;font-size:10px;font-weight:600;color:var(--red-t);margin-bottom:5px}
-.ocr-zone{border:2px dashed var(--b2);border-radius:var(--rmd);padding:20px;text-align:center;background:var(--sf2);cursor:pointer;margin-bottom:12px}
-.ocr-st{padding:8px 12px;border-radius:var(--rsm);font-size:12px;margin-bottom:8px;display:none}
+.cotiz-total{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:var(--amber-bg);border-top:2px solid var(--amber-b);font-weight:600;font-size:14px;color:var(--amber-t)}
+.oblig-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;background:var(--red-bg);border:1px solid var(--red-b);border-radius:20px;font-size:10px;font-weight:600;color:var(--red-t);margin-bottom:6px}
+.ocr-zone{border:2px dashed var(--b2);border-radius:var(--rmd);padding:24px 16px;text-align:center;background:var(--sf2);cursor:pointer;margin-bottom:12px;transition:all 0.15s}
+.ocr-zone:active{border-color:var(--blue);background:var(--blue-bg)}
+.ocr-st{padding:9px 12px;border-radius:var(--rsm);font-size:12px;margin-bottom:8px;display:none;font-weight:500}
 .ocr-st.show{display:block}
+.t-paso-hdr{display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--sf);border:1px solid var(--b);border-radius:var(--rlg);margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,0.04)}
+.t-paso-ico{font-size:28px;line-height:1}
+.t-paso-title{font-size:15px;font-weight:600;color:var(--t)}
+.t-paso-sub{font-size:11px;color:var(--t3);margin-top:2px}
+.t-paso-prog{margin-left:auto;font-size:12px;font-family:'DM Mono',monospace;color:var(--t3);white-space:nowrap}
+.t-ref-card{background:var(--amber-bg);border:1px solid var(--amber-b);border-radius:var(--rmd);margin-bottom:12px;overflow:hidden}
+.t-ref-hdr{padding:9px 14px;font-size:12px;font-weight:600;color:var(--amber-t);border-bottom:1px solid var(--amber-b)}
+.t-ref-body{padding:10px 14px}
+.t-menu-btn{width:100%;padding:18px 16px;margin-bottom:12px;background:var(--sf);border:1px solid var(--b);border-radius:var(--rlg);cursor:pointer;font-family:'DM Sans',sans-serif;text-align:left;display:flex;align-items:center;gap:14px;transition:border-color 0.15s;box-shadow:0 1px 3px rgba(0,0,0,0.04)}
+.t-menu-btn:active{border-color:var(--blue);background:var(--blue-bg)}
+.t-menu-ico{font-size:30px;flex-shrink:0}
+.t-menu-title{font-size:15px;font-weight:600;color:var(--t);margin-bottom:3px}
+.t-menu-sub{font-size:12px;color:var(--t3)}
+.t-menu-arr{margin-left:auto;color:var(--t3);font-size:20px;flex-shrink:0}
 
 </style>
 </head>
@@ -1873,7 +1895,7 @@ function T_renderEtapa(id){
   const resp=puntos.filter(p=>T_ST[p.id]?.val).length;
 
   const hdr=document.createElement('div');hdr.className='paso-hdr';
-  hdr.innerHTML=`<span class="paso-ico">${etapa.ico}</span><div><div class="paso-title">${etapa.label}</div><div class="paso-sub">${etapa.sub}</div></div><span class="paso-prog">${resp}/${puntos.length}</span>`;
+  hdr.innerHTML=`<span class="t-paso-ico">${etapa.ico}</span><div><div class="t-paso-title">${etapa.label}</div><div class="t-paso-sub">${etapa.sub}</div></div><span class="t-paso-prog">${resp}/${puntos.length}</span>`;
   c.appendChild(hdr);
 
   // Hallazgos referencia (solo en piso)
@@ -1885,12 +1907,12 @@ function T_renderEtapa(id){
 
   puntos.forEach(p=>{
     const v=T_ST[p.id]?.val;
-    const div=document.createElement('div');div.className='item'+(p.oblig?' oblig':'');
+    const div=document.createElement('div');div.className='titem'+(p.oblig?' oblig':'');
     div.innerHTML=`
-      <div class="item-hdr">
+      <div class="titem-hdr">
         ${p.oblig?'<div class="oblig-badge">🔴 OBLIGATORIO — Identidad del vehículo</div>':''}
-        <div class="item-q">${p.q}</div>
-        <div class="item-btns">
+        <div class="titem-q">${p.q}</div>
+        <div class="titem-btns">
           <button class="ibtn${v==='ok'?' ok':''}" onclick="T_setV('${p.id}','ok',this)">✓ Bien</button>
           <button class="ibtn${v==='reg'?' reg':''}" onclick="T_setV('${p.id}','reg',this)">⚠ Regular</button>
           <button class="ibtn${v==='mal'?' mal':''}" onclick="T_setV('${p.id}','mal',this)">✗ Mal</button>
@@ -1898,8 +1920,8 @@ function T_renderEtapa(id){
         </div>
       </div>
       <div class="item-det${v==='mal'||v==='reg'?' show':''}" id="det-${p.id}">
-        <div class="det-lbl">Descripción del hallazgo / trabajo requerido:</div>
-        <textarea class="det-inp" rows="2" placeholder="Describa el hallazgo..." oninput="T_ST['${p.id}'].obs=this.value">${T_ST[p.id]?.obs||''}</textarea>
+        <div class="tdet-lbl">Descripción del hallazgo / trabajo requerido:</div>
+        <textarea class="tdet-inp" rows="2" placeholder="Describa el hallazgo..." oninput="T_ST['${p.id}'].obs=this.value">${T_ST[p.id]?.obs||''}</textarea>
         <button class="foto-btn" onclick="document.getElementById('fc-${p.id}').click()">📸 Fotografiar hallazgo</button>
         <input type="file" id="fc-${p.id}" accept="image/*" onchange="T_setFoto('${p.id}',this)">
         <div id="fthumb-${p.id}">${T_ST[p.id]?.foto?`<img src="${T_ST[p.id].foto}" class="foto-thumb">`:''}</div>
@@ -1920,7 +1942,7 @@ function T_setV(id,val,btn){
   btn.closest('.item-btns').querySelectorAll('.ibtn').forEach(b=>b.className='ibtn');
   btn.className='ibtn '+(val==='ok'?'ok':val==='reg'?'reg':val==='mal'?'mal':'na');
   const det=document.getElementById('det-'+id);
-  if(det)det.className='item-det'+(val==='mal'||val==='reg'?' show':'');
+  if(det)det.className='tdet'+(val==='mal'||val==='reg'?' show':'');
   T_updateCounts();
 }
 
