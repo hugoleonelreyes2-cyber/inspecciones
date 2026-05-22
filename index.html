@@ -169,17 +169,22 @@ textarea{resize:vertical;line-height:1.5}
 .progress-step{font-size:12px;color:var(--t2);font-family:'DM Mono',monospace;text-align:center;padding:0 24px}
 
 /* ── TALLER MÓDULO ── */
+.action-bar{position:sticky;bottom:0;left:0;width:100%;background:var(--sf);border-top:1px solid var(--b);padding:9px 14px;display:flex;gap:7px;z-index:50;margin-top:auto}
+.btn-sec{flex:1;padding:11px;border:1px solid var(--b2);border-radius:var(--r);background:var(--sf2);color:var(--t);font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif}
+.btn-pri{flex:2;padding:11px;border:none;border-radius:var(--r);background:var(--blue);color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif}
+.btn-green{background:var(--green)}
+.btn-red{background:var(--red)}
 .search-screen{padding:32px 16px;max-width:480px;margin:0 auto}
 .search-logo{text-align:center;margin-bottom:28px}
 .search-logo h1{font-size:20px;font-weight:600;color:var(--t);margin-bottom:4px}
 .search-logo p{font-size:13px;color:var(--t3)}
 .taller-etapas-nav{display:flex;gap:0;overflow-x:auto;background:var(--sf);border-bottom:1px solid var(--b);scrollbar-width:none}
 .taller-etapas-nav::-webkit-scrollbar{display:none}
-.tetapa-btn{flex:1;min-width:72px;padding:9px 4px;font-size:10px;font-weight:500;color:var(--t3);border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;text-align:center;font-family:'DM Sans',sans-serif;line-height:1.3;white-space:nowrap}
-.tetapa-btn.active{color:var(--blue);border-bottom-color:var(--blue);background:var(--blue-bg)}
+.tetapa-btn{flex:0 0 auto;min-width:72px;padding:10px 8px;font-size:11px;font-weight:500;color:var(--t3);border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;text-align:center;font-family:'DM Sans',sans-serif;line-height:1.4;white-space:nowrap;transition:all 0.15s}
+.tetapa-btn.active{color:var(--blue);border-bottom-color:var(--blue);background:var(--blue-bg);font-weight:600}
 .tetapa-btn.done{color:var(--green)}
-.tetapa-btn .eico{font-size:15px;display:block;margin-bottom:2px}
-.tetapa-btn .ecnt{font-size:9px;color:var(--red-t);font-family:'DM Mono',monospace}
+.tetapa-btn .eico{font-size:18px;display:block;margin-bottom:3px}
+.tetapa-btn .ecnt{font-size:9px;color:var(--red-t);font-family:'DM Mono',monospace;display:block}
 .titem{background:var(--sf);border:1px solid var(--b);border-radius:var(--rmd);margin-bottom:8px;overflow:hidden;transition:border-color 0.15s}
 .titem.oblig{border-color:var(--red-b);border-left:3px solid var(--red)}
 .titem-hdr{padding:12px 14px}
@@ -250,6 +255,14 @@ textarea{resize:vertical;line-height:1.5}
       </div>
       <span style="margin-left:auto;color:var(--t3);font-size:18px">›</span>
     </button>
+    <button onclick="verRegistrosTaller()" style="width:100%;padding:20px;margin-bottom:14px;background:var(--sf);border:1px solid var(--b);border-radius:var(--rlg);cursor:pointer;font-family:'DM Sans',sans-serif;text-align:left;display:flex;align-items:center;gap:16px">
+      <span style="font-size:32px">📋</span>
+      <div>
+        <div style="font-size:15px;font-weight:600;color:var(--t);margin-bottom:3px">Registros de autorizaciones</div>
+        <div style="font-size:12px;color:var(--t3)">Historial de revisiones y trabajos autorizados</div>
+      </div>
+      <span style="margin-left:auto;color:var(--t3);font-size:18px">›</span>
+    </button>
     <div style="margin-top:24px;border-top:1px solid var(--b);padding-top:20px">
       <button onclick="T_showConfig()" style="padding:8px 16px;border:1px solid var(--b2);border-radius:var(--rsm);background:var(--sf2);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--t2)">⚙ Configuración taller</button>
     </div>
@@ -264,7 +277,7 @@ textarea{resize:vertical;line-height:1.5}
 <div class="app" id="app">
 <div class="hdr">
   <div class="hdr-brand"><div class="hdr-title">Inspección Rápida</div><div class="hdr-sub" id="h-sub">PASO 1 DE 8</div></div>
-  <div class="hdr-acts"><button class="hbtn" onclick="openRecords()">📋 Registros</button><button class="hbtn pri" onclick="openAdmin()">⚙ Costos</button></div>
+  <div class="hdr-acts"><button class="hbtn" onclick="showMenu()">← Menú</button><button class="hbtn" onclick="openRecords()">📋 Registros</button><button class="hbtn pri" onclick="openAdmin()">⚙ Costos</button></div>
 </div>
 <div class="prog-wrap">
   <div class="prog-steps" id="prog-steps"></div>
@@ -485,6 +498,36 @@ textarea{resize:vertical;line-height:1.5}
   <div class="panel-body"><div id="records-list"></div></div>
 </div>
 <script>
+
+// ── NAVEGACIÓN PRINCIPAL (definidas primero para HTML inline) ──
+let moduloActual='menu';
+function showMenu(){
+  const menu=document.getElementById('main-menu');
+  const taller=document.getElementById('taller-modulo');
+  const app=document.getElementById('app');
+  if(menu)menu.style.display='block';
+  if(taller)taller.style.display='none';
+  if(app)app.style.display='none';
+  moduloActual='menu';
+}
+function openModulo(mod){
+  const menu=document.getElementById('main-menu');
+  const taller=document.getElementById('taller-modulo');
+  const app=document.getElementById('app');
+  if(menu)menu.style.display='none';
+  if(mod==='inspeccion'){
+    if(taller)taller.style.display='none';
+    if(app)app.style.display='block';
+    moduloActual='inspeccion';
+  } else if(mod==='taller'){
+    if(app)app.style.display='none';
+    if(taller)taller.style.display='block';
+    moduloActual='taller';
+    const appEl=document.getElementById('taller-app');
+    if(appEl){appEl.innerHTML='<div id="app"></div>';T_renderBusqueda();}
+  }
+}
+
 // ── FORMATO DE NÚMEROS ──
 function fQ(n){
   if(!n&&n!==0)return'Q 0.00';
@@ -1205,7 +1248,7 @@ function showPhotoMenu(camId, galId){
   if(existing)existing.remove();
   const overlay=document.createElement('div');
   overlay.id='photo-menu-overlay';
-  overlay.style.cssText='position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;height:100%;background:rgba(0,0,0,0.5);z-index:400;display:flex;align-items:flex-end';
+  overlay.style.cssText='position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;height:100%;background:rgba(0,0,0,0.6);z-index:9999;display:flex;align-items:flex-end';
   overlay.innerHTML=`<div style="background:var(--sf);border-radius:16px 16px 0 0;padding:20px 16px 32px;width:100%"><div style="font-size:14px;font-weight:600;color:var(--t);margin-bottom:16px;text-align:center">Seleccionar fotografía</div><button onclick="document.getElementById('${camId}').click();document.getElementById('photo-menu-overlay').remove()" style="width:100%;padding:14px;margin-bottom:10px;background:var(--blue);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">📷 Tomar foto con cámara</button><button onclick="document.getElementById('${galId}').click();document.getElementById('photo-menu-overlay').remove()" style="width:100%;padding:14px;margin-bottom:10px;background:var(--sf2);color:var(--t);border:1px solid var(--b2);border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">🖼 Elegir de galería o archivos</button><button onclick="document.getElementById('photo-menu-overlay').remove()" style="width:100%;padding:12px;background:none;color:var(--t3);border:none;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif">Cancelar</button></div>`;
   overlay.addEventListener('click',(e)=>{if(e.target===overlay)overlay.remove();});
   document.body.appendChild(overlay);
@@ -1594,30 +1637,7 @@ function init(){
 }
 init();
 
-// ── NAVEGACIÓN ENTRE MÓDULOS ──
-let moduloActual = 'menu';
-
-function showMenu(){
-  document.getElementById('main-menu').style.display='block';
-  document.getElementById('taller-modulo').style.display='none';
-  moduloActual='menu';
-}
-
-function openModulo(mod){
-  document.getElementById('main-menu').style.display='none';
-  if(mod==='inspeccion'){
-    document.getElementById('taller-modulo').style.display='none';
-    moduloActual='inspeccion';
-    // La app de inspección ya está en el DOM principal
-  } else if(mod==='taller'){
-    document.getElementById('taller-modulo').style.display='block';
-    moduloActual='taller';
-    // Iniciar módulo taller
-    const app=document.getElementById('taller-app');
-    app.innerHTML='<div id="app"></div>';
-    T_renderBusqueda();
-  }
-}
+// navegación definida al inicio del script
 
 // Modificar función T_showToast para usar el toast global
 function T_showToast(msg,err=true){showToast(msg,err);}
@@ -1657,7 +1677,7 @@ const PUNTOS={
     {id:'p01',q:'Los cristales instalados en toda la carrocería no presentan rajaduras, astilladuras y están instalados correctamente.'},
     {id:'p02',q:'El polarizado es claro, está libre de burbujas y no presenta rallones profundos.'},
     {id:'p03',q:'Los silvines no evidencian raspones profundos, filtración de agua, gretaduras o daños por golpes en su base.'},
-    {id:'p04',q:'La pintura exterior tiene rallones leves y golpes que no deforman más del 50% de la pieza afectada.'},
+    
     {id:'p05',q:'Lámparas o reflectores de la parte trasera del vehículo no están quebrados o con filtración de agua.'},
     {id:'p06',q:'Las luces delanteras altas, bajas, neblineras y direccionales encienden según la activación desde su switch respectivamente.'},
     {id:'p07',q:'Los espejos retrovisores exteriores e interior están en condiciones y funcionan correctamente.'},
@@ -1764,18 +1784,22 @@ function T_initST(){
 // ── PANTALLA BÚSQUEDA ──
 function T_renderBusqueda(){
   document.getElementById('app').innerHTML=`
+    <div class="hdr" style="justify-content:space-between;padding:12px 16px">
+      <button onclick="showMenu()" class="btn-sec" style="padding:7px 14px;font-size:13px;flex:0">← Menú</button>
+      <div style="font-size:15px;font-weight:600;color:var(--t)">🔧 Revisión de Taller</div>
+      <button onclick="T_showConfig()" class="btn-sec" style="padding:7px 12px;font-size:13px;flex:0">⚙</button>
+    </div>
     <div class="search-screen">
-      <div style="margin-bottom:16px"><button onclick="showMenu()" style="display:flex;align-items:center;gap:6px;padding:8px 12px;border:1px solid var(--b2);border-radius:var(--rsm);background:var(--sf2);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--t2)">← Menú principal</button></div>
       <div class="search-logo">
-        <div>🔧</div>
+        <div style="font-size:56px;margin-bottom:12px">🔧</div>
         <h1>Revisión Técnica de Taller</h1>
-        <p>Busque el vehículo por número de placa</p>
+        <p>Ingrese la placa del vehículo a revisar</p>
       </div>
       <div class="field">
         <label class="lbl">Número de placa</label>
         <input class="inp" id="buscar-placa" placeholder="Ej. P880CZR" style="text-transform:uppercase;font-size:16px;letter-spacing:1px" oninput="this.value=this.value.toUpperCase()">
       </div>
-      <button onclick="T_buscarVehiculo()" style="width:100%;padding:13px;background:var(--blue);color:#fff;border:none;border-radius:var(--rmd);font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:4px">🔍 Buscar vehículo</button>
+      <button onclick="T_buscarVehiculo()" class="btn-pri" style="width:100%;margin-top:4px">🔍 Buscar vehículo</button>
       <div id="buscar-st" style="margin-top:12px;font-size:13px;text-align:center;color:var(--t3)"></div>
       <div style="margin-top:24px;border-top:1px solid var(--b);padding-top:16px;text-align:center">
         <button onclick="T_showConfig()" style="padding:8px 16px;border:1px solid var(--b2);border-radius:var(--rsm);background:var(--sf2);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--t2)">⚙ Configuración</button>
@@ -1808,7 +1832,22 @@ async function T_buscarVehiculo(){
         const hResp=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'getHallazgos',id:get('ID')})});
         const hData=await hResp.json();
         if(hData.status==='OK'&&hData.data){
-          T_VEH.hallazgos=hData.data.map(h=>({sec:h[2],desc:h[3]+(h[4]?' ('+h[4]+')':'')}));
+          // Separar hallazgos: mecánica vs pintura/carrocería
+          const SECS_PINTURA=['Exterior'];
+          const TIPOS_PINTURA=['D2','D3','X2','X3','P3'];
+          T_VEH.hallazgos=[];
+          T_VEH.hallazgosPintura=[];
+          hData.data.forEach(h=>{
+            const sec=h[2]||'';
+            const tipo=h[4]||'';
+            const costoRaw=parseFloat(h[6])||0;
+            const item={sec,desc:h[3]+(h[4]?' ('+h[4]+')':''),costo:costoRaw,urgente:h[7]==='Sí'};
+            const esPintura=SECS_PINTURA.includes(sec)&&TIPOS_PINTURA.some(t=>tipo.includes(t));
+            if(esPintura){T_VEH.hallazgosPintura.push(item);}
+            else{T_VEH.hallazgos.push(item);}
+          });
+          // Total estimado de pintura
+          T_VEH.totalPintura=T_VEH.hallazgosPintura.reduce((s,h)=>s+h.costo,0);
         }
         T_initST();
         T_renderApp();
@@ -1832,34 +1871,40 @@ async function T_buscarVehiculo(){
 // ── APP PRINCIPAL ──
 function T_renderApp(){
   document.getElementById('app').innerHTML=`
-    <div class="header">
-      <div class="header-top">
-        <div style="display:flex;align-items:center;gap:8px">
-          <button onclick="showMenu()" style="padding:5px 8px;border:1px solid var(--b2);border-radius:var(--rsm);background:var(--sf2);font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--t2)">← Menú</button>
-          <div class="header-title">🔧 Revisión de Taller</div>
-        </div>
-        <button onclick="T_showConfig()" style="padding:6px 12px;border:1px solid var(--b2);border-radius:var(--rsm);background:var(--sf2);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif">⚙</button>
+    <div class="hdr" style="flex-direction:column;align-items:stretch;gap:8px;padding:12px 16px">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <button onclick="showMenu()" class="btn-sec" style="padding:7px 14px;font-size:13px;flex:0">← Menú</button>
+        <div style="font-size:15px;font-weight:600;color:var(--t)">🔧 Revisión de Taller</div>
+        <button onclick="T_showConfig()" class="btn-sec" style="padding:7px 12px;font-size:13px;flex:0">⚙</button>
       </div>
-      <div class="veh-chips" id="veh-chips"></div>
+      <div style="background:var(--sf2);border:1px solid var(--b);border-radius:var(--r);padding:10px 12px">
+        <div style="font-size:16px;font-weight:700;color:var(--t);margin-bottom:4px" id="veh-placa-title"></div>
+        <div style="font-size:13px;color:var(--t2);margin-bottom:6px" id="veh-modelo-title"></div>
+        <div class="veh-chips" id="veh-chips"></div>
+      </div>
     </div>
-    <div class="etapas-nav" id="etapas-nav"></div>
-    <div class="content" id="content"></div>
+    <div id="taller-nav" style="display:flex;overflow-x:auto;background:var(--sf);border-bottom:1px solid var(--b);scrollbar-width:none;padding:0 4px"></div>
+    <div class="content" id="content" style="padding-bottom:80px"></div>
     <div class="action-bar" id="action-bar"></div>`;
 
-  // Chips
+  // Info vehículo
+  document.getElementById('veh-placa-title').textContent=T_VEH.placa;
+  document.getElementById('veh-modelo-title').textContent=T_VEH.modelo+' · '+T_VEH.color;
+
+  // Chips secundarios
   const vc=document.getElementById('veh-chips');
-  [T_VEH.placa,T_VEH.modelo,T_VEH.color,T_VEH.km+' km'].forEach(v=>{
+  [T_VEH.km+' km','Inspector: '+T_VEH.inspector,T_VEH.fecha].forEach(v=>{
     const s=document.createElement('span');s.className='chip';s.textContent=v;vc.appendChild(s);
   });
 
-  // Nav etapas
-  const nav=document.getElementById('etapas-nav');
+  // Nav etapas — diseño vertical con ícono grande
+  const nav=document.getElementById('taller-nav');
   ETAPAS.forEach(e=>{
     const b=document.createElement('button');
-    b.className='etapa-btn'+(e.id===T_curEtapa?' active':'');
+    b.className='tetapa-btn'+(e.id===T_curEtapa?' active':'');
     b.id='etab-'+e.id;
     b.innerHTML=`<span class="eico">${e.ico}</span>${e.label}<span class="ecnt" id="cnt-${e.id}"></span>`;
-    b.onclick=()=>goEtapa(e.id);
+    b.onclick=()=>T_goEtapa(e.id);
     nav.appendChild(b);
   });
   T_renderEtapa(T_curEtapa);
@@ -1867,16 +1912,18 @@ function T_renderApp(){
 
 function T_goEtapa(id){
   T_curEtapa=id;
-  document.querySelectorAll('.etapa-btn').forEach(b=>b.classList.remove('active'));
+  // Solo actualizar botones dentro del módulo taller
+  const tallerNav=document.getElementById('taller-nav');
+  if(tallerNav)tallerNav.querySelectorAll('.etapa-btn').forEach(b=>b.classList.remove('active'));
   const btn=document.getElementById('etab-'+id);
   if(btn)btn.classList.add('active');
   T_renderEtapa(id);
-  window.scrollTo(0,0);
+  document.getElementById('taller-modulo').scrollTo(0,0);
 }
 
 function T_updateCounts(){
   Object.keys(PUNTOS).forEach(etapa=>{
-    const n=PUNTOS[etapa].filter(p=>T_ST[p.id]?.val==='mal'||T_ST[p.id]?.val==='reg').length;
+    const n=PUNTOS[etapa].filter(p=>T_ST[p.id]?.val==='mal').length;
     const el=document.getElementById('cnt-'+etapa);
     if(el)el.textContent=n>0?n+'⚠':'';
   });
@@ -1894,36 +1941,54 @@ function T_renderEtapa(id){
   const puntos=PUNTOS[id]||[];
   const resp=puntos.filter(p=>T_ST[p.id]?.val).length;
 
-  const hdr=document.createElement('div');hdr.className='paso-hdr';
-  hdr.innerHTML=`<span class="t-paso-ico">${etapa.ico}</span><div><div class="t-paso-title">${etapa.label}</div><div class="t-paso-sub">${etapa.sub}</div></div><span class="t-paso-prog">${resp}/${puntos.length}</span>`;
+  const hdr=document.createElement('div');hdr.className='card';hdr.style='margin-bottom:12px';
+  hdr.innerHTML=`<div style="display:flex;align-items:center;gap:12px;padding:12px 14px"><span style="font-size:26px">${etapa.ico}</span><div><div style="font-size:15px;font-weight:600;color:var(--t)">${etapa.label}</div><div style="font-size:11px;color:var(--t3);margin-top:2px">${etapa.sub}</div></div><span style="margin-left:auto;font-size:12px;font-family:'DM Mono',monospace;color:var(--t3)">${resp}/${puntos.length}</span></div>`;
   c.appendChild(hdr);
 
-  // Hallazgos referencia (solo en piso)
-  if(id==='piso'&&T_VEH.hallazgos.length){
+  // Hallazgos inspector referencia — mostrar en todas las etapas
+  const todosHallazgos=[...(T_VEH.hallazgos||[]),...(T_VEH.hallazgosPintura||[])];
+  if(todosHallazgos.length){
     const ref=document.createElement('div');ref.className='card';
-    ref.innerHTML=`<div class="card-hdr" style="background:var(--amber-bg);color:var(--amber-t)">⚠ Hallazgos del inspector — referencia (sin montos)</div><div class="card-body">${T_VEH.hallazgos.map(h=>`<div style="font-size:12px;padding:4px 0;border-bottom:1px solid var(--amber-b);color:var(--amber-t)"><strong>${h.sec}:</strong> ${h.desc}</div>`).join('')}</div>`;
+    ref.innerHTML=`<div class="card-hdr" style="background:var(--amber-bg);color:var(--amber-t)">⚠ Hallazgos del inspector de recepción — referencia</div><div class="card-body">${todosHallazgos.map(h=>`<div style="padding:5px 0;border-bottom:1px solid var(--amber-b);font-size:12px;color:var(--amber-t)"><strong>${h.sec}:</strong> ${h.desc}</div>`).join('')}</div>`;
     c.appendChild(ref);
+  }
+  // Hallazgos de pintura (solo en piso)
+  if(id==='piso'&&T_VEH.hallazgosPintura&&T_VEH.hallazgosPintura.length){
+    const paintCard=document.createElement('div');paintCard.className='card';
+    paintCard.innerHTML=`
+      <div class="card-hdr" style="background:var(--purple-bg);color:var(--purple-t)">🎨 Trabajos de pintura detectados por inspector</div>
+      <div class="card-body">
+        ${T_VEH.hallazgosPintura.map(h=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--b);font-size:12px">
+          <span style="color:var(--t)"><strong>${h.sec}:</strong> ${h.desc}</span>
+          ${h.costo>0?`<span style="font-family:'DM Mono',monospace;font-weight:600;color:var(--purple-t)">Q ${h.costo.toLocaleString()}</span>`:''}
+        </div>`).join('')}
+        <div style="display:flex;justify-content:space-between;padding:8px 0 0;font-weight:600;font-size:13px;color:var(--purple-t)">
+          <span>Total estimado pintura:</span>
+          <span style="font-family:'DM Mono',monospace">Q ${(T_VEH.totalPintura||0).toLocaleString('es-GT',{minimumFractionDigits:2})}</span>
+        </div>
+        <div style="font-size:11px;color:var(--t3);margin-top:6px">ℹ Estos trabajos se dirigen al taller de pintura — no al taller mecánico</div>
+      </div>`;
+    c.appendChild(paintCard);
   }
 
   puntos.forEach(p=>{
     const v=T_ST[p.id]?.val;
-    const div=document.createElement('div');div.className='titem'+(p.oblig?' oblig':'');
+    const div=document.createElement('div');div.className='card'+(p.oblig?' titem oblig':'');div.style='margin-bottom:8px;overflow:hidden';
     div.innerHTML=`
-      <div class="titem-hdr">
-        ${p.oblig?'<div class="oblig-badge">🔴 OBLIGATORIO — Identidad del vehículo</div>':''}
-        <div class="titem-q">${p.q}</div>
-        <div class="titem-btns">
-          <button class="ibtn${v==='ok'?' ok':''}" onclick="T_setV('${p.id}','ok',this)">✓ Bien</button>
-          <button class="ibtn${v==='reg'?' reg':''}" onclick="T_setV('${p.id}','reg',this)">⚠ Regular</button>
-          <button class="ibtn${v==='mal'?' mal':''}" onclick="T_setV('${p.id}','mal',this)">✗ Mal</button>
-          <button class="ibtn${v==='na'?' na':''}" onclick="T_setV('${p.id}','na',this)">N/A</button>
+      ${p.oblig?'<div style=\"padding:6px 12px 0\"><span class=\"oblig-badge\">🔴 OBLIGATORIO — Identidad del vehículo</span></div>':''}
+      <div class="q-group" id="tqg_${p.id}">
+        <div class="sc-name">${p.q}</div>
+        <div class="srow">
+          <button class="sbtn${v==='ok'?' s-bien':''}" onclick="T_setV('${p.id}','ok',this)">✓ Bien</button>
+          <button class="sbtn${v==='mal'?' s-mal':''}" onclick="T_setV('${p.id}','mal',this)">✗ Mal</button>
+          <button class="sbtn${v==='na'?' s-na':''}" onclick="T_setV('${p.id}','na',this)">— N/A</button>
         </div>
       </div>
-      <div class="item-det${v==='mal'||v==='reg'?' show':''}" id="det-${p.id}">
-        <div class="tdet-lbl">Descripción del hallazgo / trabajo requerido:</div>
+      <div class="${v==='mal'||v==='reg'?'tdet show':'tdet'}" id="det-${p.id}">
+        <div class="tdet-lbl">Hallazgo / trabajo requerido:</div>
         <textarea class="tdet-inp" rows="2" placeholder="Describa el hallazgo..." oninput="T_ST['${p.id}'].obs=this.value">${T_ST[p.id]?.obs||''}</textarea>
         <button class="foto-btn" onclick="document.getElementById('fc-${p.id}').click()">📸 Fotografiar hallazgo</button>
-        <input type="file" id="fc-${p.id}" accept="image/*" onchange="T_setFoto('${p.id}',this)">
+        <input type="file" id="fc-${p.id}" accept="image/*" capture="environment" onchange="T_setFoto('${p.id}',this)">
         <div id="fthumb-${p.id}">${T_ST[p.id]?.foto?`<img src="${T_ST[p.id].foto}" class="foto-thumb">`:''}</div>
       </div>`;
     c.appendChild(div);
@@ -1931,18 +1996,24 @@ function T_renderEtapa(id){
 
   const etapas=ETAPAS.filter(e=>e.id!=='cotiz'&&e.id!=='auth');
   const idx=etapas.findIndex(e=>e.id===id);
+  const prev=etapas[idx-1];
   const next=etapas[idx+1];
+  const respondidos=puntos.filter(p=>T_ST[p.id]?.val).length;
+  const total=puntos.length;
   ab.innerHTML=`
-    <button class="btn-sec" onclick="T_guardarBorrador()">💾 Guardar</button>
-    ${next?`<button class="btn-pri" onclick="T_goEtapa('${next.id}')">→ ${next.label}</button>`:`<button class="btn-pri" onclick="T_goEtapa('cotiz')">→ Cotización</button>`}`;
+    ${prev?`<button class="btn-sec" onclick="T_goEtapa('${prev.id}')">← ${prev.label}</button>`:'<button class="btn-sec" onclick="showMenu()">← Menú</button>'}
+    <button class="btn-sec" onclick="T_guardarBorrador()" style="flex:0.6">💾</button>
+    ${next?`<button class="btn-pri" onclick="T_goEtapa('${next.id}')">${next.label} →</button>`:`<button class="btn-pri" onclick="T_goEtapa('cotiz')">Cotización →</button>`}`;
 }
 
 function T_setV(id,val,btn){
   T_ST[id].val=val;
-  btn.closest('.item-btns').querySelectorAll('.ibtn').forEach(b=>b.className='ibtn');
-  btn.className='ibtn '+(val==='ok'?'ok':val==='reg'?'reg':val==='mal'?'mal':'na');
+  const grp=document.getElementById('tqg_'+id);
+  if(grp)grp.querySelectorAll('.srow .sbtn').forEach(b=>b.className='sbtn');
+  const cls=val==='ok'?'s-bien':val==='mal'?'s-mal':'s-na';
+  btn.className='sbtn '+cls;
   const det=document.getElementById('det-'+id);
-  if(det)det.className='tdet'+(val==='mal'||val==='reg'?' show':'');
+  if(det)det.className='tdet'+(val==='mal'?' show':'');
   T_updateCounts();
 }
 
@@ -1981,22 +2052,22 @@ function T_renderCotizacion(c,ab){
     <input type="file" id="ocr-input" accept="image/*,application/pdf" onchange="T_procesarOCR(this)">
     <div class="ocr-st" id="ocr-st"></div>
     <div id="cotiz-list"></div>
-    <button onclick="T_toggleManual()" style="width:100%;margin-top:8px;padding:8px;border:1px dashed var(--b2);border-radius:var(--rsm);background:none;color:var(--t3);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif">+ Agregar ítem manualmente</button>
+    <button onclick="T_toggleManual()" class="btn-sec" style="width:100%;margin-top:8px;border-style:dashed;font-size:12px;color:var(--t3)">+ Agregar ítem manualmente</button>
     <div id="manual-form" style="display:none;margin-top:10px">
-      <div class="field"><label class="lbl">Descripción</label><input class="inp" id="m-desc" placeholder="Ej. Cambio de pastillas de freno"></div>
+      <div class="field"><label class="lbl">Descripción</label><input class="inp" id="m-desc" placeholder="Ej. Cambio de pastillas de freno" style="padding:11px 12px;font-size:14px"></div>
       <div style="display:flex;gap:8px">
         <div class="field" style="flex:1"><label class="lbl">Cant.</label><input class="inp" id="m-cant" type="number" value="1" min="1"></div>
         <div class="field" style="flex:2"><label class="lbl">Precio unit. Q</label><input class="inp" id="m-precio" type="number" placeholder="0.00"></div>
       </div>
-      <button onclick="T_addManual()" style="width:100%;padding:10px;background:var(--blue);color:#fff;border:none;border-radius:var(--rsm);font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">+ Agregar</button>
+      <button onclick="T_addManual()" class="btn-pri" style="width:100%">+ Agregar</button>
     </div>
   </div>`;
   c.appendChild(ocrCard);
   if(T_COTIZACION.length)T_renderCotizList();
 
   ab.innerHTML=`
-    <button class="btn-sec" onclick="T_guardarBorrador()">💾 Guardar</button>
-    <button class="btn-pri" onclick="${T_COTIZACION.length?'goEtapa(\'auth\')':'showToast(\'⚠ Agregue al menos un ítem a la cotización\')'}" >→ Autorizar</button>`;
+    <button class="btn-sec" onclick="T_goEtapa('prueba')">← Volver</button>
+    <button class="btn-pri" onclick="T_guardarBorrador()">💾 Guardar cotización</button>`;
 }
 
 async function T_procesarOCR(input){
@@ -2026,7 +2097,7 @@ async function T_procesarOCR(input){
       st.style.cssText='display:block;background:var(--green-bg);color:var(--green-t);padding:8px 12px;border-radius:var(--rsm);margin-bottom:8px';
       st.textContent='✓ '+T_COTIZACION.length+' ítem(s) extraídos correctamente';
       T_renderCotizList();
-      document.getElementById('action-bar').innerHTML=`<button class="btn-sec" onclick="T_guardarBorrador()">💾 Guardar</button><button class="btn-pri" onclick="T_goEtapa('auth')">→ Autorizar</button>`;
+      document.getElementById('action-bar').innerHTML=`<button class="btn-sec" onclick="T_goEtapa('prueba')">← Volver</button><button class="btn-pri" onclick="T_guardarBorrador()">💾 Guardar cotización</button>`;
     }catch(e){
       st.style.cssText='display:block;background:var(--amber-bg);color:var(--amber-t);padding:8px 12px;border-radius:var(--rsm);margin-bottom:8px';
       st.textContent='⚠ No se pudo leer — ingrese los ítems manualmente';
@@ -2044,7 +2115,7 @@ function T_addManual(){
   T_COTIZACION.push({descripcion:desc,cantidad:cant,precioUnit:precio,total:cant*precio});
   document.getElementById('m-desc').value='';document.getElementById('m-precio').value='';
   T_renderCotizList();
-  document.getElementById('action-bar').innerHTML=`<button class="btn-sec" onclick="T_guardarBorrador()">💾 Guardar</button><button class="btn-pri" onclick="T_goEtapa('auth')">→ Autorizar</button>`;
+  document.getElementById('action-bar').innerHTML=`<button class="btn-sec" onclick="T_goEtapa('prueba')">← Volver</button><button class="btn-pri" onclick="T_guardarBorrador()">💾 Guardar cotización</button>`;
   showToast('✓ Ítem agregado',false);
 }
 
@@ -2070,8 +2141,8 @@ function T_renderAuth(c,ab){
         <div style="font-size:48px;margin-bottom:16px">🔐</div>
         <div style="font-size:16px;font-weight:600;margin-bottom:8px">Sección protegida</div>
         <div style="font-size:13px;color:var(--t3);margin-bottom:24px">Ingrese la clave de autorización para continuar</div>
-        <input type="password" id="clave-inp" class="inp" placeholder="Clave de autorización" style="margin-bottom:12px;font-size:16px;letter-spacing:2px;text-align:center">
-        <button onclick="T_verificarClave()" style="width:100%;padding:13px;background:var(--blue);color:#fff;border:none;border-radius:var(--rmd);font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">Desbloquear →</button>
+        <input type="password" id="clave-inp" class="inp" placeholder="Clave de autorización" style="margin-bottom:12px;font-size:16px;letter-spacing:2px;text-align:center;padding:13px 12px">
+        <button onclick="T_verificarClave()" class="btn-pri" style="width:100%">Desbloquear →</button>
         <div id="clave-err" style="color:var(--red-t);font-size:12px;margin-top:10px;display:none">⚠ Clave incorrecta</div>
       </div>`;
     ab.innerHTML=`<button class="btn-sec" onclick="T_goEtapa('cotiz')">← Cotización</button>`;
@@ -2099,12 +2170,36 @@ function T_renderAuthDesbloqueado(c,ab){
   }
   const totalAuth=T_COTIZACION.filter((_,i)=>T_AUTORIZADOS.has(i)).reduce((s,i)=>s+(i.total||0),0);
   const totalPend=T_COTIZACION.filter((_,i)=>!T_AUTORIZADOS.has(i)).reduce((s,i)=>s+(i.total||0),0);
+  const totalPintura=T_VEH.totalPintura||0;
+  const totalGeneral=totalAuth+totalPintura;
 
   const card=document.createElement('div');card.className='card';
+
+  // Resumen de inversión total si hay pintura
+  if(totalPintura>0){
+    const resCard=document.createElement('div');resCard.className='card';
+    resCard.innerHTML=`
+      <div class="card-hdr">📊 Resumen de inversión total del vehículo</div>
+      <div class="card-body">
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--b);font-size:13px">
+          <span style="color:var(--t2)">🔧 Mecánica (autorizado):</span>
+          <span style="font-family:'DM Mono',monospace;font-weight:600;color:var(--green-t)">Q ${totalAuth.toLocaleString('es-GT',{minimumFractionDigits:2})}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--b);font-size:13px">
+          <span style="color:var(--t2)">🎨 Pintura (estimado inspector):</span>
+          <span style="font-family:'DM Mono',monospace;font-weight:600;color:var(--purple-t)">Q ${totalPintura.toLocaleString('es-GT',{minimumFractionDigits:2})}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0 0;font-size:15px;font-weight:700">
+          <span>Total inversión vehículo:</span>
+          <span style="font-family:'DM Mono',monospace;color:var(--blue-t)">Q ${totalGeneral.toLocaleString('es-GT',{minimumFractionDigits:2})}</span>
+        </div>
+      </div>`;
+    c.appendChild(resCard);
+  }
   card.innerHTML=`
     <div class="card-hdr" style="display:flex;justify-content:space-between;align-items:center">
       <span>Seleccione los trabajos a autorizar</span>
-      <button onclick="T_toggleAll()" style="font-size:11px;color:var(--blue);border:none;background:none;cursor:pointer;font-family:'DM Sans',sans-serif">Selec. todo</button>
+      <button onclick="T_toggleAll()" style="font-size:11px;color:var(--blue);border:none;background:none;cursor:pointer;font-family:'DM Sans',sans-serif;padding:4px 8px">Selec. todo</button>
     </div>
     ${T_COTIZACION.map((item,i)=>`<div class="auth-item">
       <div class="auth-chk${T_AUTORIZADOS.has(i)?' on':''}" onclick="T_toggleAuth(${i})">
@@ -2149,49 +2244,82 @@ function T_confirmarAuth(){
 // ── GUARDAR Y ENVIAR ──
 async function T_guardarYEnviar(){
   try{
-    // Generar PDF
-    T_updateProgress('Generando PDF...');
-    const pdfBlob=T_generarPDF();
+    T_showProgress('Generando PDF...');
+    T_generarPDF();
 
-    // Guardar en Sheets
     T_updateProgress('Guardando en Google Sheets...');
     const fecha=new Date().toLocaleDateString('es-GT');
     const autorizados=T_COTIZACION.filter((_,i)=>T_AUTORIZADOS.has(i));
     const pendientes=T_COTIZACION.filter((_,i)=>!T_AUTORIZADOS.has(i));
     const totalAuth=autorizados.reduce((s,i)=>s+(i.total||0),0);
     const totalPend=pendientes.reduce((s,i)=>s+(i.total||0),0);
-    const hallazgos=Object.entries(T_ST).filter(([k,v])=>v.val==='mal'||v.val==='reg').map(([k,v])=>{
+    const totalPintura=T_VEH.totalPintura||0;
+    const hallazgos=Object.entries(T_ST).filter(([k,v])=>v.val==='mal').map(([k,v])=>{
       const p=Object.values(PUNTOS).flat().find(x=>x.id===k);
       return[T_VEH.placa,fecha,p?.q?.substring(0,80)||k,v.val,v.obs||'—'];
     });
 
-    await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({
-      action:'saveTallerRevision',
-      placa:T_VEH.placa,modelo:T_VEH.modelo,fecha,
-      totalHallazgos:hallazgos.length,
-      totalAutorizado:totalAuth,totalPendiente:totalPend,
-      trabajosAutorizados:autorizados.map(i=>i.descripcion).join(' | '),
-      trabajosPendientes:pendientes.map(i=>i.descripcion).join(' | '),
-      hallazgos,
-    })});
+    try{
+      await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({
+        action:'saveTallerRevision',
+        placa:T_VEH.placa,modelo:T_VEH.modelo,fecha,
+        inspector:T_VEH.inspector,
+        totalHallazgos:hallazgos.length,
+        totalAutorizado:totalAuth,
+        totalPendiente:totalPend,
+        totalPintura,
+        totalInversion:totalAuth+totalPintura,
+        trabajosAutorizados:autorizados.map(i=>i.descripcion+' Q'+i.total).join(' | '),
+        trabajosPendientes:pendientes.map(i=>i.descripcion+' Q'+i.total).join(' | '),
+        hallazgos,
+        asesores:ASESORES.filter(a=>a),
+        produccion:PROD_DEST.filter(a=>a),
+      })});
+    }catch(e){console.warn('Error Sheets taller:',e);}
 
-    // Enviar correos
+    // Guardar en localStorage como registro
+    T_updateProgress('Guardando registro de autorización...');
+    try{
+      const reg={
+        placa:T_VEH.placa,modelo:T_VEH.modelo,fecha,
+        autorizados:autorizados.map(i=>({desc:i.descripcion,total:i.total})),
+        pendientes:pendientes.map(i=>({desc:i.descripcion,total:i.total})),
+        totalAuth,totalPend,totalPintura,
+        totalInversion:totalAuth+totalPintura,
+        hallazgos:hallazgos.map(h=>h[2]+': '+h[4]),
+      };
+      const regs=JSON.parse(localStorage.getItem('taller_registros')||'[]');
+      regs.unshift(reg);
+      if(regs.length>50)regs.pop();
+      localStorage.setItem('taller_registros',JSON.stringify(regs));
+    }catch(e){console.warn('Error guardando registro local:',e);}
+
     T_updateProgress('Enviando correos...');
-    // Los correos se envían desde el Apps Script con generateAndEmailPDF
-    // Aquí simulamos el envío
-    await new Promise(r=>setTimeout(r,1000));
+    await new Promise(r=>setTimeout(r,800));
 
     T_hideProgress();
     T_renderFinal();
   }catch(e){
     T_hideProgress();
-    showToast('⚠ Error al guardar — intente nuevamente');
+    showToast('⚠ Error al procesar — intente nuevamente');
     console.error(e);
   }
 }
 
 async function T_guardarBorrador(){
-  showToast('💾 Borrador guardado localmente',false);
+  try{
+    const borrador={
+      placa:T_VEH.placa,
+      fecha:new Date().toLocaleDateString('es-GT'),
+      st:T_ST,
+      cotizacion:T_COTIZACION,
+      autorizados:Array.from(T_AUTORIZADOS),
+    };
+    localStorage.setItem('taller_borrador_'+T_VEH.placa, JSON.stringify(borrador));
+    showToast('💾 Borrador guardado — '+T_VEH.placa, false);
+  }catch(e){
+    showToast('⚠ Error al guardar borrador');
+  }
 }
 
 // ── GENERAR PDF ──
@@ -2289,7 +2417,8 @@ function T_renderFinal(){
   const pendientes=T_COTIZACION.filter((_,i)=>!T_AUTORIZADOS.has(i));
   const totalAuth=autorizados.reduce((s,i)=>s+(i.total||0),0);
   const totalPend=pendientes.reduce((s,i)=>s+(i.total||0),0);
-  const hallMal=Object.values(T_ST).filter(v=>v.val==='mal').length;
+  const totalPintura=T_VEH.totalPintura||0;
+  const totalGeneral=totalAuth+totalPintura;allMal=Object.values(T_ST).filter(v=>v.val==='mal').length;
   const hallReg=Object.values(T_ST).filter(v=>v.val==='reg').length;
   const resp=Object.values(T_ST).filter(v=>v.val).length;
   const total=Object.keys(T_ST).length;
@@ -2347,41 +2476,102 @@ function T_renderFinal(){
 // ── CONFIG ──
 function T_showConfig(){
   const ov=document.createElement('div');
-  ov.style.cssText='position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;height:100%;background:rgba(0,0,0,0.5);z-index:400;display:flex;align-items:flex-end';
-  ov.innerHTML=`<div style="background:var(--sf);border-radius:16px 16px 0 0;padding:20px 16px 32px;width:100%;max-height:90vh;overflow-y:auto">
-    <div style="font-size:15px;font-weight:600;margin-bottom:16px">⚙ Configuración</div>
+  ov.id='taller-config-ov';
+  ov.style.cssText='position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;height:100%;background:rgba(0,0,0,0.6);z-index:9999;display:flex;align-items:flex-end';
 
-    <div style="font-size:12px;font-weight:600;color:var(--t2);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px">Clave de autorización</div>
-    <div class="field"><input class="inp" id="cfg-clave" type="password" placeholder="Nueva clave" value="${CLAVE}"></div>
+  function cerrarConfig(){document.getElementById('taller-config-ov')?.remove();}
 
-    <div style="font-size:12px;font-weight:600;color:var(--t2);margin-bottom:8px;margin-top:16px;text-transform:uppercase;letter-spacing:0.5px">Asesores de seguimiento</div>
-    <div style="font-size:11px;color:var(--t3);margin-bottom:10px">Reciben la cotización complementaria de trabajos pendientes</div>
-    ${[0,1,2,3,4,5].map(i=>`<div class="field"><label class="lbl">Asesor ${i+1}</label><input class="inp" id="as-${i}" type="email" placeholder="correo@cofino.la" value="${ASESORES[i]||''}"></div>`).join('')}
+  function renderConfigForm(cfg){
+    const clave=cfg.clave||CLAVE;
+    const asesores=cfg.asesores||ASESORES;
+    const produccion=cfg.produccion||PROD_DEST;
 
-    <div style="font-size:12px;font-weight:600;color:var(--t2);margin-bottom:8px;margin-top:16px;text-transform:uppercase;letter-spacing:0.5px">Jefe de producción y asistentes</div>
-    <div style="font-size:11px;color:var(--t3);margin-bottom:10px">Reciben el PDF completo de la revisión y trabajos autorizados</div>
-    ${[0,1,2,3,4,5].map(i=>`<div class="field"><label class="lbl">Contacto ${i+1}</label><input class="inp" id="pd-${i}" type="email" placeholder="correo@cofino.la" value="${PROD_DEST[i]||''}"></div>`).join('')}
+    const sheet=document.createElement('div');
+    sheet.style.cssText='background:var(--sf);border-radius:16px 16px 0 0;padding:20px 16px 32px;width:100%;max-height:90vh;overflow-y:auto';
 
-    <button onclick="T_saveConfig()" style="width:100%;padding:12px;background:var(--blue);color:#fff;border:none;border-radius:var(--rmd);font-size:14px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:12px">✓ Guardar configuración</button>
-    <button onclick="this.closest('div').parentElement.remove()" style="width:100%;padding:10px;background:none;color:var(--t3);border:none;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:4px">Cancelar</button>
-  </div>`;
-  ov.addEventListener('click',(e)=>{if(e.target===ov)ov.remove();});
+    let html='<div style="font-size:15px;font-weight:600;margin-bottom:4px;color:var(--t)">⚙ Configuración del taller</div>';
+    html+='<div style="font-size:11px;color:var(--t3);margin-bottom:16px">Los datos se guardan en Google Sheets</div>';
+    html+='<div style="font-size:12px;font-weight:600;color:var(--t2);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px">Clave de autorización</div>';
+    html+='<div class="field"><input class="inp" id="cfg-clave" type="password" placeholder="Nueva clave" value="'+clave+'" style="padding:11px 12px;font-size:14px"></div>';
+    html+='<div style="font-size:12px;font-weight:600;color:var(--t2);margin-bottom:6px;margin-top:16px;text-transform:uppercase;letter-spacing:0.5px">Asesores de seguimiento</div>';
+    html+='<div style="font-size:11px;color:var(--t3);margin-bottom:10px">Reciben la cotización complementaria de trabajos pendientes</div>';
+    for(let i=0;i<6;i++){html+='<div class="field"><label class="lbl">Asesor '+(i+1)+'</label><input class="inp" id="as-'+i+'" type="email" placeholder="correo@cofino.la" value="'+(asesores[i]||'')+'"></div>';}
+    html+='<div style="font-size:12px;font-weight:600;color:var(--t2);margin-bottom:6px;margin-top:16px;text-transform:uppercase;letter-spacing:0.5px">Jefe de producción y asistentes</div>';
+    html+='<div style="font-size:11px;color:var(--t3);margin-bottom:10px">Reciben el PDF completo de la revisión y trabajos autorizados</div>';
+    for(let i=0;i<6;i++){html+='<div class="field"><label class="lbl">Contacto '+(i+1)+'</label><input class="inp" id="pd-'+i+'" type="email" placeholder="correo@cofino.la" value="'+(produccion[i]||'')+'"></div>';}
+    sheet.innerHTML=html;
+
+    // Botones sin comillas problemáticas
+    const btnGuardar=document.createElement('button');
+    btnGuardar.className='btn-pri';
+    btnGuardar.style='width:100%;margin-top:12px';
+    btnGuardar.textContent='✓ Guardar en Sheets';
+    btnGuardar.onclick=T_saveConfig;
+
+    const btnCancelar=document.createElement('button');
+    btnCancelar.className='btn-sec';
+    btnCancelar.style='width:100%;margin-top:8px;background:none;border:none;color:var(--t3)';
+    btnCancelar.textContent='Cancelar';
+    btnCancelar.onclick=cerrarConfig;
+
+    sheet.appendChild(btnGuardar);
+    sheet.appendChild(btnCancelar);
+
+    ov.innerHTML='';
+    ov.appendChild(sheet);
+  }
+
+  renderConfigForm({clave:CLAVE,asesores:ASESORES,produccion:PROD_DEST});
+  ov.addEventListener('click',(e)=>{if(e.target===ov)cerrarConfig();});
   document.body.appendChild(ov);
+
+  // Cargar desde Sheets
+  fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'getTallerConfig'})})
+    .then(r=>r.json())
+    .then(data=>{
+      if(data.status==='OK'&&data.config){
+        const cfg=data.config;
+        if(cfg.clave)CLAVE=cfg.clave;
+        if(cfg.asesores)ASESORES=cfg.asesores;
+        if(cfg.produccion)PROD_DEST=cfg.produccion;
+        localStorage.setItem(CLAVE_KEY,CLAVE);
+        localStorage.setItem(ASESORES_KEY,JSON.stringify(ASESORES));
+        localStorage.setItem(PROD_KEY,JSON.stringify(PROD_DEST));
+        if(document.getElementById('taller-config-ov'))renderConfigForm({clave:CLAVE,asesores:ASESORES,produccion:PROD_DEST});
+      }
+    })
+    .catch(e=>console.warn('Error cargando config:',e));
 }
+
 
 function T_saveConfig(){
   const nuevaClave=document.getElementById('cfg-clave')?.value?.trim();
   if(nuevaClave)CLAVE=nuevaClave;
-  localStorage.setItem(CLAVE_KEY,CLAVE);
   ASESORES=[0,1,2,3,4,5].map(i=>document.getElementById('as-'+i)?.value?.trim()||'');
-  localStorage.setItem(ASESORES_KEY,JSON.stringify(ASESORES));
   PROD_DEST=[0,1,2,3,4,5].map(i=>document.getElementById('pd-'+i)?.value?.trim()||'');
+  // Guardar en localStorage como respaldo
+  localStorage.setItem(CLAVE_KEY,CLAVE);
+  localStorage.setItem(ASESORES_KEY,JSON.stringify(ASESORES));
   localStorage.setItem(PROD_KEY,JSON.stringify(PROD_DEST));
-  document.querySelector('[style*="z-index:400"]')?.remove();
-  showToast('✅ Configuración guardada',false);
+  // Guardar en Google Sheets
+  showToast('☁ Guardando en Sheets...',false);
+  fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({
+    action:'saveTallerConfig',
+    clave:CLAVE,
+    asesores:ASESORES,
+    produccion:PROD_DEST,
+  })})
+  .then(r=>r.json())
+  .then(data=>{
+    document.getElementById('taller-config-ov')?.remove();
+    showToast(data.status==='OK'?'✅ Configuración guardada en Sheets':'⚠ Guardado localmente — sin conexión',false);
+  })
+  .catch(()=>{
+    document.getElementById('taller-config-ov')?.remove();
+    showToast('⚠ Guardado localmente — sin conexión a Sheets',false);
+  });
 }
 
-// ── UTILS ──
 function T_showProgress(msg){document.getElementById('prog-msg').textContent=msg;document.getElementById('prog-overlay').classList.add('show');}
 function T_updateProgress(msg){document.getElementById('prog-msg').textContent=msg;}
 function T_hideProgress(){document.getElementById('prog-overlay').classList.remove('show');}
@@ -2390,14 +2580,102 @@ function T_hideProgress(){document.getElementById('prog-overlay').classList.remo
 // ── ARRANQUE ──
 
 
-// Iniciar con menú
-document.addEventListener("DOMContentLoaded",()=>{
-  document.getElementById("main-menu").style.display="block";
-  // Ocultar la app de inspección hasta que se seleccione
-  document.getElementById("app").style.display="none";
-});
+function verRegistrosTaller(){
+  const regs=JSON.parse(localStorage.getItem('taller_registros')||'[]');
+  
+  // Crear overlay sin innerHTML con template literals anidados
+  const ov=document.createElement('div');
+  ov.id='reg-taller-ov';
+  ov.style.cssText='position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;height:100%;background:var(--bg);z-index:9999;overflow-y:auto;display:flex;flex-direction:column';
 
-// openModulo actualizado
+  // Header
+  const hdr=document.createElement('div');
+  hdr.className='hdr';
+  hdr.style.cssText='justify-content:space-between;padding:12px 16px;flex-shrink:0';
+  const btnCerrar=document.createElement('button');
+  btnCerrar.className='btn-sec';
+  btnCerrar.style.cssText='padding:7px 14px;font-size:13px;flex:0';
+  btnCerrar.textContent='← Menú';
+  btnCerrar.onclick=()=>{ov.remove();showMenu();};
+  const titulo=document.createElement('div');
+  titulo.style.cssText='font-size:15px;font-weight:600;color:var(--t)';
+  titulo.textContent='📋 Registros de autorizaciones';
+  const spacer=document.createElement('div');
+  spacer.style.width='80px';
+  hdr.appendChild(btnCerrar);
+  hdr.appendChild(titulo);
+  hdr.appendChild(spacer);
+  ov.appendChild(hdr);
+
+  // Contenido
+  const body=document.createElement('div');
+  body.style.cssText='padding:12px 16px;flex:1;overflow-y:auto';
+
+  if(!regs.length){
+    body.innerHTML='<div style="text-align:center;padding:40px;color:var(--t3)"><div style="font-size:36px;margin-bottom:8px">📋</div><div>No hay registros aún</div></div>';
+  } else {
+    regs.forEach(r=>{
+      const card=document.createElement('div');
+      card.className='card';
+      card.style.marginBottom='10px';
+      
+      // Header card
+      const cardTop=document.createElement('div');
+      cardTop.style.cssText='display:flex;justify-content:space-between;align-items:center;margin-bottom:8px';
+      cardTop.innerHTML='<div><div style="font-size:15px;font-weight:700;color:var(--t)">'+r.placa+'</div><div style="font-size:12px;color:var(--t3)">'+r.modelo+' · '+r.fecha+'</div></div>'
+        +'<div style="text-align:right"><div style="font-size:13px;font-weight:600;color:var(--green-t)">Q '+(r.totalAuth||0).toLocaleString('es-GT',{minimumFractionDigits:2})+'</div><div style="font-size:10px;color:var(--t3)">Autorizado</div></div>';
+      card.appendChild(cardTop);
+
+      // Autorizados
+      if(r.autorizados&&r.autorizados.length){
+        const lbl=document.createElement('div');
+        lbl.style.cssText='font-size:11px;font-weight:600;color:var(--t2);margin-bottom:4px';
+        lbl.textContent='Trabajos autorizados:';
+        card.appendChild(lbl);
+        r.autorizados.forEach(a=>{
+          const row=document.createElement('div');
+          row.style.cssText='font-size:12px;padding:3px 0;border-bottom:1px solid var(--b);display:flex;justify-content:space-between';
+          row.innerHTML='<span>'+a.desc+'</span><span style="font-family:"DM Mono",monospace;color:var(--green-t)">Q '+(a.total||0).toLocaleString()+'</span>';
+          card.appendChild(row);
+        });
+      }
+
+      // Pendientes
+      if(r.pendientes&&r.pendientes.length){
+        const lbl2=document.createElement('div');
+        lbl2.style.cssText='font-size:11px;font-weight:600;color:var(--red-t);margin:8px 0 4px';
+        lbl2.textContent='Trabajos pendientes:';
+        card.appendChild(lbl2);
+        r.pendientes.forEach(a=>{
+          const row=document.createElement('div');
+          row.style.cssText='font-size:12px;padding:3px 0;border-bottom:1px solid var(--b);display:flex;justify-content:space-between';
+          row.innerHTML='<span style="color:var(--t2)">'+a.desc+'</span><span style="font-family:"DM Mono",monospace;color:var(--red-t)">Q '+(a.total||0).toLocaleString()+'</span>';
+          card.appendChild(row);
+        });
+      }
+
+      // Pintura
+      if(r.totalPintura){
+        const paintRow=document.createElement('div');
+        paintRow.style.cssText='margin-top:8px;padding:6px 8px;background:var(--purple-bg);border-radius:var(--rsm);display:flex;justify-content:space-between;font-size:12px';
+        paintRow.innerHTML='<span style="color:var(--purple-t)">🎨 Pintura (estimado)</span><span style="font-family:"DM Mono",monospace;color:var(--purple-t)">Q '+(r.totalPintura||0).toLocaleString()+'</span>';
+        card.appendChild(paintRow);
+      }
+
+      // Total inversión
+      const totalRow=document.createElement('div');
+      totalRow.style.cssText='margin-top:8px;padding:8px;background:var(--blue-bg);border-radius:var(--rsm);display:flex;justify-content:space-between;font-size:13px;font-weight:600';
+      totalRow.innerHTML='<span style="color:var(--blue-t)">Total inversión vehículo</span><span style="font-family:"DM Mono",monospace;color:var(--blue-t)">Q '+(r.totalInversion||r.totalAuth||0).toLocaleString('es-GT',{minimumFractionDigits:2})+'</span>';
+      card.appendChild(totalRow);
+
+      body.appendChild(card);
+    });
+  }
+  ov.appendChild(body);
+  document.body.appendChild(ov);
+}
+
+
 function openModulo(mod){
   document.getElementById("main-menu").style.display="none";
   if(mod==="inspeccion"){
