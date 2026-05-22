@@ -2026,7 +2026,7 @@ function T_renderEtapa(id){
   const total=puntos.length;
   ab.innerHTML=`
     ${prev?`<button class="btn-sec" onclick="T_goEtapa('${prev.id}')">← ${prev.label}</button>`:'<button class="btn-sec" onclick="showMenu()">← Menú</button>'}
-    <button class="btn-sec" onclick="T_guardarBorrador()" style="flex:0.6">💾</button>
+    <button class="btn-sec" onclick="T_guardarRegistro()" style="flex:0.6">💾</button>
     ${next?`<button class="btn-pri" onclick="T_goEtapa('${next.id}')">${next.label} →</button>`:`<button class="btn-pri" onclick="T_goEtapa('cotiz')">Cotización →</button>`}`;
 }
 
@@ -2121,7 +2121,7 @@ async function T_procesarOCR(input){
       st.style.cssText='display:block;background:var(--green-bg);color:var(--green-t);padding:8px 12px;border-radius:var(--rsm);margin-bottom:8px';
       st.textContent='✓ '+T_COTIZACION.length+' ítem(s) extraídos correctamente';
       T_renderCotizList();
-      document.getElementById('action-bar').innerHTML=`<button class="btn-sec" onclick="T_goEtapa('prueba')">← Volver</button><button class="btn-pri" onclick="T_guardarBorrador()">💾 Guardar cotización</button>`;
+      document.getElementById('action-bar').innerHTML=`<button class="btn-sec" onclick="T_goEtapa('prueba')">← Volver</button><button class="btn-pri" onclick="T_guardarRegistro()">💾 Guardar en Sheets</button>`;
     }catch(e){
       st.style.cssText='display:block;background:var(--amber-bg);color:var(--amber-t);padding:8px 12px;border-radius:var(--rsm);margin-bottom:8px';
       st.textContent='⚠ No se pudo leer — ingrese los ítems manualmente';
@@ -2139,7 +2139,7 @@ function T_addManual(){
   T_COTIZACION.push({descripcion:desc,cantidad:cant,precioUnit:precio,total:cant*precio});
   document.getElementById('m-desc').value='';document.getElementById('m-precio').value='';
   T_renderCotizList();
-  document.getElementById('action-bar').innerHTML=`<button class="btn-sec" onclick="T_goEtapa('prueba')">← Volver</button><button class="btn-pri" onclick="T_guardarBorrador()">💾 Guardar cotización</button>`;
+  document.getElementById('action-bar').innerHTML=`<button class="btn-sec" onclick="T_goEtapa('prueba')">← Volver</button><button class="btn-pri" onclick="T_guardarRegistro()">💾 Guardar en Sheets</button>`;
   showToast('✓ Ítem agregado',false);
 }
 
@@ -2333,6 +2333,7 @@ async function T_guardarYEnviar(){
 
 
 async function T_guardarRegistro(){
+  console.log('T_guardarRegistro llamada, VEH:', T_VEH?.placa);
   if(!T_VEH?.placa){showToast('⚠ No hay vehículo cargado');return;}
   T_showProgress('Guardando en Sheets...','Un momento...');
   try{
