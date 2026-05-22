@@ -2342,7 +2342,7 @@ async function T_guardarRegistro(){
       return[T_VEH.placa,fecha,p?.q?.substring(0,80)||k,v.val,v.obs||'—'];
     });
     const totalCotiz=T_COTIZACION.reduce((s,i)=>s+(i.total||0),0);
-    await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({
+    const payload={
       action:'saveTallerRevision',
       placa:T_VEH.placa,modelo:T_VEH.modelo,fecha,
       inspector:T_VEH.inspector||'—',
@@ -2356,7 +2356,12 @@ async function T_guardarRegistro(){
       hallazgos,
       asesores:ASESORES.filter(a=>a),
       produccion:PROD_DEST.filter(a=>a),
-    })});
+    };
+    console.log('Guardando en Sheets:', payload);
+    const res=await fetch(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const resData=await res.json();
+    console.log('Respuesta Sheets:', resData);
+    if(resData.error)throw new Error(resData.error);
     // Guardar local también
     try{
       localStorage.setItem('taller_borrador_'+T_VEH.placa, JSON.stringify({
