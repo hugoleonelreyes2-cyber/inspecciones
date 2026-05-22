@@ -2358,10 +2358,9 @@ async function T_guardarRegistro(){
       produccion:PROD_DEST.filter(a=>a),
     };
     console.log('Guardando en Sheets:', payload);
-    const res=await fetch(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-    const resData=await res.json();
+    // Usar la misma función gPost que usa la inspección inicial
+    const resData=await gPost(payload);
     console.log('Respuesta Sheets:', resData);
-    if(resData.error)throw new Error(resData.error);
     // Guardar local también
     try{
       localStorage.setItem('taller_borrador_'+T_VEH.placa, JSON.stringify({
