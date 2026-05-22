@@ -1654,9 +1654,10 @@ function T_showProgress(msg,step){
   const ov=document.getElementById('taller-progress-overlay');
   const ms=document.getElementById('taller-progress-msg');
   const st=document.getElementById('taller-progress-step');
-  if(ms)ms.textContent=msg;
+  if(ms)ms.textContent=msg||'';
   if(st)st.textContent=step||'';
-  if(ov){ov.style.display='flex';}
+  if(ov)ov.style.display='flex';
+  else console.log('Progress:',msg,step);
 }
 function T_updateProgress(msg,step){
   const ms=document.getElementById('taller-progress-msg');
@@ -1846,11 +1847,18 @@ async function T_buscarVehiculo(){
       if(row){
         const get=(h)=>row[headers.indexOf(h)]||'';
         T_VEH={
-          placa:get('Placa'),modelo:get('Modelo'),color:get('Color'),km:get('Km'),
-          inspector:get('Inspector'),fecha:get('Fecha'),
-          chasis:get('Chasis'),motor:get('Motor'),
+          placa:get('Placa'),
+          modelo:get('Modelo'),
+          color:get('Color'),
+          km:String(get('Km')||'—'),
+          inspector:get('Inspector'),
+          fecha:get('Fecha')||new Date().toLocaleDateString('es-GT'),
+          chasis:get('Chasis'),
+          motor:get('Motor'),
           hallazgos:[],
           folderLink:get('Carpeta Drive'),
+          totalPintura:0,
+          hallazgosPintura:[],
         };
         // Leer hallazgos desde Sheets
         const hResp=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'getHallazgos',id:get('ID')})});
