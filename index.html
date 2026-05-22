@@ -534,6 +534,86 @@ textarea{resize:vertical;line-height:1.5}
 
 // ── NAVEGACIÓN PRINCIPAL (definidas primero para HTML inline) ──
 let moduloActual='menu';
+async function REG_descargarPDF(){
+  showToast('⏳ Generando PDF...', false);
+  try{
+    // Get hallazgos
+    const r=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({
+      action:'getHallazgosTaller',
+      placa:REG_detalle.placa,
+      fecha:REG_detalle.fecha
+    })});
+    const d=await r.json();
+    const hallazgos=d.data||[];
+
+    const {jsPDF}=window.jspdf;
+    const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+    let y=20;
+
+    // Header
+    doc.setFontSize(16);doc.setFont('helvetica','bold');doc.setTextColor(27,111,216);
+    doc.text('REVISIÓN TÉCNICA DE TALLER',105,y,{align:'center'});y+=8;
+    doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(100);
+    doc.text('División Vehículos Usados  ·  '+REG_detalle.fecha,105,y,{align:'center'});y+=12;
+
+    // Datos vehículo
+    doc.setFillColor(27,111,216);doc.rect(10,y-4,190,7,'F');
+    doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(255,255,255);
+    doc.text('DATOS DEL VEHÍCULO',14,y+0.5);y+=12;
+    doc.setTextColor(0,0,0);doc.setFont('helvetica','normal');
+    doc.text('Placa: '+REG_detalle.placa,14,y);
+    doc.text('Modelo: '+(REG_detalle.modelo||'—'),80,y);y+=6;
+    doc.text('Inspector: '+(REG_detalle.inspector||'—'),14,y);
+    doc.text('Hallazgos: '+REG_detalle.totalHallazgos,80,y);y+=10;
+
+    // Estado
+    const est=ESTADOS[REG_detalle.estado]||ESTADOS.sin_inversion;
+    doc.setFillColor(240,240,240);doc.rect(10,y-4,190,7,'F');
+    doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(0,0,0);
+    doc.text('ESTADO: '+est.label,14,y+0.5);y+=12;
+
+    // Hallazgos
+    if(hallazgos.length){
+      doc.setFillColor(27,111,216);doc.rect(10,y-4,190,7,'F');
+      doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(255,255,255);
+      doc.text('HALLAZGOS DETECTADOS ('+hallazgos.length+')',14,y+0.5);y+=10;
+      doc.setTextColor(0,0,0);doc.setFont('helvetica','normal');
+      hallazgos.forEach((h,i)=>{
+        if(y>270){doc.addPage();y=20;}
+        doc.setFont('helvetica','bold');
+        doc.text((i+1)+'. '+String(h[2]||'').substring(0,60),14,y);y+=5;
+        doc.setFont('helvetica','normal');
+        if(h[4]&&h[4]!=='—'){
+          const lines=doc.splitTextToSize('Obs: '+h[4],170);
+          doc.text(lines,18,y);y+=lines.length*4+2;
+        }
+        if(h[5]&&h[5]!=='—'){
+          doc.setTextColor(27,111,216);
+          doc.text('Foto: '+String(h[5]).substring(0,80),18,y);
+          doc.setTextColor(0,0,0);
+          y+=5;
+        }
+        y+=2;
+      });
+    } else {
+      doc.text('Sin hallazgos registrados.',14,y);y+=10;
+    }
+
+    // Footer
+    if(y>260)doc.addPage();
+    doc.setFontSize(8);doc.setTextColor(150);
+    doc.text('Sistema de Inspecciones — División Vehículos Usados',105,285,{align:'center'});
+
+    const fname='Revision_Taller_'+REG_detalle.placa+'_'+REG_detalle.fecha.replace(/\//g,'-')+'.pdf';
+    doc.save(fname);
+    showToast('✅ PDF descargado', false);
+  }catch(e){
+    showToast('⚠ Error generando PDF: '+e.message);
+    console.error(e);
+  }
+}
+
+
 function showMenu(){
   const menu=document.getElementById('main-menu');
   const taller=document.getElementById('taller-modulo');
@@ -1822,8 +1902,6 @@ const ETAPAS=[
   {id:'alto',  label:'Altura sup.',  ico:'⬆️',sub:'Mecánico debajo'},
   {id:'capo',  label:'Capó abierto', ico:'🔧',sub:'Motor'},
   {id:'prueba',label:'Prueba din.',  ico:'🚦',sub:'En movimiento'},
-  {id:'cotiz', label:'Cotización',   ico:'📄',sub:'OCR / manual'},
-  {id:'auth',  label:'Autorizar',    ico:'✅',sub:'Con clave'},
 ];
 
 function T_initST(){
@@ -2052,7 +2130,7 @@ function T_renderEtapa(id){
     c.appendChild(div);
   });
 
-  const etapas=ETAPAS.filter(e=>e.id!=='cotiz'&&e.id!=='auth');
+  const etapas=ETAPAS;
   const idx=etapas.findIndex(e=>e.id===id);
   const prev=etapas[idx-1];
   const next=etapas[idx+1];
@@ -2061,7 +2139,7 @@ function T_renderEtapa(id){
   ab.innerHTML=`
     ${prev?`<button class="btn-sec" onclick="T_goEtapa('${prev.id}')">← ${prev.label}</button>`:'<button class="btn-sec" onclick="showMenu()">← Menú</button>'}
     <button class="btn-sec" onclick="T_guardarRegistro()" style="flex:0.6">💾</button>
-    ${next?`<button class="btn-pri" onclick="T_goEtapa('${next.id}')">${next.label} →</button>`:`<button class="btn-pri" onclick="T_goEtapa('cotiz')">Cotización →</button>`}`;
+    ${next?`<button class="btn-pri" onclick="T_goEtapa('${next.id}')">${next.label} →</button>`:`<button class="btn-pri" onclick="T_guardarRegistro()">💾 Guardar registro</button>`}`;
 }
 
 function T_setV(id,val,btn){
@@ -2368,14 +2446,49 @@ async function T_guardarYEnviar(){
 
 async function T_guardarRegistro(){
   if(!T_VEH?.placa){showToast('⚠ No hay vehículo cargado');return;}
-  showToast('☁ Guardando en Sheets...',false);
+
+  // 1. Validar que todos los puntos estén respondidos
+  const sinResponder=Object.values(PUNTOS).flat().filter(p=>!T_ST[p.id]?.val);
+  if(sinResponder.length>0){
+    showToast('⚠ Faltan '+sinResponder.length+' punto(s) por responder');
+    return;
+  }
+
+  // 2. Mostrar progreso
+  T_showProgress('Preparando registro...','Paso 1 de 4');
+  const overlay=document.getElementById('taller-progress-overlay');
+  if(overlay)overlay.style.display='flex';
+
   try{
     const fecha=new Date().toLocaleDateString('es-GT');
-    const hallazgos=Object.entries(T_ST).filter(([k,v])=>v.val==='mal').map(([k,v])=>{
+
+    // 3. Subir fotos de hallazgos a Drive
+    T_updateProgress('Subiendo fotos...','Paso 2 de 4');
+    const hallazgos=[];
+    for(const [k,v] of Object.entries(T_ST)){
       const p=Object.values(PUNTOS).flat().find(x=>x.id===k);
-      return[T_VEH.placa,fecha,p?.q?.substring(0,80)||k,v.val,v.obs||'—'];
-    });
-    const totalCotiz=T_COTIZACION.reduce((s,i)=>s+(i.total||0),0);
+      let fotoLink='—';
+      if(v.val==='mal'&&v.foto&&T_VEH.folderVehId){
+        try{
+          const base64=v.foto.split(',')[1];
+          const mimeType=v.foto.split(';')[0].split(':')[1]||'image/jpeg';
+          const fr=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({
+            action:'uploadPhoto',
+            base64,mimeType,
+            filename:'taller_'+k+'_'+T_VEH.placa+'.jpg',
+            folderId:T_VEH.folderVehId
+          })});
+          const fd=await fr.json();
+          if(fd.webViewLink)fotoLink=fd.webViewLink;
+        }catch(fe){console.warn('Error subiendo foto:',fe);}
+      }
+      if(v.val==='mal'){
+        hallazgos.push([T_VEH.placa,fecha,p?.q?.substring(0,80)||k,v.val,v.obs||'—',fotoLink]);
+      }
+    }
+
+    // 4. Guardar en Sheets
+    T_updateProgress('Guardando en Sheets...','Paso 3 de 4');
     const payload={
       action:'saveTallerRevision',
       placa:T_VEH.placa,
@@ -2383,26 +2496,29 @@ async function T_guardarRegistro(){
       fecha,
       inspector:T_VEH.inspector||'—',
       totalHallazgos:hallazgos.length,
-      totalAutorizado:totalCotiz,
+      totalAutorizado:0,
       totalPendiente:0,
       totalPintura:T_VEH.totalPintura||0,
-      totalInversion:totalCotiz+(T_VEH.totalPintura||0),
-      trabajosAutorizados:T_COTIZACION.map(i=>i.descripcion+' Q'+(i.total||0)).join(' | ')||'—',
+      totalInversion:0,
+      trabajosAutorizados:'—',
       trabajosPendientes:'—',
       hallazgos,
       asesores:ASESORES.filter(a=>a),
       produccion:PROD_DEST.filter(a=>a),
     };
-    const resp=await fetch(SCRIPT_URL,{
-      method:'POST',
-      body:JSON.stringify(payload)
-    });
+    const resp=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify(payload)});
     const data=await resp.json();
     if(data.error)throw new Error(data.error);
-    // Guardar local
-    try{localStorage.setItem('taller_borrador_'+T_VEH.placa,JSON.stringify({placa:T_VEH.placa,fecha,st:T_ST,cotizacion:T_COTIZACION}));}catch(e){}
-    showToast('✅ Guardado correctamente en Sheets',false);
+
+    T_updateProgress('Finalizando...','Paso 4 de 4');
+    await new Promise(r=>setTimeout(r,600));
+
+    T_hideProgress();
+    showToast('✅ Revisión guardada correctamente',false);
+    await new Promise(r=>setTimeout(r,1200));
+    showMenu();
   }catch(e){
+    T_hideProgress();
     showToast('⚠ Error: '+e.message);
     console.error('Error guardando:',e);
   }
@@ -2415,8 +2531,7 @@ function T_guardarBorrador(){
       placa:T_VEH?.placa||'',
       fecha:new Date().toLocaleDateString('es-GT'),
       st:T_ST,
-      cotizacion:T_COTIZACION,
-      autorizados:Array.from(T_AUTORIZADOS),
+
     };
     if(T_VEH?.placa){
       localStorage.setItem('taller_borrador_'+T_VEH.placa, JSON.stringify(borrador));
@@ -2902,6 +3017,8 @@ async function REG_verDetalle(idx){
         <div><span style="color:var(--t3)">Hallazgos:</span> ${REG_detalle.totalHallazgos||0}</div>
       </div>
     </div>
+
+    <button onclick="REG_descargarPDF()" style="width:100%;padding:11px;background:var(--sf2);color:var(--t);border:1px solid var(--b2);border-radius:var(--rsm);font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;margin-bottom:14px">📄 Descargar PDF de revisión</button>
 
     <div id="reg-cotizacion-section">
       ${cotizacion ? REG_renderCotizacionHTML(cotizacion) : `
