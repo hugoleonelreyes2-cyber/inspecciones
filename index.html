@@ -257,54 +257,43 @@ textarea{resize:vertical;line-height:1.5}
       </div>
       <span style="margin-left:auto;color:var(--t3);font-size:18px">›</span>
     </button>
-    <button onclick="openModulo('cotizaciones')" style="width:100%;padding:20px;margin-bottom:14px;background:var(--sf);border:1px solid var(--b);border-radius:var(--rlg);cursor:pointer;font-family:'DM Sans',sans-serif;text-align:left;display:flex;align-items:center;gap:16px">
-      <span style="font-size:32px">💰</span>
+    <button onclick="openModulo('registros')" style="width:100%;padding:20px;margin-bottom:14px;background:var(--sf);border:1px solid var(--b);border-radius:var(--rlg);cursor:pointer;font-family:'DM Sans',sans-serif;text-align:left;display:flex;align-items:center;gap:16px">
+      <span style="font-size:32px">📊</span>
       <div>
-        <div style="font-size:15px;font-weight:600;color:var(--t);margin-bottom:3px">Cotizaciones</div>
-        <div style="font-size:12px;color:var(--t3)">Para técnicos — Agregar, editar o eliminar trabajos</div>
+        <div style="font-size:15px;font-weight:600;color:var(--t);margin-bottom:3px">Registros</div>
+        <div style="font-size:12px;color:var(--t3)">Cotizaciones, autorizaciones e historial</div>
       </div>
       <span style="margin-left:auto;color:var(--t3);font-size:18px">›</span>
     </button>
-    <button onclick="openModulo('autorizaciones')" style="width:100%;padding:20px;margin-bottom:14px;background:var(--sf);border:1px solid var(--b);border-radius:var(--rlg);cursor:pointer;font-family:'DM Sans',sans-serif;text-align:left;display:flex;align-items:center;gap:16px">
-      <span style="font-size:32px">✅</span>
+    <button onclick="openModulo('configuracion')" style="width:100%;padding:20px;margin-bottom:14px;background:var(--sf);border:1px solid var(--b);border-radius:var(--rlg);cursor:pointer;font-family:'DM Sans',sans-serif;text-align:left;display:flex;align-items:center;gap:16px">
+      <span style="font-size:32px">⚙️</span>
       <div>
-        <div style="font-size:15px;font-weight:600;color:var(--t);margin-bottom:3px">Autorizaciones</div>
-        <div style="font-size:12px;color:var(--t3)">Para asesores — Aprobar o rechazar trabajos cotizados</div>
+        <div style="font-size:15px;font-weight:600;color:var(--t);margin-bottom:3px">Configuración</div>
+        <div style="font-size:12px;color:var(--t3)">Costos, correos y accesos</div>
       </div>
       <span style="margin-left:auto;color:var(--t3);font-size:18px">›</span>
     </button>
-    <button onclick="verRegistrosTaller()" style="width:100%;padding:20px;margin-bottom:14px;background:var(--sf);border:1px solid var(--b);border-radius:var(--rlg);cursor:pointer;font-family:'DM Sans',sans-serif;text-align:left;display:flex;align-items:center;gap:16px">
-      <span style="font-size:32px">📋</span>
-      <div>
-        <div style="font-size:15px;font-weight:600;color:var(--t);margin-bottom:3px">Registros de autorizaciones</div>
-        <div style="font-size:12px;color:var(--t3)">Historial de revisiones y trabajos autorizados</div>
-      </div>
-      <span style="margin-left:auto;color:var(--t3);font-size:18px">›</span>
-    </button>
-    <div style="margin-top:24px;border-top:1px solid var(--b);padding-top:20px">
-      <button onclick="T_showConfig()" style="padding:8px 16px;border:1px solid var(--b2);border-radius:var(--rsm);background:var(--sf2);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--t2)">⚙ Configuración taller</button>
-    </div>
   </div>
 </div>
 
-<!-- MÓDULO COTIZACIONES -->
-<div id="cotizaciones-modulo" style="display:none;position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;height:100%;background:var(--bg);z-index:490;overflow-y:auto">
+<!-- MÓDULO REGISTROS -->
+<div id="registros-modulo" style="display:none;position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;height:100%;background:var(--bg);z-index:490;overflow-y:auto">
   <div style="background:var(--sf);border-bottom:1px solid var(--b);padding:11px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10">
     <button onclick="showMenu()" style="padding:6px 12px;border:1px solid var(--b);border-radius:var(--rsm);background:transparent;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--t2)">☰ Menú</button>
-    <div style="font-size:14px;font-weight:600;color:var(--t)">💰 Cotizaciones</div>
+    <div style="font-size:14px;font-weight:600;color:var(--t)">📊 Registros</div>
     <div style="width:60px"></div>
   </div>
-  <div id="cot-app"></div>
+  <div id="reg-app"></div>
 </div>
 
-<!-- MÓDULO AUTORIZACIONES -->
-<div id="autorizaciones-modulo" style="display:none;position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;height:100%;background:var(--bg);z-index:490;overflow-y:auto">
+<!-- MÓDULO CONFIGURACION -->
+<div id="configuracion-modulo" style="display:none;position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;height:100%;background:var(--bg);z-index:490;overflow-y:auto">
   <div style="background:var(--sf);border-bottom:1px solid var(--b);padding:11px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10">
     <button onclick="showMenu()" style="padding:6px 12px;border:1px solid var(--b);border-radius:var(--rsm);background:transparent;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--t2)">☰ Menú</button>
-    <div style="font-size:14px;font-weight:600;color:var(--t)">✅ Autorizaciones</div>
+    <div style="font-size:14px;font-weight:600;color:var(--t)">⚙️ Configuración</div>
     <div style="width:60px"></div>
   </div>
-  <div id="aut-app"></div>
+  <div id="cfg-app"></div>
 </div>
 
 <!-- MÓDULO TALLER -->
@@ -2792,11 +2781,10 @@ function verRegistrosTaller(){
 
 
 function openModulo(mod){
+  const mods=['registros-modulo','configuracion-modulo','taller-modulo','cotizaciones-modulo','autorizaciones-modulo'];
   document.getElementById("main-menu").style.display="none";
   document.getElementById("app").style.display="none";
-  document.getElementById("taller-modulo").style.display="none";
-  document.getElementById("cotizaciones-modulo").style.display="none";
-  document.getElementById("autorizaciones-modulo").style.display="none";
+  mods.forEach(m=>{const el=document.getElementById(m);if(el)el.style.display="none";});
   if(mod==="inspeccion"){
     document.getElementById("app").style.display="block";
     moduloActual="inspeccion";
@@ -2804,275 +2792,459 @@ function openModulo(mod){
     document.getElementById("taller-modulo").style.display="block";
     moduloActual="taller";
     const appEl=document.getElementById("taller-app");
-    appEl.innerHTML="<div id=\"app\"></div>";
+    appEl.innerHTML='<div id="app"></div>';
     T_renderBusqueda();
-  } else if(mod==="cotizaciones"){
-    document.getElementById("cotizaciones-modulo").style.display="block";
-    moduloActual="cotizaciones";
-    COT_renderBusqueda();
-  } else if(mod==="autorizaciones"){
-    document.getElementById("autorizaciones-modulo").style.display="block";
-    moduloActual="autorizaciones";
-    AUT_renderBusqueda();
+  } else if(mod==="registros"){
+    document.getElementById("registros-modulo").style.display="block";
+    moduloActual="registros";
+    REG_render();
+  } else if(mod==="configuracion"){
+    document.getElementById("configuracion-modulo").style.display="block";
+    moduloActual="configuracion";
+    CFG_render();
   }
 }
 
 function showMenu(){
+  const mods=['registros-modulo','configuracion-modulo','taller-modulo','cotizaciones-modulo','autorizaciones-modulo'];
   document.getElementById("main-menu").style.display="block";
-  document.getElementById("taller-modulo").style.display="none";
   document.getElementById("app").style.display="none";
-  document.getElementById("cotizaciones-modulo").style.display="none";
-  document.getElementById("autorizaciones-modulo").style.display="none";
+  mods.forEach(m=>{const el=document.getElementById(m);if(el)el.style.display="none";});
   moduloActual="menu";
 }
 
-// ══════════════════════════════════════
-// MÓDULO COTIZACIONES
-// ══════════════════════════════════════
-let COT_placa='', COT_items=[], COT_rowIndex=-1;
+// ══════════════════════════════════════════════════════
+// MÓDULO REGISTROS — Lista integrada + Cotización + Auth
+// ══════════════════════════════════════════════════════
 
-function COT_renderBusqueda(){
-  document.getElementById('cot-app').innerHTML=`
-    <div style="padding:24px 16px">
-      <div style="text-align:center;margin-bottom:28px">
-        <div style="font-size:40px;margin-bottom:8px">💰</div>
-        <div style="font-size:18px;font-weight:700;color:var(--t)">Cotizaciones</div>
-        <div style="font-size:12px;color:var(--t3);margin-top:4px">Busque el vehículo por placa para editar su cotización</div>
-      </div>
-      <div style="margin-bottom:16px">
-        <label style="font-size:12px;color:var(--t2);font-weight:500">Número de placa</label>
-        <input id="cot-placa-input" type="text" placeholder="EJ. P880CZR" style="width:100%;padding:12px;border:1px solid var(--b);border-radius:var(--rsm);font-size:15px;background:var(--sf);color:var(--t);box-sizing:border-box;margin-top:6px;text-transform:uppercase">
-      </div>
-      <button onclick="COT_buscar()" style="width:100%;padding:14px;background:var(--blue);color:#fff;border:none;border-radius:var(--rsm);font-size:15px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">🔍 Buscar vehículo</button>
-      <div id="cot-resultado" style="margin-top:20px"></div>
-    </div>`;
-  const inp=document.getElementById('cot-placa-input');
-  inp.addEventListener('keydown',e=>{if(e.key==='Enter')COT_buscar();});
-}
+const ESTADOS = {
+  sin_inversion: {label:'Sin inversiones', color:'var(--t3)', bg:'var(--sf2)', border:'var(--b)'},
+  pend_autorizar: {label:'Pend. autorizar', color:'#B45309', bg:'#FEF3C7', border:'#FCD34D'},
+  autorizada:     {label:'Autorizada',      color:'var(--green)', bg:'var(--green-bg)', border:'var(--green-b)'},
+  no_invierte:    {label:'No se invierte',  color:'var(--red)', bg:'var(--red-bg)', border:'var(--red)'},
+};
 
-async function COT_buscar(){
-  const placa=document.getElementById('cot-placa-input').value.trim().toUpperCase();
-  if(!placa){showToast('⚠ Ingrese una placa');return;}
-  const res=document.getElementById('cot-resultado');
-  res.innerHTML='<div style="text-align:center;padding:20px;color:var(--t2)">🔍 Buscando...</div>';
+let REG_lista=[], REG_detalle=null, REG_autorizadores=[];
+
+async function REG_render(){
+  const app=document.getElementById('reg-app');
+  app.innerHTML='<div style="padding:20px;text-align:center;color:var(--t2)">🔍 Cargando registros...</div>';
   try{
-    const r=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'getCotizacion',placa})});
+    const r=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'getRegistros'})});
     const d=await r.json();
-    if(d.error||!d.data){res.innerHTML='<div style="text-align:center;padding:20px;color:var(--red)">⚠ No se encontró cotización para esta placa</div>';return;}
-    COT_placa=placa;
-    COT_items=d.data.items||[];
-    COT_rowIndex=d.data.rowIndex||-1;
-    COT_renderEditor();
-  }catch(e){res.innerHTML='<div style="text-align:center;padding:20px;color:var(--red)">⚠ Error: '+e.message+'</div>';}
+    if(d.error)throw new Error(d.error);
+    REG_lista=d.data||[];
+    REG_renderLista();
+  }catch(e){
+    app.innerHTML=`<div style="padding:20px;text-align:center;color:var(--red)">⚠ ${e.message}</div>`;
+  }
 }
 
-function COT_renderEditor(){
-  const total=COT_items.reduce((s,i)=>s+(parseFloat(i.total)||0),0);
-  document.getElementById('cot-app').innerHTML=`
-    <div style="padding:16px">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
-        <button onclick="COT_renderBusqueda()" style="padding:6px 12px;border:1px solid var(--b);border-radius:var(--rsm);background:var(--sf);font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--t2)">← Volver</button>
-        <div style="font-weight:700;font-size:16px;color:var(--t)">💰 ${COT_placa}</div>
-      </div>
-      <div id="cot-lista"></div>
-      <div style="background:var(--amber-bg);border:1px solid var(--amber-b);border-radius:var(--rsm);padding:12px 16px;margin-bottom:16px;display:flex;justify-content:space-between">
-        <span style="font-weight:600;color:var(--t)">Total cotización:</span>
-        <span style="font-weight:700;color:var(--amber-t)">Q ${total.toLocaleString('es-GT',{minimumFractionDigits:2})}</span>
-      </div>
-      <div style="border:1.5px dashed var(--b2);border-radius:var(--rsm);padding:16px;margin-bottom:16px">
-        <div style="font-size:13px;font-weight:600;color:var(--t2);margin-bottom:10px">+ Agregar ítem</div>
-        <input id="cot-desc" type="text" placeholder="Descripción del trabajo" style="width:100%;padding:10px;border:1px solid var(--b);border-radius:var(--rsm);font-size:14px;background:var(--sf);color:var(--t);box-sizing:border-box;margin-bottom:8px">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-          <input id="cot-cant" type="number" placeholder="Cant." value="1" min="1" style="padding:10px;border:1px solid var(--b);border-radius:var(--rsm);font-size:14px;background:var(--sf);color:var(--t)">
-          <input id="cot-precio" type="number" placeholder="Precio unit. Q" min="0" style="padding:10px;border:1px solid var(--b);border-radius:var(--rsm);font-size:14px;background:var(--sf);color:var(--t)">
+function REG_renderLista(){
+  const app=document.getElementById('reg-app');
+  // Ordenar: pend_autorizar primero, luego sin_inversion, luego autorizada, luego no_invierte, por fecha desc dentro de cada grupo
+  const orden={pend_autorizar:0,sin_inversion:1,autorizada:2,no_invierte:3};
+  const sorted=[...REG_lista].sort((a,b)=>{
+    const oa=orden[a.estado]??1, ob=orden[b.estado]??1;
+    if(oa!==ob)return oa-ob;
+    return new Date(b.fecha)-new Date(a.fecha);
+  });
+  if(!sorted.length){
+    app.innerHTML='<div style="padding:40px 20px;text-align:center;color:var(--t3)">Sin registros aún</div>';
+    return;
+  }
+  app.innerHTML=`<div style="padding:16px">
+    <div style="font-size:12px;color:var(--t3);margin-bottom:12px">${sorted.length} registro(s)</div>
+    ${sorted.map((r,i)=>{
+      const est=ESTADOS[r.estado]||ESTADOS.sin_inversion;
+      return`<div onclick="REG_verDetalle(${i})" style="background:var(--sf);border:1px solid var(--b);border-radius:var(--rsm);padding:14px;margin-bottom:10px;cursor:pointer;display:flex;align-items:center;gap:12px">
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+            <span style="font-weight:700;font-size:15px;color:var(--t)">${r.placa}</span>
+            <span style="font-size:10px;padding:2px 8px;border-radius:20px;font-weight:600;background:${est.bg};color:${est.color};border:1px solid ${est.border}">${est.label}</span>
+          </div>
+          <div style="font-size:12px;color:var(--t2)">${r.modelo||'—'} · ${r.inspector||'—'}</div>
+          <div style="font-size:11px;color:var(--t3);margin-top:2px">${r.fecha||'—'}</div>
+          ${r.totalAutorizado>0?`<div style="font-size:12px;color:var(--green);font-weight:600;margin-top:4px">Q ${parseFloat(r.totalAutorizado).toLocaleString('es-GT',{minimumFractionDigits:2})} autorizado</div>`:''}
         </div>
-        <button onclick="COT_agregar()" style="width:100%;padding:12px;background:var(--blue);color:#fff;border:none;border-radius:var(--rsm);font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">+ Agregar</button>
-      </div>
-      <button onclick="COT_guardar()" style="width:100%;padding:14px;background:var(--green);color:#fff;border:none;border-radius:var(--rsm);font-size:15px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">💾 Guardar cambios</button>
-    </div>`;
-  COT_renderLista();
+        <span style="color:var(--t3);font-size:18px">›</span>
+      </div>`;
+    }).join('')}
+  </div>`;
 }
 
-function COT_renderLista(){
-  const lista=document.getElementById('cot-lista');
-  if(!COT_items.length){lista.innerHTML='<div style="text-align:center;padding:16px;color:var(--t3);font-size:13px">Sin ítems aún</div>';return;}
-  lista.innerHTML=COT_items.map((it,i)=>`
-    <div style="background:var(--sf);border:1px solid var(--b);border-radius:var(--rsm);padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px">
-      <div style="flex:1">
-        <div style="font-size:13px;font-weight:600;color:var(--t)">${it.descripcion}</div>
-        <div style="font-size:11px;color:var(--t3)">${it.cantidad} × Q ${parseFloat(it.precio||0).toLocaleString('es-GT',{minimumFractionDigits:2})}</div>
+async function REG_verDetalle(idx){
+  REG_detalle=REG_lista[idx];
+  const app=document.getElementById('reg-app');
+  const est=ESTADOS[REG_detalle.estado]||ESTADOS.sin_inversion;
+  
+  // Load cotizacion if exists
+  let cotizacion=null;
+  try{
+    const r=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'getCotizacion',placa:REG_detalle.placa})});
+    const d=await r.json();
+    if(!d.error&&d.data)cotizacion=d.data;
+  }catch(e){}
+
+  app.innerHTML=`<div style="padding:16px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+      <button onclick="REG_render()" style="padding:6px 12px;border:1px solid var(--b);border-radius:var(--rsm);background:var(--sf);font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--t2)">← Volver</button>
+      <div style="font-weight:700;font-size:16px;color:var(--t)">${REG_detalle.placa}</div>
+      <span style="font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600;background:${est.bg};color:${est.color};border:1px solid ${est.border}">${est.label}</span>
+    </div>
+
+    <div style="background:var(--sf);border:1px solid var(--b);border-radius:var(--rsm);padding:14px;margin-bottom:14px">
+      <div style="font-size:12px;font-weight:600;color:var(--t2);margin-bottom:8px">REVISIÓN DE TALLER</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:13px">
+        <div><span style="color:var(--t3)">Modelo:</span> ${REG_detalle.modelo||'—'}</div>
+        <div><span style="color:var(--t3)">Fecha:</span> ${REG_detalle.fecha||'—'}</div>
+        <div><span style="color:var(--t3)">Inspector:</span> ${REG_detalle.inspector||'—'}</div>
+        <div><span style="color:var(--t3)">Hallazgos:</span> ${REG_detalle.totalHallazgos||0}</div>
       </div>
-      <div style="font-weight:700;color:var(--t);font-size:14px">Q ${parseFloat(it.total||0).toLocaleString('es-GT',{minimumFractionDigits:2})}</div>
-      <button onclick="COT_editar(${i})" style="padding:4px 8px;border:1px solid var(--b2);border-radius:4px;background:var(--sf2);font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--t2)">✏️</button>
-      <button onclick="COT_eliminar(${i})" style="padding:4px 8px;border:1px solid var(--red-bg);border-radius:4px;background:var(--red-bg);font-size:11px;cursor:pointer;color:var(--red)">✕</button>
-    </div>`).join('');
+    </div>
+
+    <div id="reg-cotizacion-section">
+      ${cotizacion ? REG_renderCotizacionHTML(cotizacion) : `
+        <div style="border:1.5px dashed var(--b2);border-radius:var(--rsm);padding:20px;text-align:center;margin-bottom:14px">
+          <div style="font-size:13px;color:var(--t3);margin-bottom:10px">Sin cotización aún</div>
+          <button onclick="REG_nuevaCotizacion()" style="padding:10px 20px;background:var(--blue);color:#fff;border:none;border-radius:var(--rsm);font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">+ Agregar cotización</button>
+        </div>`}
+    </div>
+
+    <div style="margin-top:8px">
+      <div style="font-size:12px;font-weight:600;color:var(--t2);margin-bottom:8px">CAMBIAR ESTADO</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        ${Object.entries(ESTADOS).map(([k,v])=>`
+          <button onclick="REG_cambiarEstado('${k}')" style="padding:10px;border-radius:var(--rsm);border:1.5px solid ${REG_detalle.estado===k?v.color:v.border};background:${REG_detalle.estado===k?v.bg:'var(--sf)'};color:${REG_detalle.estado===k?v.color:'var(--t2)'};font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">${v.label}</button>
+        `).join('')}
+      </div>
+    </div>
+  </div>`;
 }
 
-function COT_agregar(){
-  const desc=document.getElementById('cot-desc').value.trim();
-  const cant=parseFloat(document.getElementById('cot-cant').value)||1;
-  const precio=parseFloat(document.getElementById('cot-precio').value)||0;
+function REG_renderCotizacionHTML(cot){
+  const items=cot.items||[];
+  const autorizados=new Set((cot.autorizados||[]).map(Number));
+  const total=items.reduce((s,it)=>s+(parseFloat(it.total)||0),0);
+  const totalAuth=items.filter((_,i)=>autorizados.has(i)).reduce((s,it)=>s+(parseFloat(it.total)||0),0);
+  return`<div style="background:var(--sf);border:1px solid var(--b);border-radius:var(--rsm);padding:14px;margin-bottom:14px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div style="font-size:12px;font-weight:600;color:var(--t2)">COTIZACIÓN</div>
+      <button onclick="REG_editarCotizacion()" style="padding:4px 10px;border:1px solid var(--b2);border-radius:4px;background:var(--sf2);font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--t2)">✏️ Editar</button>
+    </div>
+    ${items.map((it,i)=>{
+      const auth=autorizados.has(i);
+      return`<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--b)">
+        <div style="flex:1;font-size:12px;color:var(--t)">${it.descripcion}</div>
+        <div style="font-size:12px;font-weight:600;color:var(--t)">Q ${parseFloat(it.total||0).toLocaleString('es-GT',{minimumFractionDigits:2})}</div>
+        <span style="font-size:10px;padding:2px 6px;border-radius:10px;font-weight:600;${auth?'background:var(--green-bg);color:var(--green)':'background:var(--red-bg);color:var(--red)'}">${auth?'✅':'Pend.'}</span>
+      </div>`;
+    }).join('')}
+    <div style="display:flex;justify-content:space-between;margin-top:10px;padding-top:8px">
+      <span style="font-size:13px;font-weight:600;color:var(--t)">Total: Q ${total.toLocaleString('es-GT',{minimumFractionDigits:2})}</span>
+      <span style="font-size:13px;font-weight:600;color:var(--green)">Auth: Q ${totalAuth.toLocaleString('es-GT',{minimumFractionDigits:2})}</span>
+    </div>
+    <button onclick="REG_autorizar()" style="width:100%;margin-top:12px;padding:12px;background:var(--blue);color:#fff;border:none;border-radius:var(--rsm);font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">🔑 Gestionar autorizaciones</button>
+  </div>`;
+}
+
+let REG_cotEdit=null;
+
+function REG_nuevaCotizacion(){
+  REG_cotEdit={items:[]};
+  REG_renderCotEditor();
+}
+
+async function REG_editarCotizacion(){
+  const r=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'getCotizacion',placa:REG_detalle.placa})});
+  const d=await r.json();
+  REG_cotEdit=d.data||{items:[]};
+  REG_renderCotEditor();
+}
+
+function REG_renderCotEditor(){
+  const items=REG_cotEdit.items||[];
+  const total=items.reduce((s,it)=>s+(parseFloat(it.total)||0),0);
+  document.getElementById('reg-app').innerHTML=`<div style="padding:16px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+      <button onclick="REG_verDetalle(${REG_lista.indexOf(REG_detalle)})" style="padding:6px 12px;border:1px solid var(--b);border-radius:var(--rsm);background:var(--sf);font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--t2)">← Volver</button>
+      <div style="font-weight:700;font-size:15px;color:var(--t)">💰 Cotización — ${REG_detalle.placa}</div>
+    </div>
+    <div id="cot-lista-items">
+      ${items.length?items.map((it,i)=>`
+        <div style="background:var(--sf);border:1px solid var(--b);border-radius:var(--rsm);padding:12px;margin-bottom:8px;display:flex;align-items:center;gap:8px">
+          <div style="flex:1">
+            <div style="font-size:13px;font-weight:600;color:var(--t)">${it.descripcion}</div>
+            <div style="font-size:11px;color:var(--t3)">${it.cantidad} × Q ${parseFloat(it.precio||0).toFixed(2)}</div>
+          </div>
+          <div style="font-weight:700;font-size:13px">Q ${parseFloat(it.total||0).toFixed(2)}</div>
+          <button onclick="REG_cotEliminar(${i})" style="padding:4px 8px;border:1px solid var(--red);border-radius:4px;background:var(--red-bg);font-size:11px;cursor:pointer;color:var(--red)">✕</button>
+        </div>`).join(''):'<div style="text-align:center;padding:16px;color:var(--t3);font-size:13px">Sin ítems</div>'}
+    </div>
+    <div style="background:var(--amber-bg);border:1px solid var(--amber-b);border-radius:var(--rsm);padding:10px 14px;margin-bottom:14px;display:flex;justify-content:space-between">
+      <span style="font-weight:600">Total:</span>
+      <span style="font-weight:700;color:var(--amber-t)">Q ${total.toLocaleString('es-GT',{minimumFractionDigits:2})}</span>
+    </div>
+    <div style="border:1.5px dashed var(--b2);border-radius:var(--rsm);padding:14px;margin-bottom:14px">
+      <div style="font-size:12px;font-weight:600;color:var(--t2);margin-bottom:8px">+ Agregar ítem</div>
+      <input id="rc-desc" type="text" placeholder="Descripción" style="width:100%;padding:10px;border:1px solid var(--b);border-radius:var(--rsm);font-size:14px;background:var(--sf);color:var(--t);box-sizing:border-box;margin-bottom:8px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+        <input id="rc-cant" type="number" placeholder="Cant." value="1" min="1" style="padding:10px;border:1px solid var(--b);border-radius:var(--rsm);font-size:14px;background:var(--sf);color:var(--t)">
+        <input id="rc-precio" type="number" placeholder="Precio unit." min="0" style="padding:10px;border:1px solid var(--b);border-radius:var(--rsm);font-size:14px;background:var(--sf);color:var(--t)">
+      </div>
+      <button onclick="REG_cotAgregar()" style="width:100%;padding:11px;background:var(--blue);color:#fff;border:none;border-radius:var(--rsm);font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">+ Agregar</button>
+    </div>
+    <button onclick="REG_cotGuardar()" style="width:100%;padding:14px;background:var(--green);color:#fff;border:none;border-radius:var(--rsm);font-size:15px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">💾 Guardar cotización</button>
+  </div>`;
+}
+
+function REG_cotAgregar(){
+  const desc=document.getElementById('rc-desc').value.trim();
+  const cant=parseFloat(document.getElementById('rc-cant').value)||1;
+  const precio=parseFloat(document.getElementById('rc-precio').value)||0;
   if(!desc){showToast('⚠ Ingrese una descripción');return;}
-  COT_items.push({descripcion:desc,cantidad:cant,precio,total:cant*precio});
-  document.getElementById('cot-desc').value='';
-  document.getElementById('cot-cant').value='1';
-  document.getElementById('cot-precio').value='';
-  COT_renderEditor();
+  REG_cotEdit.items.push({descripcion:desc,cantidad:cant,precio,total:cant*precio});
+  document.getElementById('rc-desc').value='';
+  document.getElementById('rc-cant').value='1';
+  document.getElementById('rc-precio').value='';
+  REG_renderCotEditor();
 }
 
-function COT_eliminar(i){
-  COT_items.splice(i,1);
-  COT_renderEditor();
+function REG_cotEliminar(i){
+  REG_cotEdit.items.splice(i,1);
+  REG_renderCotEditor();
 }
 
-function COT_editar(i){
-  const it=COT_items[i];
-  const desc=prompt('Descripción:',it.descripcion);
-  if(desc===null)return;
-  const precio=parseFloat(prompt('Precio unitario:',it.precio))||0;
-  const cant=parseFloat(prompt('Cantidad:',it.cantidad))||1;
-  COT_items[i]={descripcion:desc,cantidad:cant,precio,total:cant*precio};
-  COT_renderEditor();
-}
-
-async function COT_guardar(){
-  if(!COT_placa){showToast('⚠ No hay vehículo cargado');return;}
+async function REG_cotGuardar(){
   showToast('☁ Guardando...', false);
   try{
+    const total=REG_cotEdit.items.reduce((s,it)=>s+(parseFloat(it.total)||0),0);
     const r=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({
       action:'saveCotizacion',
-      placa:COT_placa,
-      rowIndex:COT_rowIndex,
-      items:COT_items,
-      total:COT_items.reduce((s,i)=>s+(parseFloat(i.total)||0),0)
+      placa:REG_detalle.placa,
+      modelo:REG_detalle.modelo||'—',
+      rowIndex:REG_cotEdit.rowIndex||-1,
+      items:REG_cotEdit.items,
+      total
     })});
     const d=await r.json();
     if(d.error)throw new Error(d.error);
+    // Update estado to pend_autorizar if sin_inversion
+    if(REG_detalle.estado==='sin_inversion'){
+      await REG_cambiarEstado('pend_autorizar', false);
+    }
     showToast('✅ Cotización guardada', false);
+    REG_verDetalle(REG_lista.indexOf(REG_detalle));
   }catch(e){showToast('⚠ Error: '+e.message);}
 }
 
-// ══════════════════════════════════════
-// MÓDULO AUTORIZACIONES
-// ══════════════════════════════════════
-let AUT_placa='', AUT_items=[], AUT_rowIndex=-1, AUT_autorizados=new Set();
-
-function AUT_renderBusqueda(){
-  document.getElementById('aut-app').innerHTML=`
-    <div style="padding:24px 16px">
-      <div style="text-align:center;margin-bottom:28px">
-        <div style="font-size:40px;margin-bottom:8px">✅</div>
-        <div style="font-size:18px;font-weight:700;color:var(--t)">Autorizaciones</div>
-        <div style="font-size:12px;color:var(--t3);margin-top:4px">Busque el vehículo por placa para aprobar o rechazar trabajos</div>
-      </div>
-      <div style="margin-bottom:16px">
-        <label style="font-size:12px;color:var(--t2);font-weight:500">Número de placa</label>
-        <input id="aut-placa-input" type="text" placeholder="EJ. P880CZR" style="width:100%;padding:12px;border:1px solid var(--b);border-radius:var(--rsm);font-size:15px;background:var(--sf);color:var(--t);box-sizing:border-box;margin-top:6px;text-transform:uppercase">
-      </div>
-      <button onclick="AUT_buscar()" style="width:100%;padding:14px;background:var(--blue);color:#fff;border:none;border-radius:var(--rsm);font-size:15px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">🔍 Buscar vehículo</button>
-      <div id="aut-resultado" style="margin-top:20px"></div>
-    </div>`;
-  const inp=document.getElementById('aut-placa-input');
-  inp.addEventListener('keydown',e=>{if(e.key==='Enter')AUT_buscar();});
-}
-
-async function AUT_buscar(){
-  const placa=document.getElementById('aut-placa-input').value.trim().toUpperCase();
-  if(!placa){showToast('⚠ Ingrese una placa');return;}
-  const res=document.getElementById('aut-resultado');
-  res.innerHTML='<div style="text-align:center;padding:20px;color:var(--t2)">🔍 Buscando...</div>';
+async function REG_cambiarEstado(estado, reload=true){
   try{
-    const r=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'getCotizacion',placa})});
+    const r=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({
+      action:'updateEstado',
+      placa:REG_detalle.placa,
+      estado
+    })});
     const d=await r.json();
-    if(d.error||!d.data){res.innerHTML='<div style="text-align:center;padding:20px;color:var(--red)">⚠ No se encontró cotización para esta placa</div>';return;}
-    AUT_placa=placa;
-    AUT_items=d.data.items||[];
-    AUT_rowIndex=d.data.rowIndex||-1;
-    AUT_autorizados=new Set((d.data.autorizados||[]).map(Number));
-    AUT_renderEditor();
-  }catch(e){res.innerHTML='<div style="text-align:center;padding:20px;color:var(--red)">⚠ Error: '+e.message+'</div>';}
+    if(d.error)throw new Error(d.error);
+    REG_detalle.estado=estado;
+    if(reload){
+      showToast('✅ Estado actualizado', false);
+      REG_verDetalle(REG_lista.indexOf(REG_detalle));
+    }
+  }catch(e){showToast('⚠ Error: '+e.message);}
 }
 
-function AUT_renderEditor(){
-  const totalAuth=AUT_items.filter((_,i)=>AUT_autorizados.has(i)).reduce((s,it)=>s+(parseFloat(it.total)||0),0);
-  const totalPend=AUT_items.filter((_,i)=>!AUT_autorizados.has(i)).reduce((s,it)=>s+(parseFloat(it.total)||0),0);
-  document.getElementById('aut-app').innerHTML=`
-    <div style="padding:16px">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
-        <button onclick="AUT_renderBusqueda()" style="padding:6px 12px;border:1px solid var(--b);border-radius:var(--rsm);background:var(--sf);font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--t2)">← Volver</button>
-        <div style="font-weight:700;font-size:16px;color:var(--t)">✅ ${AUT_placa}</div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">
-        <div style="background:var(--green-bg);border:1px solid var(--green-b);border-radius:var(--rsm);padding:10px;text-align:center">
-          <div style="font-size:11px;color:var(--t2)">Autorizado</div>
-          <div style="font-weight:700;color:var(--green);font-size:15px">Q ${totalAuth.toLocaleString('es-GT',{minimumFractionDigits:2})}</div>
-        </div>
-        <div style="background:var(--red-bg);border:1px solid var(--red);border-radius:var(--rsm);padding:10px;text-align:center">
-          <div style="font-size:11px;color:var(--t2)">Pendiente</div>
-          <div style="font-weight:700;color:var(--red);font-size:15px">Q ${totalPend.toLocaleString('es-GT',{minimumFractionDigits:2})}</div>
-        </div>
-      </div>
-      <div id="aut-lista"></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px">
-        <button onclick="AUT_todos(true)" style="padding:12px;background:var(--green-bg);color:var(--green);border:1px solid var(--green-b);border-radius:var(--rsm);font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">✅ Autorizar todos</button>
-        <button onclick="AUT_todos(false)" style="padding:12px;background:var(--red-bg);color:var(--red);border:1px solid var(--red);border-radius:var(--rsm);font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">✕ Rechazar todos</button>
-      </div>
-      <button onclick="AUT_guardar()" style="width:100%;padding:14px;background:var(--blue);color:#fff;border:none;border-radius:var(--rsm);font-size:15px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:10px">💾 Guardar autorización</button>
-    </div>`;
-  AUT_renderLista();
+// ── AUTORIZACIONES ──
+let AUT2_items=[], AUT2_autorizados=new Set(), AUT2_rowIndex=-1;
+
+async function REG_autorizar(){
+  const app=document.getElementById('reg-app');
+  app.innerHTML='<div style="padding:20px;text-align:center;color:var(--t2)">🔍 Cargando...</div>';
+  
+  // Load autorizadores from Sheets
+  try{
+    const ra=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'getAutorizadores'})});
+    const da=await ra.json();
+    REG_autorizadores=da.data||[];
+  }catch(e){REG_autorizadores=[];}
+
+  const rc=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'getCotizacion',placa:REG_detalle.placa})});
+  const dc=await rc.json();
+  if(dc.error||!dc.data){showToast('⚠ Sin cotización');return;}
+  AUT2_items=dc.data.items||[];
+  AUT2_autorizados=new Set((dc.data.autorizados||[]).map(Number));
+  AUT2_rowIndex=dc.data.rowIndex||-1;
+  REG_renderAutorizar();
 }
 
-function AUT_renderLista(){
-  const lista=document.getElementById('aut-lista');
-  if(!AUT_items.length){lista.innerHTML='<div style="text-align:center;padding:16px;color:var(--t3);font-size:13px">Sin ítems en cotización</div>';return;}
-  lista.innerHTML=AUT_items.map((it,i)=>{
-    const auth=AUT_autorizados.has(i);
-    return`<div style="background:var(--sf);border:1.5px solid ${auth?'var(--green-b)':'var(--red)'};border-radius:var(--rsm);padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px">
-      <div style="flex:1">
-        <div style="font-size:13px;font-weight:600;color:var(--t)">${it.descripcion}</div>
-        <div style="font-size:11px;color:var(--t3)">${it.cantidad} × Q ${parseFloat(it.precio||0).toLocaleString('es-GT',{minimumFractionDigits:2})}</div>
-        <div style="font-size:12px;font-weight:700;color:var(--t);margin-top:2px">Q ${parseFloat(it.total||0).toLocaleString('es-GT',{minimumFractionDigits:2})}</div>
+function REG_renderAutorizar(){
+  const totalAuth=AUT2_items.filter((_,i)=>AUT2_autorizados.has(i)).reduce((s,it)=>s+(parseFloat(it.total)||0),0);
+  const totalPend=AUT2_items.filter((_,i)=>!AUT2_autorizados.has(i)).reduce((s,it)=>s+(parseFloat(it.total)||0),0);
+  const idx=REG_lista.indexOf(REG_detalle);
+  document.getElementById('reg-app').innerHTML=`<div style="padding:16px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+      <button onclick="REG_verDetalle(${idx})" style="padding:6px 12px;border:1px solid var(--b);border-radius:var(--rsm);background:var(--sf);font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--t2)">← Volver</button>
+      <div style="font-weight:700;font-size:15px;color:var(--t)">🔑 Autorizar — ${REG_detalle.placa}</div>
+    </div>
+
+    <div style="background:var(--sf);border:1px solid var(--b);border-radius:var(--rsm);padding:12px;margin-bottom:14px">
+      <div style="font-size:12px;font-weight:600;color:var(--t2);margin-bottom:8px">AUTORIZADOR</div>
+      <select id="aut-nombre" style="width:100%;padding:10px;border:1px solid var(--b);border-radius:var(--rsm);font-size:14px;background:var(--sf);color:var(--t);margin-bottom:8px;box-sizing:border-box">
+        <option value="">Seleccione autorizador...</option>
+        ${REG_autorizadores.map(a=>`<option value="${a.nombre}">${a.nombre}</option>`).join('')}
+      </select>
+      <input id="aut-clave" type="password" placeholder="Clave de autorización" style="width:100%;padding:10px;border:1px solid var(--b);border-radius:var(--rsm);font-size:14px;background:var(--sf);color:var(--t);box-sizing:border-box">
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+      <div style="background:var(--green-bg);border:1px solid var(--green-b);border-radius:var(--rsm);padding:10px;text-align:center">
+        <div style="font-size:11px;color:var(--t2)">Autorizado</div>
+        <div style="font-weight:700;color:var(--green);font-size:14px">Q ${totalAuth.toLocaleString('es-GT',{minimumFractionDigits:2})}</div>
       </div>
-      <div style="display:flex;flex-direction:column;gap:6px">
-        <button onclick="AUT_toggle(${i},true)" style="padding:6px 10px;border-radius:4px;border:1px solid var(--green-b);background:${auth?'var(--green)':'var(--sf2)'};color:${auth?'#fff':'var(--t2)'};font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600">✅</button>
-        <button onclick="AUT_toggle(${i},false)" style="padding:6px 10px;border-radius:4px;border:1px solid var(--red);background:${!auth?'var(--red)':'var(--sf2)'};color:${!auth?'#fff':'var(--t2)'};font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600">✕</button>
+      <div style="background:var(--red-bg);border:1px solid var(--red);border-radius:var(--rsm);padding:10px;text-align:center">
+        <div style="font-size:11px;color:var(--t2)">Pendiente</div>
+        <div style="font-weight:700;color:var(--red);font-size:14px">Q ${totalPend.toLocaleString('es-GT',{minimumFractionDigits:2})}</div>
       </div>
-    </div>`;
-  }).join('');
+    </div>
+
+    <div id="aut-items-lista">
+      ${AUT2_items.map((it,i)=>{
+        const auth=AUT2_autorizados.has(i);
+        return`<div style="background:var(--sf);border:1.5px solid ${auth?'var(--green-b)':'var(--red)'};border-radius:var(--rsm);padding:12px;margin-bottom:8px;display:flex;align-items:center;gap:10px">
+          <div style="flex:1">
+            <div style="font-size:13px;font-weight:600;color:var(--t)">${it.descripcion}</div>
+            <div style="font-size:12px;font-weight:700;color:var(--t)">Q ${parseFloat(it.total||0).toLocaleString('es-GT',{minimumFractionDigits:2})}</div>
+          </div>
+          <div style="display:flex;gap:6px">
+            <button onclick="AUT2_toggle(${i},true)" style="padding:7px 11px;border-radius:4px;border:1px solid var(--green-b);background:${auth?'var(--green)':'var(--sf2)'};color:${auth?'#fff':'var(--t2)'};font-size:13px;cursor:pointer;font-weight:700">✅</button>
+            <button onclick="AUT2_toggle(${i},false)" style="padding:7px 11px;border-radius:4px;border:1px solid var(--red);background:${!auth?'var(--red)':'var(--sf2)'};color:${!auth?'#fff':'var(--t2)'};font-size:13px;cursor:pointer;font-weight:700">✕</button>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+      <button onclick="AUT2_todos(true)" style="padding:11px;background:var(--green-bg);color:var(--green);border:1px solid var(--green-b);border-radius:var(--rsm);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">✅ Todos</button>
+      <button onclick="AUT2_todos(false)" style="padding:11px;background:var(--red-bg);color:var(--red);border:1px solid var(--red);border-radius:var(--rsm);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">✕ Ninguno</button>
+    </div>
+    <button onclick="AUT2_guardar()" style="width:100%;margin-top:10px;padding:14px;background:var(--blue);color:#fff;border:none;border-radius:var(--rsm);font-size:15px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">💾 Guardar autorización</button>
+  </div>`;
 }
 
-function AUT_toggle(i, autorizar){
-  if(autorizar) AUT_autorizados.add(i);
-  else AUT_autorizados.delete(i);
-  AUT_renderEditor();
+function AUT2_toggle(i,auth){
+  if(auth)AUT2_autorizados.add(i);
+  else AUT2_autorizados.delete(i);
+  REG_renderAutorizar();
 }
 
-function AUT_todos(autorizar){
-  if(autorizar) AUT_items.forEach((_,i)=>AUT_autorizados.add(i));
-  else AUT_autorizados.clear();
-  AUT_renderEditor();
+function AUT2_todos(auth){
+  if(auth)AUT2_items.forEach((_,i)=>AUT2_autorizados.add(i));
+  else AUT2_autorizados.clear();
+  REG_renderAutorizar();
 }
 
-async function AUT_guardar(){
-  if(!AUT_placa){showToast('⚠ No hay vehículo cargado');return;}
+async function AUT2_guardar(){
+  const nombre=document.getElementById('aut-nombre').value;
+  const clave=document.getElementById('aut-clave').value;
+  if(!nombre){showToast('⚠ Seleccione un autorizador');return;}
+  if(!clave){showToast('⚠ Ingrese la clave');return;}
+  // Verify clave
+  const autorizador=REG_autorizadores.find(a=>a.nombre===nombre);
+  if(!autorizador||autorizador.clave!==clave){showToast('⚠ Clave incorrecta');return;}
   showToast('☁ Guardando...', false);
   try{
-    const autorizados=AUT_items.filter((_,i)=>AUT_autorizados.has(i));
-    const pendientes=AUT_items.filter((_,i)=>!AUT_autorizados.has(i));
+    const autorizados=AUT2_items.filter((_,i)=>AUT2_autorizados.has(i));
+    const pendientes=AUT2_items.filter((_,i)=>!AUT2_autorizados.has(i));
     const r=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({
       action:'saveAutorizacion',
-      placa:AUT_placa,
-      rowIndex:AUT_rowIndex,
-      autorizados,
-      pendientes,
-      indicesAutorizados:Array.from(AUT_autorizados),
+      placa:REG_detalle.placa,
+      rowIndex:AUT2_rowIndex,
+      indicesAutorizados:Array.from(AUT2_autorizados),
       totalAutorizado:autorizados.reduce((s,it)=>s+(parseFloat(it.total)||0),0),
       totalPendiente:pendientes.reduce((s,it)=>s+(parseFloat(it.total)||0),0),
+      autorizadoPor:nombre,
+      fechaAutorizacion:new Date().toLocaleDateString('es-GT'),
     })});
     const d=await r.json();
     if(d.error)throw new Error(d.error);
+    // Update estado
+    const nuevoEstado=AUT2_autorizados.size>0?'autorizada':'no_invierte';
+    await REG_cambiarEstado(nuevoEstado, false);
     showToast('✅ Autorización guardada', false);
+    REG_verDetalle(REG_lista.indexOf(REG_detalle));
   }catch(e){showToast('⚠ Error: '+e.message);}
+}
+
+// ══════════════════════════════════════════════════════
+// MÓDULO CONFIGURACIÓN
+// ══════════════════════════════════════════════════════
+const CLAVE_MAESTRA_KEY='cfg_master_key';
+
+function CFG_render(){
+  document.getElementById('cfg-app').innerHTML=`<div style="padding:20px;text-align:center">
+    <div style="font-size:40px;margin-bottom:8px">⚙️</div>
+    <div style="font-size:16px;font-weight:700;color:var(--t);margin-bottom:20px">Configuración</div>
+    <div style="margin-bottom:14px;text-align:left">
+      <label style="font-size:12px;color:var(--t2);font-weight:500">Clave maestra</label>
+      <input id="cfg-clave-input" type="password" placeholder="Ingrese clave maestra" style="width:100%;padding:12px;border:1px solid var(--b);border-radius:var(--rsm);font-size:15px;background:var(--sf);color:var(--t);box-sizing:border-box;margin-top:6px">
+    </div>
+    <button onclick="CFG_verificar()" style="width:100%;padding:14px;background:var(--blue);color:#fff;border:none;border-radius:var(--rsm);font-size:15px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">Acceder</button>
+    <div id="cfg-error" style="color:var(--red);font-size:13px;margin-top:10px"></div>
+  </div>`;
+}
+
+async function CFG_verificar(){
+  const clave=document.getElementById('cfg-clave-input').value;
+  // Get master key from sheets
+  try{
+    const r=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'getMasterKey'})});
+    const d=await r.json();
+    if(d.error)throw new Error(d.error);
+    if(clave!==d.clave){document.getElementById('cfg-error').textContent='⚠ Clave incorrecta';return;}
+    CFG_renderPanel();
+  }catch(e){document.getElementById('cfg-error').textContent='⚠ '+e.message;}
+}
+
+async function CFG_renderPanel(){
+  const app=document.getElementById('cfg-app');
+  app.innerHTML='<div style="padding:20px;text-align:center;color:var(--t2)">Cargando configuración...</div>';
+  try{
+    // Load config, emails, costos
+    const [rc, re] = await Promise.all([
+      fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'getTallerConfig'})}),
+      fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'getConfig'})}),
+    ]);
+    const dc=await rc.json();
+    const de=await re.json();
+    const cfg=dc.config||{};
+    const emails=(de.data||[]).map(e=>e.email).filter(Boolean);
+
+    app.innerHTML=`<div style="padding:16px">
+      <div style="font-size:15px;font-weight:700;color:var(--t);margin-bottom:16px">⚙️ Configuración</div>
+
+      <div style="background:var(--sf);border:1px solid var(--b);border-radius:var(--rsm);padding:14px;margin-bottom:14px">
+        <div style="font-size:12px;font-weight:600;color:var(--t2);margin-bottom:10px">📧 CORREOS DE NOTIFICACIÓN</div>
+        <div style="font-size:12px;color:var(--t3);margin-bottom:8px">Edite directamente en Google Sheets → pestaña "Configuracion"</div>
+        <div style="font-size:13px;color:var(--t)">${emails.length?emails.join('<br>'):'Sin correos configurados'}</div>
+      </div>
+
+      <div style="background:var(--sf);border:1px solid var(--b);border-radius:var(--rsm);padding:14px;margin-bottom:14px">
+        <div style="font-size:12px;font-weight:600;color:var(--t2);margin-bottom:10px">🔑 AUTORIZADORES</div>
+        <div style="font-size:12px;color:var(--t3)">Edite directamente en Google Sheets → pestaña "Autorizadores" (columnas: Nombre | Clave)</div>
+      </div>
+
+      <div style="background:var(--sf);border:1px solid var(--b);border-radius:var(--rsm);padding:14px;margin-bottom:14px">
+        <div style="font-size:12px;font-weight:600;color:var(--t2);margin-bottom:10px">💰 COSTOS DE REFERENCIA</div>
+        <div style="font-size:12px;color:var(--t3)">Edite directamente en Google Sheets → pestaña "Config Taller"</div>
+        <button onclick="T_showConfig()" style="margin-top:10px;width:100%;padding:11px;background:var(--sf2);color:var(--t);border:1px solid var(--b2);border-radius:var(--rsm);font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">Ver costos actuales</button>
+      </div>
+
+      <a href="https://docs.google.com/spreadsheets/d/${typeof SHEETS_ID!=='undefined'?SHEETS_ID:''}/edit" target="_blank" style="display:block;width:100%;padding:12px;background:var(--green-bg);color:var(--green);border:1px solid var(--green-b);border-radius:var(--rsm);font-size:13px;font-weight:600;text-align:center;text-decoration:none;box-sizing:border-box">📊 Abrir Google Sheets</a>
+    </div>`;
+  }catch(e){
+    app.innerHTML=`<div style="padding:20px;text-align:center;color:var(--red)">⚠ ${e.message}</div>`;
+  }
 }
 </script>
 </body>
