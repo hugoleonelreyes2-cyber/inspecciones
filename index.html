@@ -534,85 +534,6 @@ textarea{resize:vertical;line-height:1.5}
 
 // ── NAVEGACIÓN PRINCIPAL (definidas primero para HTML inline) ──
 let moduloActual='menu';
-async function REG_descargarPDF(){
-  showToast('⏳ Generando PDF...', false);
-  try{
-    // Get hallazgos
-    const r=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({
-      action:'getHallazgosTaller',
-      placa:REG_detalle.placa,
-      fecha:REG_detalle.fecha
-    })});
-    const d=await r.json();
-    const hallazgos=d.data||[];
-
-    const {jsPDF}=window.jspdf;
-    const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
-    let y=20;
-
-    // Header
-    doc.setFontSize(16);doc.setFont('helvetica','bold');doc.setTextColor(27,111,216);
-    doc.text('REVISIÓN TÉCNICA DE TALLER',105,y,{align:'center'});y+=8;
-    doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(100);
-    doc.text('División Vehículos Usados  ·  '+REG_detalle.fecha,105,y,{align:'center'});y+=12;
-
-    // Datos vehículo
-    doc.setFillColor(27,111,216);doc.rect(10,y-4,190,7,'F');
-    doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(255,255,255);
-    doc.text('DATOS DEL VEHÍCULO',14,y+0.5);y+=12;
-    doc.setTextColor(0,0,0);doc.setFont('helvetica','normal');
-    doc.text('Placa: '+REG_detalle.placa,14,y);
-    doc.text('Modelo: '+(REG_detalle.modelo||'—'),80,y);y+=6;
-    doc.text('Inspector: '+(REG_detalle.inspector||'—'),14,y);
-    doc.text('Hallazgos: '+REG_detalle.totalHallazgos,80,y);y+=10;
-
-    // Estado
-    const est=ESTADOS[REG_detalle.estado]||ESTADOS.sin_inversion;
-    doc.setFillColor(240,240,240);doc.rect(10,y-4,190,7,'F');
-    doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(0,0,0);
-    doc.text('ESTADO: '+est.label,14,y+0.5);y+=12;
-
-    // Hallazgos
-    if(hallazgos.length){
-      doc.setFillColor(27,111,216);doc.rect(10,y-4,190,7,'F');
-      doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(255,255,255);
-      doc.text('HALLAZGOS DETECTADOS ('+hallazgos.length+')',14,y+0.5);y+=10;
-      doc.setTextColor(0,0,0);doc.setFont('helvetica','normal');
-      hallazgos.forEach((h,i)=>{
-        if(y>270){doc.addPage();y=20;}
-        doc.setFont('helvetica','bold');
-        doc.text((i+1)+'. '+String(h[2]||'').substring(0,60),14,y);y+=5;
-        doc.setFont('helvetica','normal');
-        if(h[4]&&h[4]!=='—'){
-          const lines=doc.splitTextToSize('Obs: '+h[4],170);
-          doc.text(lines,18,y);y+=lines.length*4+2;
-        }
-        if(h[5]&&h[5]!=='—'){
-          doc.setTextColor(27,111,216);
-          doc.text('Foto: '+String(h[5]).substring(0,80),18,y);
-          doc.setTextColor(0,0,0);
-          y+=5;
-        }
-        y+=2;
-      });
-    } else {
-      doc.text('Sin hallazgos registrados.',14,y);y+=10;
-    }
-
-    // Footer
-    if(y>260)doc.addPage();
-    doc.setFontSize(8);doc.setTextColor(150);
-    doc.text('Sistema de Inspecciones — División Vehículos Usados',105,285,{align:'center'});
-
-    const fname='Revision_Taller_'+REG_detalle.placa+'_'+REG_detalle.fecha.replace(/\//g,'-')+'.pdf';
-    doc.save(fname);
-    showToast('✅ PDF descargado', false);
-  }catch(e){
-    showToast('⚠ Error generando PDF: '+e.message);
-    console.error(e);
-  }
-}
-
 
 function showMenu(){
   const menu=document.getElementById('main-menu');
@@ -2933,13 +2854,25 @@ function showMenu(){
 // ══════════════════════════════════════════════════════
 
 const ESTADOS = {
-  sin_inversion: {label:'Sin inversiones', color:'var(--t3)', bg:'var(--sf2)', border:'var(--b)'},
-  pend_autorizar: {label:'Pend. autorizar', color:'#B45309', bg:'#FEF3C7', border:'#FCD34D'},
-  autorizada:     {label:'Autorizada',      color:'var(--green)', bg:'var(--green-bg)', border:'var(--green-b)'},
-  no_invierte:    {label:'No se invierte',  color:'var(--red)', bg:'var(--red-bg)', border:'var(--red)'},
+  sin_inversion:    {label:'Sin inversiones',    color:'var(--t3)',   bg:'var(--sf2)',       border:'var(--b)'},
+  espera_presup:    {label:'Espera presupuesto',  color:'#92400E',    bg:'#FEF3C7',          border:'#FCD34D'},
+  espera_autorizar: {label:'Espera autorización', color:'#1D4ED8',    bg:'#DBEAFE',          border:'#93C5FD'},
+  autorizada:       {label:'Autorizada',          color:'var(--green)',bg:'var(--green-bg)', border:'var(--green-b)'},
 };
 
-let REG_lista=[], REG_detalle=null, REG_autorizadores=[];
+function REG_calcularEstado(reg, cotizacion){
+  // Si no tiene hallazgos (todos bien/na) -> sin inversiones
+  if(!reg.totalHallazgos || reg.totalHallazgos===0) return 'sin_inversion';
+  // Si tiene hallazgos pero sin cotización -> espera presupuesto
+  if(!cotizacion || !cotizacion.items || cotizacion.items.length===0) return 'espera_presup';
+  // Si tiene cotización pero sin autorizados -> espera autorización
+  const autorizados = cotizacion.autorizados||[];
+  if(autorizados.length===0) return 'espera_autorizar';
+  // Tiene al menos uno autorizado -> autorizada
+  return 'autorizada';
+}
+
+let REG_lista=[], REG_detalle=null, REG_autorizadores=[], REG_filtro='', REG_filtroEstado='';
 
 async function REG_render(){
   const app=document.getElementById('reg-app');
@@ -2949,6 +2882,12 @@ async function REG_render(){
     const d=await r.json();
     if(d.error)throw new Error(d.error);
     REG_lista=d.data||[];
+    // Load all cotizaciones to calculate states
+    const rc=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'getAllCotizaciones'})});
+    const dc=await rc.json();
+    const cotsMap={};
+    (dc.data||[]).forEach(c=>{ cotsMap[c.placa]=c; });
+    REG_lista.forEach(r=>{ r.cotizacion=cotsMap[r.placa]||null; r.estado=REG_calcularEstado(r,r.cotizacion); });
     REG_renderLista();
   }catch(e){
     app.innerHTML=`<div style="padding:20px;text-align:center;color:var(--red)">⚠ ${e.message}</div>`;
@@ -2957,32 +2896,43 @@ async function REG_render(){
 
 function REG_renderLista(){
   const app=document.getElementById('reg-app');
-  // Ordenar: pend_autorizar primero, luego sin_inversion, luego autorizada, luego no_invierte, por fecha desc dentro de cada grupo
-  const orden={pend_autorizar:0,sin_inversion:1,autorizada:2,no_invierte:3};
-  const sorted=[...REG_lista].sort((a,b)=>{
-    const oa=orden[a.estado]??1, ob=orden[b.estado]??1;
+  const orden={espera_presup:0, espera_autorizar:1, autorizada:2, sin_inversion:3};
+  let lista=[...REG_lista];
+  // Apply filters
+  if(REG_filtro) lista=lista.filter(r=>r.placa.toUpperCase().includes(REG_filtro.toUpperCase()));
+  if(REG_filtroEstado) lista=lista.filter(r=>r.estado===REG_filtroEstado);
+  lista.sort((a,b)=>{
+    const oa=orden[a.estado]??3, ob=orden[b.estado]??3;
     if(oa!==ob)return oa-ob;
-    return new Date(b.fecha)-new Date(a.fecha);
+    return 0;
   });
-  if(!sorted.length){
-    app.innerHTML='<div style="padding:40px 20px;text-align:center;color:var(--t3)">Sin registros aún</div>';
-    return;
-  }
-  app.innerHTML=`<div style="padding:16px">
-    <div style="font-size:12px;color:var(--t3);margin-bottom:12px">${sorted.length} registro(s)</div>
-    ${sorted.map((r,i)=>{
+
+  app.innerHTML=`<div style="padding:12px 16px">
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <input id="reg-filtro-placa" type="text" placeholder="🔍 Buscar placa..." value="${REG_filtro}"
+        oninput="REG_filtro=this.value;REG_renderLista()"
+        style="flex:1;padding:9px 12px;border:1px solid var(--b);border-radius:var(--rsm);font-size:13px;background:var(--sf);color:var(--t)">
+      <select id="reg-filtro-estado" onchange="REG_filtroEstado=this.value;REG_renderLista()"
+        style="padding:9px 10px;border:1px solid var(--b);border-radius:var(--rsm);font-size:12px;background:var(--sf);color:var(--t)">
+        <option value="">Todos</option>
+        ${Object.entries(ESTADOS).map(([k,v])=>`<option value="${k}" ${REG_filtroEstado===k?'selected':''}>${v.label}</option>`).join('')}
+      </select>
+    </div>
+    <div style="font-size:11px;color:var(--t3);margin-bottom:10px">${lista.length} registro(s)</div>
+    ${lista.length===0?'<div style="text-align:center;padding:40px;color:var(--t3)">Sin registros</div>':
+    lista.map((r,i)=>{
       const est=ESTADOS[r.estado]||ESTADOS.sin_inversion;
-      return`<div onclick="REG_verDetalle(${i})" style="background:var(--sf);border:1px solid var(--b);border-radius:var(--rsm);padding:14px;margin-bottom:10px;cursor:pointer;display:flex;align-items:center;gap:12px">
-        <div style="flex:1;min-width:0">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
-            <span style="font-weight:700;font-size:15px;color:var(--t)">${r.placa}</span>
-            <span style="font-size:10px;padding:2px 8px;border-radius:20px;font-weight:600;background:${est.bg};color:${est.color};border:1px solid ${est.border}">${est.label}</span>
-          </div>
-          <div style="font-size:12px;color:var(--t2)">${r.modelo||'—'} · ${r.inspector||'—'}</div>
-          <div style="font-size:11px;color:var(--t3);margin-top:2px">${r.fecha||'—'}</div>
-          ${r.totalAutorizado>0?`<div style="font-size:12px;color:var(--green);font-weight:600;margin-top:4px">Q ${parseFloat(r.totalAutorizado).toLocaleString('es-GT',{minimumFractionDigits:2})} autorizado</div>`:''}
+      const realIdx=REG_lista.indexOf(r);
+      return`<div onclick="REG_verDetalle(${realIdx})" style="background:var(--sf);border:1px solid var(--b);border-left:4px solid ${est.border};border-radius:var(--rsm);padding:12px 14px;margin-bottom:10px;cursor:pointer">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+          <span style="font-weight:700;font-size:15px;color:var(--t)">${r.placa}</span>
+          <span style="font-size:10px;padding:2px 8px;border-radius:20px;font-weight:600;background:${est.bg};color:${est.color};border:1px solid ${est.border}">${est.label}</span>
         </div>
-        <span style="color:var(--t3);font-size:18px">›</span>
+        <div style="font-size:12px;color:var(--t2)">${r.modelo||'—'} · ${r.inspector||'—'}</div>
+        <div style="display:flex;justify-content:space-between;margin-top:4px">
+          <span style="font-size:11px;color:var(--t3)">${r.fecha||'—'}</span>
+          ${r.cotizacion&&r.cotizacion.totalAutorizado>0?`<span style="font-size:12px;color:var(--green);font-weight:600">Q ${parseFloat(r.cotizacion.totalAutorizado).toLocaleString('es-GT',{minimumFractionDigits:2})} auth.</span>`:''}
+        </div>
       </div>`;
     }).join('')}
   </div>`;
@@ -2991,26 +2941,30 @@ function REG_renderLista(){
 async function REG_verDetalle(idx){
   REG_detalle=REG_lista[idx];
   const app=document.getElementById('reg-app');
-  const est=ESTADOS[REG_detalle.estado]||ESTADOS.sin_inversion;
+  app.innerHTML='<div style="padding:20px;text-align:center;color:var(--t2)">Cargando...</div>';
   
-  // Load cotizacion if exists
-  let cotizacion=null;
+  // Reload cotizacion fresh
+  let cotizacion=REG_detalle.cotizacion||null;
   try{
     const r=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'getCotizacion',placa:REG_detalle.placa})});
     const d=await r.json();
-    if(!d.error&&d.data)cotizacion=d.data;
+    if(!d.error&&d.data){ cotizacion=d.data; REG_detalle.cotizacion=cotizacion; }
   }catch(e){}
+
+  const estado=REG_calcularEstado(REG_detalle, cotizacion);
+  REG_detalle.estado=estado;
+  const est=ESTADOS[estado]||ESTADOS.sin_inversion;
 
   app.innerHTML=`<div style="padding:16px">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
       <button onclick="REG_render()" style="padding:6px 12px;border:1px solid var(--b);border-radius:var(--rsm);background:var(--sf);font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--t2)">← Volver</button>
       <div style="font-weight:700;font-size:16px;color:var(--t)">${REG_detalle.placa}</div>
-      <span style="font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600;background:${est.bg};color:${est.color};border:1px solid ${est.border}">${est.label}</span>
+      <span style="font-size:10px;padding:3px 10px;border-radius:20px;font-weight:600;background:${est.bg};color:${est.color};border:1px solid ${est.border}">${est.label}</span>
     </div>
 
-    <div style="background:var(--sf);border:1px solid var(--b);border-radius:var(--rsm);padding:14px;margin-bottom:14px">
-      <div style="font-size:12px;font-weight:600;color:var(--t2);margin-bottom:8px">REVISIÓN DE TALLER</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:13px">
+    <div style="background:var(--sf);border:1px solid var(--b);border-radius:var(--rsm);padding:14px;margin-bottom:12px">
+      <div style="font-size:11px;font-weight:600;color:var(--t3);margin-bottom:8px;letter-spacing:.5px">REVISIÓN DE TALLER</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:13px;color:var(--t)">
         <div><span style="color:var(--t3)">Modelo:</span> ${REG_detalle.modelo||'—'}</div>
         <div><span style="color:var(--t3)">Fecha:</span> ${REG_detalle.fecha||'—'}</div>
         <div><span style="color:var(--t3)">Inspector:</span> ${REG_detalle.inspector||'—'}</div>
@@ -3018,23 +2972,14 @@ async function REG_verDetalle(idx){
       </div>
     </div>
 
-    <button onclick="REG_descargarPDF()" style="width:100%;padding:11px;background:var(--sf2);color:var(--t);border:1px solid var(--b2);border-radius:var(--rsm);font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;margin-bottom:14px">📄 Descargar PDF de revisión</button>
+    <button onclick="REG_descargarPDF_revision()" style="width:100%;padding:10px;background:var(--sf2);color:var(--t2);border:1px solid var(--b2);border-radius:var(--rsm);font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;margin-bottom:12px">📋 PDF Revisión de taller</button>
 
-    <div id="reg-cotizacion-section">
-      ${cotizacion ? REG_renderCotizacionHTML(cotizacion) : `
-        <div style="border:1.5px dashed var(--b2);border-radius:var(--rsm);padding:20px;text-align:center;margin-bottom:14px">
-          <div style="font-size:13px;color:var(--t3);margin-bottom:10px">Sin cotización aún</div>
-          <button onclick="REG_nuevaCotizacion()" style="padding:10px 20px;background:var(--blue);color:#fff;border:none;border-radius:var(--rsm);font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">+ Agregar cotización</button>
+    <div id="reg-cot-section">
+      ${cotizacion && cotizacion.items && cotizacion.items.length>0 ? REG_renderCotizacionHTML(cotizacion) : `
+        <div style="border:1.5px dashed var(--b2);border-radius:var(--rsm);padding:20px;text-align:center;margin-bottom:12px">
+          <div style="font-size:13px;color:var(--t3);margin-bottom:10px">Sin cotización adjunta</div>
+          ${REG_detalle.totalHallazgos>0?`<button onclick="REG_nuevaCotizacion()" style="padding:10px 20px;background:var(--blue);color:#fff;border:none;border-radius:var(--rsm);font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">+ Agregar cotización</button>`:''}
         </div>`}
-    </div>
-
-    <div style="margin-top:8px">
-      <div style="font-size:12px;font-weight:600;color:var(--t2);margin-bottom:8px">CAMBIAR ESTADO</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-        ${Object.entries(ESTADOS).map(([k,v])=>`
-          <button onclick="REG_cambiarEstado('${k}')" style="padding:10px;border-radius:var(--rsm);border:1.5px solid ${REG_detalle.estado===k?v.color:v.border};background:${REG_detalle.estado===k?v.bg:'var(--sf)'};color:${REG_detalle.estado===k?v.color:'var(--t2)'};font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">${v.label}</button>
-        `).join('')}
-      </div>
     </div>
   </div>`;
 }
@@ -3044,9 +2989,10 @@ function REG_renderCotizacionHTML(cot){
   const autorizados=new Set((cot.autorizados||[]).map(Number));
   const total=items.reduce((s,it)=>s+(parseFloat(it.total)||0),0);
   const totalAuth=items.filter((_,i)=>autorizados.has(i)).reduce((s,it)=>s+(parseFloat(it.total)||0),0);
-  return`<div style="background:var(--sf);border:1px solid var(--b);border-radius:var(--rsm);padding:14px;margin-bottom:14px">
+  const totalPend=items.filter((_,i)=>!autorizados.has(i)).reduce((s,it)=>s+(parseFloat(it.total)||0),0);
+  return`<div style="background:var(--sf);border:1px solid var(--b);border-radius:var(--rsm);padding:14px;margin-bottom:12px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-      <div style="font-size:12px;font-weight:600;color:var(--t2)">COTIZACIÓN</div>
+      <div style="font-size:11px;font-weight:600;color:var(--t3);letter-spacing:.5px">COTIZACIÓN</div>
       <button onclick="REG_editarCotizacion()" style="padding:4px 10px;border:1px solid var(--b2);border-radius:4px;background:var(--sf2);font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--t2)">✏️ Editar</button>
     </div>
     ${items.map((it,i)=>{
@@ -3054,37 +3000,43 @@ function REG_renderCotizacionHTML(cot){
       return`<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--b)">
         <div style="flex:1;font-size:12px;color:var(--t)">${it.descripcion}</div>
         <div style="font-size:12px;font-weight:600;color:var(--t)">Q ${parseFloat(it.total||0).toLocaleString('es-GT',{minimumFractionDigits:2})}</div>
-        <span style="font-size:10px;padding:2px 6px;border-radius:10px;font-weight:600;${auth?'background:var(--green-bg);color:var(--green)':'background:var(--red-bg);color:var(--red)'}">${auth?'✅':'Pend.'}</span>
+        <span style="font-size:10px;padding:2px 7px;border-radius:10px;font-weight:600;${auth?'background:var(--green-bg);color:var(--green);':'background:#FEF3C7;color:#92400E;'}">${auth?'✅ Auth':'Pend.'}</span>
       </div>`;
     }).join('')}
-    <div style="display:flex;justify-content:space-between;margin-top:10px;padding-top:8px">
-      <span style="font-size:13px;font-weight:600;color:var(--t)">Total: Q ${total.toLocaleString('es-GT',{minimumFractionDigits:2})}</span>
-      <span style="font-size:13px;font-weight:600;color:var(--green)">Auth: Q ${totalAuth.toLocaleString('es-GT',{minimumFractionDigits:2})}</span>
+    <div style="display:flex;justify-content:space-between;margin-top:10px;padding-top:8px;border-top:1px solid var(--b)">
+      <span style="font-size:12px;color:var(--t2)">Total: <b>Q ${total.toLocaleString('es-GT',{minimumFractionDigits:2})}</b></span>
+      <span style="font-size:12px;color:var(--green)">Auth: <b>Q ${totalAuth.toLocaleString('es-GT',{minimumFractionDigits:2})}</b></span>
     </div>
-    <button onclick="REG_autorizar()" style="width:100%;margin-top:12px;padding:12px;background:var(--blue);color:#fff;border:none;border-radius:var(--rsm);font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">🔑 Gestionar autorizaciones</button>
+    ${cot.autorizadoPor?`<div style="font-size:11px;color:var(--t3);margin-top:6px">🔑 Autorizado por: <b>${cot.autorizadoPor}</b> · ${cot.fechaAutorizacion||''}</div>`:''}
+    <button onclick="REG_autorizar()" style="width:100%;margin-top:12px;padding:12px;background:var(--blue);color:#fff;border:none;border-radius:var(--rsm);font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">🔑 Gestionar autorización</button>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+      <button onclick="REG_descargarPDF_autorizado()" style="padding:10px;background:var(--green-bg);color:var(--green);border:1px solid var(--green-b);border-radius:var(--rsm);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">📄 PDF Autorizado</button>
+      <button onclick="REG_descargarPDF_pendiente()" style="padding:10px;background:#FEF3C7;color:#92400E;border:1px solid #FCD34D;border-radius:var(--rsm);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">📄 PDF Pendiente</button>
+    </div>
   </div>`;
 }
 
 let REG_cotEdit=null;
 
 function REG_nuevaCotizacion(){
-  REG_cotEdit={items:[]};
+  REG_cotEdit={items:[], rowIndex:-1};
   REG_renderCotEditor();
 }
 
 async function REG_editarCotizacion(){
   const r=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'getCotizacion',placa:REG_detalle.placa})});
   const d=await r.json();
-  REG_cotEdit=d.data||{items:[]};
+  REG_cotEdit=d.data||{items:[], rowIndex:-1};
   REG_renderCotEditor();
 }
 
 function REG_renderCotEditor(){
   const items=REG_cotEdit.items||[];
   const total=items.reduce((s,it)=>s+(parseFloat(it.total)||0),0);
+  const idx=REG_lista.indexOf(REG_detalle);
   document.getElementById('reg-app').innerHTML=`<div style="padding:16px">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
-      <button onclick="REG_verDetalle(${REG_lista.indexOf(REG_detalle)})" style="padding:6px 12px;border:1px solid var(--b);border-radius:var(--rsm);background:var(--sf);font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--t2)">← Volver</button>
+      <button onclick="REG_verDetalle(${idx})" style="padding:6px 12px;border:1px solid var(--b);border-radius:var(--rsm);background:var(--sf);font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--t2)">← Volver</button>
       <div style="font-weight:700;font-size:15px;color:var(--t)">💰 Cotización — ${REG_detalle.placa}</div>
     </div>
     <div id="cot-lista-items">
@@ -3094,20 +3046,20 @@ function REG_renderCotEditor(){
             <div style="font-size:13px;font-weight:600;color:var(--t)">${it.descripcion}</div>
             <div style="font-size:11px;color:var(--t3)">${it.cantidad} × Q ${parseFloat(it.precio||0).toFixed(2)}</div>
           </div>
-          <div style="font-weight:700;font-size:13px">Q ${parseFloat(it.total||0).toFixed(2)}</div>
+          <div style="font-weight:700;font-size:13px;color:var(--t)">Q ${parseFloat(it.total||0).toFixed(2)}</div>
           <button onclick="REG_cotEliminar(${i})" style="padding:4px 8px;border:1px solid var(--red);border-radius:4px;background:var(--red-bg);font-size:11px;cursor:pointer;color:var(--red)">✕</button>
         </div>`).join(''):'<div style="text-align:center;padding:16px;color:var(--t3);font-size:13px">Sin ítems</div>'}
     </div>
     <div style="background:var(--amber-bg);border:1px solid var(--amber-b);border-radius:var(--rsm);padding:10px 14px;margin-bottom:14px;display:flex;justify-content:space-between">
-      <span style="font-weight:600">Total:</span>
+      <span style="font-weight:600;color:var(--t)">Total:</span>
       <span style="font-weight:700;color:var(--amber-t)">Q ${total.toLocaleString('es-GT',{minimumFractionDigits:2})}</span>
     </div>
     <div style="border:1.5px dashed var(--b2);border-radius:var(--rsm);padding:14px;margin-bottom:14px">
       <div style="font-size:12px;font-weight:600;color:var(--t2);margin-bottom:8px">+ Agregar ítem</div>
-      <input id="rc-desc" type="text" placeholder="Descripción" style="width:100%;padding:10px;border:1px solid var(--b);border-radius:var(--rsm);font-size:14px;background:var(--sf);color:var(--t);box-sizing:border-box;margin-bottom:8px">
+      <input id="rc-desc" type="text" placeholder="Descripción del trabajo" style="width:100%;padding:10px;border:1px solid var(--b);border-radius:var(--rsm);font-size:14px;background:var(--sf);color:var(--t);box-sizing:border-box;margin-bottom:8px">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
         <input id="rc-cant" type="number" placeholder="Cant." value="1" min="1" style="padding:10px;border:1px solid var(--b);border-radius:var(--rsm);font-size:14px;background:var(--sf);color:var(--t)">
-        <input id="rc-precio" type="number" placeholder="Precio unit." min="0" style="padding:10px;border:1px solid var(--b);border-radius:var(--rsm);font-size:14px;background:var(--sf);color:var(--t)">
+        <input id="rc-precio" type="number" placeholder="Precio unit. Q" min="0" style="padding:10px;border:1px solid var(--b);border-radius:var(--rsm);font-size:14px;background:var(--sf);color:var(--t)">
       </div>
       <button onclick="REG_cotAgregar()" style="width:100%;padding:11px;background:var(--blue);color:#fff;border:none;border-radius:var(--rsm);font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">+ Agregar</button>
     </div>
@@ -3120,6 +3072,7 @@ function REG_cotAgregar(){
   const cant=parseFloat(document.getElementById('rc-cant').value)||1;
   const precio=parseFloat(document.getElementById('rc-precio').value)||0;
   if(!desc){showToast('⚠ Ingrese una descripción');return;}
+  if(!REG_cotEdit.items)REG_cotEdit.items=[];
   REG_cotEdit.items.push({descripcion:desc,cantidad:cant,precio,total:cant*precio});
   document.getElementById('rc-desc').value='';
   document.getElementById('rc-cant').value='1';
@@ -3146,29 +3099,8 @@ async function REG_cotGuardar(){
     })});
     const d=await r.json();
     if(d.error)throw new Error(d.error);
-    // Update estado to pend_autorizar if sin_inversion
-    if(REG_detalle.estado==='sin_inversion'){
-      await REG_cambiarEstado('pend_autorizar', false);
-    }
     showToast('✅ Cotización guardada', false);
     REG_verDetalle(REG_lista.indexOf(REG_detalle));
-  }catch(e){showToast('⚠ Error: '+e.message);}
-}
-
-async function REG_cambiarEstado(estado, reload=true){
-  try{
-    const r=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({
-      action:'updateEstado',
-      placa:REG_detalle.placa,
-      estado
-    })});
-    const d=await r.json();
-    if(d.error)throw new Error(d.error);
-    REG_detalle.estado=estado;
-    if(reload){
-      showToast('✅ Estado actualizado', false);
-      REG_verDetalle(REG_lista.indexOf(REG_detalle));
-    }
   }catch(e){showToast('⚠ Error: '+e.message);}
 }
 
@@ -3178,21 +3110,19 @@ let AUT2_items=[], AUT2_autorizados=new Set(), AUT2_rowIndex=-1;
 async function REG_autorizar(){
   const app=document.getElementById('reg-app');
   app.innerHTML='<div style="padding:20px;text-align:center;color:var(--t2)">🔍 Cargando...</div>';
-  
-  // Load autorizadores from Sheets
   try{
-    const ra=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'getAutorizadores'})});
-    const da=await ra.json();
-    REG_autorizadores=da.data||[];
-  }catch(e){REG_autorizadores=[];}
-
-  const rc=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'getCotizacion',placa:REG_detalle.placa})});
-  const dc=await rc.json();
-  if(dc.error||!dc.data){showToast('⚠ Sin cotización');return;}
-  AUT2_items=dc.data.items||[];
-  AUT2_autorizados=new Set((dc.data.autorizados||[]).map(Number));
-  AUT2_rowIndex=dc.data.rowIndex||-1;
-  REG_renderAutorizar();
+    const [ra, rc] = await Promise.all([
+      fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'getAutorizadores'})}),
+      fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'getCotizacion',placa:REG_detalle.placa})})
+    ]);
+    const da=await ra.json(); REG_autorizadores=da.data||[];
+    const dc=await rc.json();
+    if(dc.error||!dc.data){showToast('⚠ Sin cotización');return;}
+    AUT2_items=dc.data.items||[];
+    AUT2_autorizados=new Set((dc.data.autorizados||[]).map(Number));
+    AUT2_rowIndex=dc.data.rowIndex||-1;
+    REG_renderAutorizar();
+  }catch(e){showToast('⚠ Error: '+e.message);}
 }
 
 function REG_renderAutorizar(){
@@ -3202,50 +3132,46 @@ function REG_renderAutorizar(){
   document.getElementById('reg-app').innerHTML=`<div style="padding:16px">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
       <button onclick="REG_verDetalle(${idx})" style="padding:6px 12px;border:1px solid var(--b);border-radius:var(--rsm);background:var(--sf);font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--t2)">← Volver</button>
-      <div style="font-weight:700;font-size:15px;color:var(--t)">🔑 Autorizar — ${REG_detalle.placa}</div>
+      <div style="font-weight:700;font-size:15px;color:var(--t)">🔑 Autorización — ${REG_detalle.placa}</div>
     </div>
-
     <div style="background:var(--sf);border:1px solid var(--b);border-radius:var(--rsm);padding:12px;margin-bottom:14px">
-      <div style="font-size:12px;font-weight:600;color:var(--t2);margin-bottom:8px">AUTORIZADOR</div>
+      <div style="font-size:11px;font-weight:600;color:var(--t3);margin-bottom:8px">AUTORIZADOR</div>
       <select id="aut-nombre" style="width:100%;padding:10px;border:1px solid var(--b);border-radius:var(--rsm);font-size:14px;background:var(--sf);color:var(--t);margin-bottom:8px;box-sizing:border-box">
         <option value="">Seleccione autorizador...</option>
         ${REG_autorizadores.map(a=>`<option value="${a.nombre}">${a.nombre}</option>`).join('')}
       </select>
       <input id="aut-clave" type="password" placeholder="Clave de autorización" style="width:100%;padding:10px;border:1px solid var(--b);border-radius:var(--rsm);font-size:14px;background:var(--sf);color:var(--t);box-sizing:border-box">
     </div>
-
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
       <div style="background:var(--green-bg);border:1px solid var(--green-b);border-radius:var(--rsm);padding:10px;text-align:center">
         <div style="font-size:11px;color:var(--t2)">Autorizado</div>
         <div style="font-weight:700;color:var(--green);font-size:14px">Q ${totalAuth.toLocaleString('es-GT',{minimumFractionDigits:2})}</div>
       </div>
-      <div style="background:var(--red-bg);border:1px solid var(--red);border-radius:var(--rsm);padding:10px;text-align:center">
+      <div style="background:#FEF3C7;border:1px solid #FCD34D;border-radius:var(--rsm);padding:10px;text-align:center">
         <div style="font-size:11px;color:var(--t2)">Pendiente</div>
-        <div style="font-weight:700;color:var(--red);font-size:14px">Q ${totalPend.toLocaleString('es-GT',{minimumFractionDigits:2})}</div>
+        <div style="font-weight:700;color:#92400E;font-size:14px">Q ${totalPend.toLocaleString('es-GT',{minimumFractionDigits:2})}</div>
       </div>
     </div>
-
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+      <button onclick="AUT2_todos(true)" style="padding:10px;background:var(--green-bg);color:var(--green);border:1px solid var(--green-b);border-radius:var(--rsm);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">✅ Autorizar todos</button>
+      <button onclick="AUT2_todos(false)" style="padding:10px;background:#FEF3C7;color:#92400E;border:1px solid #FCD34D;border-radius:var(--rsm);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">✕ Limpiar</button>
+    </div>
     <div id="aut-items-lista">
       ${AUT2_items.map((it,i)=>{
         const auth=AUT2_autorizados.has(i);
-        return`<div style="background:var(--sf);border:1.5px solid ${auth?'var(--green-b)':'var(--red)'};border-radius:var(--rsm);padding:12px;margin-bottom:8px;display:flex;align-items:center;gap:10px">
+        return`<div style="background:var(--sf);border:1.5px solid ${auth?'var(--green-b)':'#FCD34D'};border-radius:var(--rsm);padding:12px;margin-bottom:8px;display:flex;align-items:center;gap:10px">
           <div style="flex:1">
             <div style="font-size:13px;font-weight:600;color:var(--t)">${it.descripcion}</div>
-            <div style="font-size:12px;font-weight:700;color:var(--t)">Q ${parseFloat(it.total||0).toLocaleString('es-GT',{minimumFractionDigits:2})}</div>
+            <div style="font-size:12px;color:var(--t2)">Q ${parseFloat(it.total||0).toLocaleString('es-GT',{minimumFractionDigits:2})}</div>
           </div>
           <div style="display:flex;gap:6px">
             <button onclick="AUT2_toggle(${i},true)" style="padding:7px 11px;border-radius:4px;border:1px solid var(--green-b);background:${auth?'var(--green)':'var(--sf2)'};color:${auth?'#fff':'var(--t2)'};font-size:13px;cursor:pointer;font-weight:700">✅</button>
-            <button onclick="AUT2_toggle(${i},false)" style="padding:7px 11px;border-radius:4px;border:1px solid var(--red);background:${!auth?'var(--red)':'var(--sf2)'};color:${!auth?'#fff':'var(--t2)'};font-size:13px;cursor:pointer;font-weight:700">✕</button>
+            <button onclick="AUT2_toggle(${i},false)" style="padding:7px 11px;border-radius:4px;border:1px solid #FCD34D;background:${!auth?'#F59E0B':'var(--sf2)'};color:${!auth?'#fff':'var(--t2)'};font-size:13px;cursor:pointer;font-weight:700">✕</button>
           </div>
         </div>`;
       }).join('')}
     </div>
-
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
-      <button onclick="AUT2_todos(true)" style="padding:11px;background:var(--green-bg);color:var(--green);border:1px solid var(--green-b);border-radius:var(--rsm);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">✅ Todos</button>
-      <button onclick="AUT2_todos(false)" style="padding:11px;background:var(--red-bg);color:var(--red);border:1px solid var(--red);border-radius:var(--rsm);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">✕ Ninguno</button>
-    </div>
-    <button onclick="AUT2_guardar()" style="width:100%;margin-top:10px;padding:14px;background:var(--blue);color:#fff;border:none;border-radius:var(--rsm);font-size:15px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">💾 Guardar autorización</button>
+    <button onclick="AUT2_guardar()" style="width:100%;margin-top:8px;padding:14px;background:var(--blue);color:#fff;border:none;border-radius:var(--rsm);font-size:15px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">💾 Guardar autorización</button>
   </div>`;
 }
 
@@ -3266,32 +3192,219 @@ async function AUT2_guardar(){
   const clave=document.getElementById('aut-clave').value;
   if(!nombre){showToast('⚠ Seleccione un autorizador');return;}
   if(!clave){showToast('⚠ Ingrese la clave');return;}
-  // Verify clave
   const autorizador=REG_autorizadores.find(a=>a.nombre===nombre);
   if(!autorizador||autorizador.clave!==clave){showToast('⚠ Clave incorrecta');return;}
   showToast('☁ Guardando...', false);
   try{
-    const autorizados=AUT2_items.filter((_,i)=>AUT2_autorizados.has(i));
-    const pendientes=AUT2_items.filter((_,i)=>!AUT2_autorizados.has(i));
+    const fechaAuth=new Date().toLocaleDateString('es-GT');
     const r=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({
       action:'saveAutorizacion',
       placa:REG_detalle.placa,
       rowIndex:AUT2_rowIndex,
       indicesAutorizados:Array.from(AUT2_autorizados),
-      totalAutorizado:autorizados.reduce((s,it)=>s+(parseFloat(it.total)||0),0),
-      totalPendiente:pendientes.reduce((s,it)=>s+(parseFloat(it.total)||0),0),
+      totalAutorizado:AUT2_items.filter((_,i)=>AUT2_autorizados.has(i)).reduce((s,it)=>s+(parseFloat(it.total)||0),0),
+      totalPendiente:AUT2_items.filter((_,i)=>!AUT2_autorizados.has(i)).reduce((s,it)=>s+(parseFloat(it.total)||0),0),
       autorizadoPor:nombre,
-      fechaAutorizacion:new Date().toLocaleDateString('es-GT'),
+      fechaAutorizacion:fechaAuth,
     })});
     const d=await r.json();
     if(d.error)throw new Error(d.error);
-    // Update estado
-    const nuevoEstado=AUT2_autorizados.size>0?'autorizada':'no_invierte';
-    await REG_cambiarEstado(nuevoEstado, false);
     showToast('✅ Autorización guardada', false);
     REG_verDetalle(REG_lista.indexOf(REG_detalle));
   }catch(e){showToast('⚠ Error: '+e.message);}
 }
+
+// ══════════════════════════════════════════════════════
+// PDFs
+// ══════════════════════════════════════════════════════
+
+async function REG_getHallazgosConFotos(){
+  try{
+    const r=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({
+      action:'getHallazgosTaller', placa:REG_detalle.placa, fecha:REG_detalle.fecha
+    })});
+    const d=await r.json();
+    return d.data||[];
+  }catch(e){return [];}
+}
+
+async function REG_descargarPDF_revision(){
+  showToast('⏳ Generando PDF...', false);
+  try{
+    const hallazgos=await REG_getHallazgosConFotos();
+    const {jsPDF}=window.jspdf;
+    const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+    let y=20;
+
+    // Header
+    doc.setFontSize(16);doc.setFont('helvetica','bold');doc.setTextColor(27,111,216);
+    doc.text('REVISIÓN TÉCNICA DE TALLER',105,y,{align:'center'});y+=8;
+    doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(100);
+    doc.text('División Vehículos Usados · '+REG_detalle.fecha,105,y,{align:'center'});y+=12;
+
+    // Info
+    const sec=(t)=>{doc.setFillColor(27,111,216);doc.rect(10,y-4,190,7,'F');doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(255,255,255);doc.text(t,14,y+0.5);doc.setTextColor(0,0,0);doc.setFont('helvetica','normal');y+=12;};
+    sec('DATOS DEL VEHÍCULO');
+    doc.setFontSize(10);
+    doc.text('Placa: '+REG_detalle.placa,14,y);doc.text('Modelo: '+(REG_detalle.modelo||'—'),80,y);y+=6;
+    doc.text('Inspector: '+(REG_detalle.inspector||'—'),14,y);doc.text('Hallazgos: '+REG_detalle.totalHallazgos,80,y);y+=10;
+
+    const est=ESTADOS[REG_detalle.estado]||ESTADOS.sin_inversion;
+    doc.setFontSize(9);doc.text('Estado: '+est.label,14,y);y+=10;
+
+    if(hallazgos.length){
+      sec('HALLAZGOS DETECTADOS ('+hallazgos.length+')');
+      for(let h of hallazgos){
+        if(y>240){doc.addPage();y=20;}
+        doc.setFont('helvetica','bold');doc.setFontSize(10);
+        const lines=doc.splitTextToSize(String(h[2]||''),170);
+        doc.text(lines,14,y);y+=lines.length*5+2;
+        doc.setFont('helvetica','normal');doc.setFontSize(9);
+        if(h[4]&&h[4]!=='—'){
+          const obs=doc.splitTextToSize('Obs: '+h[4],170);
+          doc.text(obs,18,y);y+=obs.length*4+2;
+        }
+        if(h[5]&&h[5]!=='—'){
+          doc.setTextColor(27,111,216);
+          doc.text('📎 Foto: '+String(h[5]).substring(0,80),18,y);
+          doc.setTextColor(0,0,0);y+=5;
+        }
+        y+=3;
+      }
+    } else {
+      doc.setFontSize(10);doc.text('Sin hallazgos registrados.',14,y);
+    }
+    doc.setFontSize(8);doc.setTextColor(150);
+    doc.text('Sistema de Inspecciones — División Vehículos Usados',105,285,{align:'center'});
+    doc.save('Revision_Taller_'+REG_detalle.placa+'_'+REG_detalle.fecha.replace(/\//g,'-')+'.pdf');
+    showToast('✅ PDF descargado', false);
+  }catch(e){showToast('⚠ Error: '+e.message);}
+}
+
+async function REG_descargarPDF_autorizado(){
+  showToast('⏳ Generando PDF...', false);
+  try{
+    const rc=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'getCotizacion',placa:REG_detalle.placa})});
+    const dc=await rc.json();
+    if(dc.error||!dc.data){showToast('⚠ Sin cotización');return;}
+    const cot=dc.data;
+    const items=cot.items||[];
+    const autorizados=new Set((cot.autorizados||[]).map(Number));
+    const itemsAuth=items.filter((_,i)=>autorizados.has(i));
+    const hallazgos=await REG_getHallazgosConFotos();
+
+    const {jsPDF}=window.jspdf;
+    const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+    let y=20;
+
+    doc.setFontSize(16);doc.setFont('helvetica','bold');doc.setTextColor(27,111,216);
+    doc.text('ORDEN DE TRABAJO — AUTORIZADO',105,y,{align:'center'});y+=8;
+    doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(100);
+    doc.text('División Vehículos Usados · '+REG_detalle.fecha,105,y,{align:'center'});y+=12;
+
+    const sec=(t,color=[27,111,216])=>{doc.setFillColor(...color);doc.rect(10,y-4,190,7,'F');doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(255,255,255);doc.text(t,14,y+0.5);doc.setTextColor(0,0,0);doc.setFont('helvetica','normal');y+=12;};
+
+    sec('DATOS DEL VEHÍCULO');
+    doc.setFontSize(10);
+    doc.text('Placa: '+REG_detalle.placa,14,y);doc.text('Modelo: '+(REG_detalle.modelo||'—'),80,y);y+=6;
+    doc.text('Inspector: '+(REG_detalle.inspector||'—'),14,y);y+=10;
+
+    if(cot.autorizadoPor){
+      sec('AUTORIZACIÓN',[34,197,94]);
+      doc.setFontSize(10);
+      doc.text('Autorizado por: '+cot.autorizadoPor,14,y);doc.text('Fecha: '+(cot.fechaAutorizacion||'—'),110,y);y+=10;
+    }
+
+    sec('TRABAJOS AUTORIZADOS',[34,197,94]);
+    if(itemsAuth.length){
+      itemsAuth.forEach(it=>{
+        if(y>270){doc.addPage();y=20;}
+        doc.setFont('helvetica','bold');doc.setFontSize(10);
+        const lines=doc.splitTextToSize('• '+it.descripcion,170);
+        doc.text(lines,14,y);y+=lines.length*5+3;
+        // Buscar foto relacionada
+        const hallazgo=hallazgos.find(h=>String(h[2]||'').toLowerCase().includes(it.descripcion.toLowerCase().substring(0,15)));
+        if(hallazgo&&hallazgo[5]&&hallazgo[5]!=='—'){
+          doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(27,111,216);
+          doc.text('📎 '+String(hallazgo[5]).substring(0,80),18,y);doc.setTextColor(0,0,0);y+=5;
+        }
+        y+=2;
+      });
+    } else {
+      doc.text('Sin trabajos autorizados.',14,y);y+=8;
+    }
+
+    doc.setFontSize(8);doc.setTextColor(150);
+    doc.text('Sistema de Inspecciones — División Vehículos Usados',105,285,{align:'center'});
+    doc.save('Autorizado_'+REG_detalle.placa+'_'+REG_detalle.fecha.replace(/\//g,'-')+'.pdf');
+    showToast('✅ PDF Autorizado descargado', false);
+  }catch(e){showToast('⚠ Error: '+e.message);}
+}
+
+async function REG_descargarPDF_pendiente(){
+  showToast('⏳ Generando PDF...', false);
+  try{
+    const rc=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'getCotizacion',placa:REG_detalle.placa})});
+    const dc=await rc.json();
+    if(dc.error||!dc.data){showToast('⚠ Sin cotización');return;}
+    const cot=dc.data;
+    const items=cot.items||[];
+    const autorizados=new Set((cot.autorizados||[]).map(Number));
+    const itemsPend=items.filter((_,i)=>!autorizados.has(i));
+    const totalPend=itemsPend.reduce((s,it)=>s+(parseFloat(it.total)||0),0);
+    const hallazgos=await REG_getHallazgosConFotos();
+
+    const {jsPDF}=window.jspdf;
+    const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+    let y=20;
+
+    doc.setFontSize(16);doc.setFont('helvetica','bold');doc.setTextColor(245,158,11);
+    doc.text('PRESUPUESTO PENDIENTE DE AUTORIZAR',105,y,{align:'center'});y+=8;
+    doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(100);
+    doc.text('División Vehículos Usados · '+REG_detalle.fecha,105,y,{align:'center'});y+=12;
+
+    const sec=(t,color=[245,158,11])=>{doc.setFillColor(...color);doc.rect(10,y-4,190,7,'F');doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(255,255,255);doc.text(t,14,y+0.5);doc.setTextColor(0,0,0);doc.setFont('helvetica','normal');y+=12;};
+
+    sec('DATOS DEL VEHÍCULO',[27,111,216]);
+    doc.setFontSize(10);
+    doc.text('Placa: '+REG_detalle.placa,14,y);doc.text('Modelo: '+(REG_detalle.modelo||'—'),80,y);y+=6;
+    doc.text('Inspector: '+(REG_detalle.inspector||'—'),14,y);y+=10;
+
+    sec('TRABAJOS PENDIENTES DE AUTORIZAR');
+    if(itemsPend.length){
+      itemsPend.forEach(it=>{
+        if(y>255){doc.addPage();y=20;}
+        doc.setFont('helvetica','bold');doc.setFontSize(10);
+        const lines=doc.splitTextToSize('• '+it.descripcion,140);
+        doc.text(lines,14,y);
+        doc.text('Q '+parseFloat(it.total||0).toLocaleString('es-GT',{minimumFractionDigits:2}),195,y,{align:'right'});
+        y+=lines.length*5+3;
+        // Buscar foto relacionada
+        const hallazgo=hallazgos.find(h=>String(h[2]||'').toLowerCase().includes(it.descripcion.toLowerCase().substring(0,15)));
+        if(hallazgo&&hallazgo[5]&&hallazgo[5]!=='—'){
+          doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(27,111,216);
+          doc.text('📎 '+String(hallazgo[5]).substring(0,80),18,y);doc.setTextColor(0,0,0);y+=5;
+        }
+        y+=2;
+      });
+      // Total
+      y+=4;
+      doc.setFillColor(254,243,199);doc.rect(10,y-4,190,9,'F');
+      doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor(146,64,14);
+      doc.text('TOTAL PENDIENTE:',14,y+1);
+      doc.text('Q '+totalPend.toLocaleString('es-GT',{minimumFractionDigits:2}),195,y+1,{align:'right'});
+      doc.setTextColor(0,0,0);
+    } else {
+      doc.text('Sin trabajos pendientes.',14,y);
+    }
+
+    doc.setFontSize(8);doc.setTextColor(150);
+    doc.text('Sistema de Inspecciones — División Vehículos Usados',105,285,{align:'center'});
+    doc.save('Pendiente_'+REG_detalle.placa+'_'+REG_detalle.fecha.replace(/\//g,'-')+'.pdf');
+    showToast('✅ PDF Pendiente descargado', false);
+  }catch(e){showToast('⚠ Error: '+e.message);}
+}
+
 
 // ══════════════════════════════════════════════════════
 // MÓDULO CONFIGURACIÓN
