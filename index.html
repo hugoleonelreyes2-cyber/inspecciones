@@ -210,6 +210,7 @@ textarea{resize:vertical;line-height:1.5}
 .cotiz-tbl tr:last-child td{border-bottom:none}
 .cotiz-total{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:var(--amber-bg);border-top:2px solid var(--amber-b);font-weight:600;font-size:14px;color:var(--amber-t)}
 .oblig-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;background:var(--red-bg);border:1px solid var(--red-b);border-radius:20px;font-size:10px;font-weight:600;color:var(--red-t);margin-bottom:6px}
+.foto-thumb{width:44px;height:34px;object-fit:cover;border-radius:4px;border:1px solid var(--b2);margin-top:6px}
 .ocr-zone{border:2px dashed var(--b2);border-radius:var(--rmd);padding:24px 16px;text-align:center;background:var(--sf2);cursor:pointer;margin-bottom:12px;transition:all 0.15s}
 .ocr-zone:active{border-color:var(--blue);background:var(--blue-bg)}
 .ocr-st{padding:9px 12px;border-radius:var(--rsm);font-size:12px;margin-bottom:8px;display:none;font-weight:500}
@@ -1825,7 +1826,7 @@ function T_renderBusqueda(){
       <button onclick="T_buscarVehiculo()" class="btn-pri" style="width:100%;margin-top:4px">🔍 Buscar vehículo</button>
       <div id="buscar-st" style="margin-top:12px;font-size:13px;text-align:center;color:var(--t3)"></div>
       <div style="margin-top:24px;border-top:1px solid var(--b);padding-top:16px;text-align:center">
-        <button onclick="T_showConfig()" style="padding:8px 16px;border:1px solid var(--b2);border-radius:var(--rsm);background:var(--sf2);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--t2)">⚙ Configuración</button>
+        
       </div>
     </div>`;
 }
@@ -1898,7 +1899,7 @@ function T_renderApp(){
       <div style="display:flex;align-items:center;justify-content:space-between">
         <button onclick="showMenu()" class="btn-sec" style="padding:7px 14px;font-size:13px;flex:0">← Menú</button>
         <div style="font-size:15px;font-weight:600;color:var(--t)">🔧 Revisión de Taller</div>
-        <button onclick="T_showConfig()" class="btn-sec" style="padding:7px 12px;font-size:13px;flex:0">⚙</button>
+        <div style="width:60px"></div>
       </div>
       <div style="background:var(--sf2);border:1px solid var(--b);border-radius:var(--r);padding:10px 12px">
         <div style="font-size:16px;font-weight:700;color:var(--t);margin-bottom:4px" id="veh-placa-title"></div>
@@ -2090,7 +2091,7 @@ function T_renderCotizacion(c,ab){
 
   ab.innerHTML=`
     <button class="btn-sec" onclick="T_goEtapa('prueba')">← Volver</button>
-    <button class="btn-pri" onclick="T_guardarBorrador()">💾 Guardar cotización</button>`;
+    <button class="btn-pri" onclick="T_guardarRegistro()">💾 Guardar en Sheets</button>`;
 }
 
 async function T_procesarOCR(input){
@@ -2331,19 +2332,63 @@ async function T_guardarYEnviar(){
 }
 
 
-async function T_guardarBorrador(){
+async function T_guardarRegistro(){
+  if(!T_VEH?.placa){showToast('⚠ No hay vehículo cargado');return;}
+  T_showProgress('Guardando en Sheets...','Un momento...');
   try{
+    const fecha=new Date().toLocaleDateString('es-GT');
+    const hallazgos=Object.entries(T_ST).filter(([k,v])=>v.val==='mal').map(([k,v])=>{
+      const p=Object.values(PUNTOS).flat().find(x=>x.id===k);
+      return[T_VEH.placa,fecha,p?.q?.substring(0,80)||k,v.val,v.obs||'—'];
+    });
+    const totalCotiz=T_COTIZACION.reduce((s,i)=>s+(i.total||0),0);
+    await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({
+      action:'saveTallerRevision',
+      placa:T_VEH.placa,modelo:T_VEH.modelo,fecha,
+      inspector:T_VEH.inspector||'—',
+      totalHallazgos:hallazgos.length,
+      totalAutorizado:totalCotiz,
+      totalPendiente:0,
+      totalPintura:T_VEH.totalPintura||0,
+      totalInversion:totalCotiz+(T_VEH.totalPintura||0),
+      trabajosAutorizados:T_COTIZACION.map(i=>i.descripcion+' Q'+(i.total||0)).join(' | ')||'—',
+      trabajosPendientes:'—',
+      hallazgos,
+      asesores:ASESORES.filter(a=>a),
+      produccion:PROD_DEST.filter(a=>a),
+    })});
+    // Guardar local también
+    try{
+      localStorage.setItem('taller_borrador_'+T_VEH.placa, JSON.stringify({
+        placa:T_VEH.placa,fecha,st:T_ST,cotizacion:T_COTIZACION,autorizados:[],
+      }));
+    }catch(e){}
+    T_hideProgress();
+    showToast('✅ Registro guardado en Sheets',false);
+  }catch(e){
+    T_hideProgress();
+    showToast('⚠ Error al guardar: '+e.message);
+    console.error(e);
+  }
+}
+
+function T_guardarBorrador(){
+  try{
+    // Guardar borrador en localStorage
     const borrador={
-      placa:T_VEH.placa,
+      placa:T_VEH?.placa||'',
       fecha:new Date().toLocaleDateString('es-GT'),
       st:T_ST,
       cotizacion:T_COTIZACION,
       autorizados:Array.from(T_AUTORIZADOS),
     };
-    localStorage.setItem('taller_borrador_'+T_VEH.placa, JSON.stringify(borrador));
-    showToast('💾 Borrador guardado — '+T_VEH.placa, false);
+    if(T_VEH?.placa){
+      localStorage.setItem('taller_borrador_'+T_VEH.placa, JSON.stringify(borrador));
+    }
+    showToast('💾 Borrador guardado localmente', false);
   }catch(e){
-    showToast('⚠ Error al guardar borrador');
+    showToast('⚠ Error al guardar: '+e.message);
+    console.error(e);
   }
 }
 
