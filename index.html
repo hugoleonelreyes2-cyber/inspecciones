@@ -2341,9 +2341,8 @@ async function T_guardarYEnviar(){
 
 
 async function T_guardarRegistro(){
-  console.log('T_guardarRegistro llamada, VEH:', T_VEH?.placa);
   if(!T_VEH?.placa){showToast('⚠ No hay vehículo cargado');return;}
-  T_showProgress('Guardando en Sheets...','Un momento...');
+  showToast('☁ Guardando en Sheets...',false);
   try{
     const fecha=new Date().toLocaleDateString('es-GT');
     const hallazgos=Object.entries(T_ST).filter(([k,v])=>v.val==='mal').map(([k,v])=>{
@@ -2353,7 +2352,9 @@ async function T_guardarRegistro(){
     const totalCotiz=T_COTIZACION.reduce((s,i)=>s+(i.total||0),0);
     const payload={
       action:'saveTallerRevision',
-      placa:T_VEH.placa,modelo:T_VEH.modelo,fecha,
+      placa:T_VEH.placa,
+      modelo:T_VEH.modelo||'—',
+      fecha,
       inspector:T_VEH.inspector||'—',
       totalHallazgos:hallazgos.length,
       totalAutorizado:totalCotiz,
@@ -2366,22 +2367,18 @@ async function T_guardarRegistro(){
       asesores:ASESORES.filter(a=>a),
       produccion:PROD_DEST.filter(a=>a),
     };
-    console.log('Guardando en Sheets:', payload);
-    // Usar la misma función gPost que usa la inspección inicial
-    const resData=await gPost(payload);
-    console.log('Respuesta Sheets:', resData);
-    // Guardar local también
-    try{
-      localStorage.setItem('taller_borrador_'+T_VEH.placa, JSON.stringify({
-        placa:T_VEH.placa,fecha,st:T_ST,cotizacion:T_COTIZACION,autorizados:[],
-      }));
-    }catch(e){}
-    T_hideProgress();
-    showToast('✅ Registro guardado en Sheets',false);
+    const resp=await fetch(SCRIPT_URL,{
+      method:'POST',
+      body:JSON.stringify(payload)
+    });
+    const data=await resp.json();
+    if(data.error)throw new Error(data.error);
+    // Guardar local
+    try{localStorage.setItem('taller_borrador_'+T_VEH.placa,JSON.stringify({placa:T_VEH.placa,fecha,st:T_ST,cotizacion:T_COTIZACION}));}catch(e){}
+    showToast('✅ Guardado correctamente en Sheets',false);
   }catch(e){
-    T_hideProgress();
-    showToast('⚠ Error al guardar: '+e.message);
-    console.error(e);
+    showToast('⚠ Error: '+e.message);
+    console.error('Error guardando:',e);
   }
 }
 
