@@ -1843,23 +1843,21 @@ function T_renderBusqueda(){
       <div class="search-logo">
         <div style="font-size:56px;margin-bottom:12px">🔧</div>
         <h1>Revisión Técnica de Taller</h1>
-        <p>Ingrese la placa del vehículo a revisar</p>
+        <p>Busque por placa o número de chasis</p>
       </div>
       <div class="field">
-        <label class="lbl">Número de placa</label>
-        <input class="inp" id="buscar-placa" placeholder="Ej. P880CZR" style="text-transform:uppercase;font-size:16px;letter-spacing:1px" oninput="this.value=this.value.toUpperCase()">
+        <label class="lbl">Placa o N° de chasis</label>
+        <input class="inp" id="buscar-placa" placeholder="Ej. P880CZR o VIN123456" style="text-transform:uppercase;font-size:15px;letter-spacing:1px" oninput="this.value=this.value.toUpperCase()">
       </div>
       <button onclick="T_buscarVehiculo()" class="btn-pri" style="width:100%;margin-top:4px">🔍 Buscar vehículo</button>
       <div id="buscar-st" style="margin-top:12px;font-size:13px;text-align:center;color:var(--t3)"></div>
-      <div style="margin-top:24px;border-top:1px solid var(--b);padding-top:16px;text-align:center">
-        
-      </div>
     </div>`;
+  document.getElementById('buscar-placa').addEventListener('keydown',e=>{if(e.key==='Enter')T_buscarVehiculo();});
 }
 
 async function T_buscarVehiculo(){
-  const placa=document.getElementById('buscar-placa').value.trim();
-  if(!placa){showToast('⚠ Ingrese un número de placa');return;}
+  const busqueda=document.getElementById('buscar-placa').value.trim().toUpperCase();
+  if(!busqueda){showToast('⚠ Ingrese placa o número de chasis');return;}
   const st=document.getElementById('buscar-st');
   st.textContent='🔍 Buscando en Google Sheets...';
   try{
@@ -1868,7 +1866,11 @@ async function T_buscarVehiculo(){
     if(data.status==='OK'&&data.data&&data.data.length>1){
       const headers=data.data[0];
       const rows=data.data.slice(1);
-      const row=rows.filter(r=>String(r[headers.indexOf('Placa')]||'').toUpperCase()===placa.toUpperCase()).pop();
+      // Search by placa OR chasis
+      const row=rows.filter(r=>
+        String(r[headers.indexOf('Placa')]||'').toUpperCase()===busqueda ||
+        String(r[headers.indexOf('Chasis')]||'').toUpperCase()===busqueda
+      ).pop();
       if(row){
         const get=(h)=>row[headers.indexOf(h)]||'';
         T_VEH={
@@ -1909,17 +1911,17 @@ async function T_buscarVehiculo(){
         T_initST();
         T_renderApp();
       }else{
-        st.textContent='⚠ No se encontró ninguna inspección con la placa '+placa;
+        st.textContent='⚠ No se encontró ninguna inspección con: '+busqueda;
       }
     }else{
       // Demo si no hay conexión
-      T_VEH={placa,modelo:'Vehículo demo',color:'—',km:'—',inspector:'—',fecha:new Date().toLocaleDateString('es-GT'),chasis:'—',motor:'—',hallazgos:[],folderLink:''};
+      T_VEH={placa:busqueda,modelo:'Vehículo demo',color:'—',km:'—',inspector:'—',fecha:new Date().toLocaleDateString('es-GT'),chasis:'—',motor:'—',hallazgos:[],folderLink:''};
       T_initST();
       T_renderApp();
     }
   }catch(e){
     // Demo offline
-    T_VEH={placa,modelo:'Vehículo demo',color:'—',km:'—',inspector:'—',fecha:new Date().toLocaleDateString('es-GT'),chasis:'—',motor:'—',hallazgos:[],folderLink:''};
+    T_VEH={placa:busqueda,modelo:'Vehículo demo',color:'—',km:'—',inspector:'—',fecha:new Date().toLocaleDateString('es-GT'),chasis:'—',motor:'—',hallazgos:[],folderLink:''};
     T_initST();
     T_renderApp();
   }
@@ -2381,7 +2383,8 @@ async function T_guardarRegistro(){
   if(overlay)overlay.style.display='flex';
 
   try{
-    const fecha=new Date().toLocaleDateString('es-GT');
+    const fechaObj=new Date();
+    const fecha=fechaObj.toLocaleDateString('es-GT',{day:'2-digit',month:'2-digit',year:'numeric'});
 
     // 3. Subir fotos de hallazgos a Drive
     T_updateProgress('Subiendo fotos...','Paso 2 de 4');
@@ -2414,6 +2417,7 @@ async function T_guardarRegistro(){
       action:'saveTallerRevision',
       placa:T_VEH.placa,
       modelo:T_VEH.modelo||'—',
+      chasis:T_VEH.chasis||'—',
       fecha,
       inspector:T_VEH.inspector||'—',
       totalHallazgos:hallazgos.length,
@@ -2853,6 +2857,16 @@ function showMenu(){
 // MÓDULO REGISTROS — Lista integrada + Cotización + Auth
 // ══════════════════════════════════════════════════════
 
+function REG_formatFecha(f){
+  if(!f)return '—';
+  const s=String(f);
+  if(s.includes('T')||s.includes('Z')){
+    const d=new Date(s);
+    if(!isNaN(d))return d.toLocaleDateString('es-GT',{day:'2-digit',month:'2-digit',year:'numeric'});
+  }
+  return s;
+}
+
 const ESTADOS = {
   sin_inversion:    {label:'Sin inversiones',    color:'var(--t3)',   bg:'var(--sf2)',       border:'var(--b)'},
   espera_presup:    {label:'Espera presupuesto',  color:'#92400E',    bg:'#FEF3C7',          border:'#FCD34D'},
@@ -2898,8 +2912,15 @@ function REG_renderLista(){
   const app=document.getElementById('reg-app');
   const orden={espera_presup:0, espera_autorizar:1, autorizada:2, sin_inversion:3};
   let lista=[...REG_lista];
-  // Apply filters
-  if(REG_filtro) lista=lista.filter(r=>r.placa.toUpperCase().includes(REG_filtro.toUpperCase()));
+  // Apply filters — by numRevision, placa or chasis
+  if(REG_filtro){
+    const f=REG_filtro.toUpperCase();
+    lista=lista.filter(r=>
+      (r.placa||'').toUpperCase().includes(f)||
+      (r.chasis||'').toUpperCase().includes(f)||
+      (r.numRevision||'').toUpperCase().includes(f)
+    );
+  }
   if(REG_filtroEstado) lista=lista.filter(r=>r.estado===REG_filtroEstado);
   lista.sort((a,b)=>{
     const oa=orden[a.estado]??3, ob=orden[b.estado]??3;
@@ -2911,7 +2932,7 @@ function REG_renderLista(){
     <div style="display:flex;gap:8px;margin-bottom:12px">
       <input id="reg-filtro-placa" type="text" placeholder="🔍 Buscar placa..." value="${REG_filtro}"
         oninput="REG_filtro=this.value;REG_renderLista()"
-        style="flex:1;padding:9px 12px;border:1px solid var(--b);border-radius:var(--rsm);font-size:13px;background:var(--sf);color:var(--t)">
+        style="flex:1;padding:9px 12px;border:1px solid var(--b);border-radius:var(--rsm);font-size:13px;background:var(--sf);color:var(--t)" placeholder="🔍 Placa, chasis o N° rev...">
       <select id="reg-filtro-estado" onchange="REG_filtroEstado=this.value;REG_renderLista()"
         style="padding:9px 10px;border:1px solid var(--b);border-radius:var(--rsm);font-size:12px;background:var(--sf);color:var(--t)">
         <option value="">Todos</option>
@@ -2925,12 +2946,16 @@ function REG_renderLista(){
       const realIdx=REG_lista.indexOf(r);
       return`<div onclick="REG_verDetalle(${realIdx})" style="background:var(--sf);border:1px solid var(--b);border-left:4px solid ${est.border};border-radius:var(--rsm);padding:12px 14px;margin-bottom:10px;cursor:pointer">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-          <span style="font-weight:700;font-size:15px;color:var(--t)">${r.placa}</span>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-weight:700;font-size:15px;color:var(--t)">${r.placa}</span>
+            ${r.numRevision&&r.numRevision!=='—'?`<span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--t3);background:var(--sf2);padding:2px 6px;border-radius:4px;border:1px solid var(--b)">${r.numRevision}</span>`:''}
+          </div>
           <span style="font-size:10px;padding:2px 8px;border-radius:20px;font-weight:600;background:${est.bg};color:${est.color};border:1px solid ${est.border}">${est.label}</span>
         </div>
         <div style="font-size:12px;color:var(--t2)">${r.modelo||'—'} · ${r.inspector||'—'}</div>
+        ${r.chasis&&r.chasis!=='—'?`<div style="font-size:11px;color:var(--t3);margin-top:2px">Chasis: ${r.chasis}</div>`:''}
         <div style="display:flex;justify-content:space-between;margin-top:4px">
-          <span style="font-size:11px;color:var(--t3)">${r.fecha||'—'}</span>
+          <span style="font-size:11px;color:var(--t3)">${REG_formatFecha(r.fecha)}</span>
           ${r.cotizacion&&r.cotizacion.totalAutorizado>0?`<span style="font-size:12px;color:var(--green);font-weight:600">Q ${parseFloat(r.cotizacion.totalAutorizado).toLocaleString('es-GT',{minimumFractionDigits:2})} auth.</span>`:''}
         </div>
       </div>`;
@@ -2965,10 +2990,12 @@ async function REG_verDetalle(idx){
     <div style="background:var(--sf);border:1px solid var(--b);border-radius:var(--rsm);padding:14px;margin-bottom:12px">
       <div style="font-size:11px;font-weight:600;color:var(--t3);margin-bottom:8px;letter-spacing:.5px">REVISIÓN DE TALLER</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:13px;color:var(--t)">
+        <div><span style="color:var(--t3)">N° Revisión:</span> <b>${REG_detalle.numRevision||'—'}</b></div>
+        <div><span style="color:var(--t3)">Fecha:</span> ${REG_formatFecha(REG_detalle.fecha)}</div>
         <div><span style="color:var(--t3)">Modelo:</span> ${REG_detalle.modelo||'—'}</div>
-        <div><span style="color:var(--t3)">Fecha:</span> ${REG_detalle.fecha||'—'}</div>
-        <div><span style="color:var(--t3)">Inspector:</span> ${REG_detalle.inspector||'—'}</div>
         <div><span style="color:var(--t3)">Hallazgos:</span> ${REG_detalle.totalHallazgos||0}</div>
+        <div><span style="color:var(--t3)">Chasis:</span> ${REG_detalle.chasis||'—'}</div>
+        <div><span style="color:var(--t3)">Inspector:</span> ${REG_detalle.inspector||'—'}</div>
       </div>
     </div>
 
