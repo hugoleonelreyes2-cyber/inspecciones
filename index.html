@@ -2387,23 +2387,37 @@ async function T_guardarRegistro(){
     const fecha=fechaObj.toLocaleDateString('es-GT',{day:'2-digit',month:'2-digit',year:'numeric'});
 
     // 3. Subir fotos de hallazgos a Drive
+    T_updateProgress('Preparando carpeta en Drive...','Paso 2 de 4');
+    // Ensure folder exists — create if missing
+    let folderId=T_VEH.folderVehId||'';
+    if(!folderId){
+      try{
+        folderId=await gEnsureFolderPath(T_VEH.placa, fecha);
+        T_VEH.folderVehId=folderId;
+      }catch(fe){console.warn('No se pudo crear carpeta Drive:',fe);}
+    }
+
     T_updateProgress('Subiendo fotos...','Paso 2 de 4');
     const hallazgos=[];
+    const puntosConFoto=Object.entries(T_ST).filter(([k,v])=>v.val==='mal'&&v.foto);
+    let fotoCount=0;
     for(const [k,v] of Object.entries(T_ST)){
       const p=Object.values(PUNTOS).flat().find(x=>x.id===k);
       let fotoLink='—';
-      if(v.val==='mal'&&v.foto&&T_VEH.folderVehId){
+      if(v.val==='mal'&&v.foto&&folderId){
         try{
+          T_updateProgress(`Subiendo foto ${++fotoCount} de ${puntosConFoto.length}...`,'Paso 2 de 4');
           const base64=v.foto.split(',')[1];
           const mimeType=v.foto.split(';')[0].split(':')[1]||'image/jpeg';
           const fr=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({
             action:'uploadPhoto',
             base64,mimeType,
             filename:'taller_'+k+'_'+T_VEH.placa+'.jpg',
-            folderId:T_VEH.folderVehId
+            folderId
           })});
           const fd=await fr.json();
           if(fd.webViewLink)fotoLink=fd.webViewLink;
+          if(fd.fileId)v.fileId=fd.fileId;
         }catch(fe){console.warn('Error subiendo foto:',fe);}
       }
       if(v.val==='mal'){
@@ -3256,56 +3270,91 @@ async function REG_getHallazgosConFotos(){
 }
 
 async function REG_descargarPDF_revision(){
-  showToast('⏳ Generando PDF...', false);
+  showToast('⏳ Generando PDF con fotos...', false);
   try{
     const hallazgos=await REG_getHallazgosConFotos();
     const {jsPDF}=window.jspdf;
     const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
     let y=20;
 
+    const sec=(t,rgb=[27,111,216])=>{
+      if(y>265){doc.addPage();y=20;}
+      doc.setFillColor(...rgb);doc.rect(10,y-4,190,7,'F');
+      doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(255,255,255);
+      doc.text(t,14,y+0.5);doc.setTextColor(0,0,0);doc.setFont('helvetica','normal');y+=12;
+    };
+
     // Header
-    doc.setFontSize(16);doc.setFont('helvetica','bold');doc.setTextColor(27,111,216);
+    doc.setFontSize(15);doc.setFont('helvetica','bold');doc.setTextColor(27,111,216);
     doc.text('REVISIÓN TÉCNICA DE TALLER',105,y,{align:'center'});y+=8;
     doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(100);
-    doc.text('División Vehículos Usados · '+REG_detalle.fecha,105,y,{align:'center'});y+=12;
+    doc.text('División Vehículos Usados · '+REG_formatFecha(REG_detalle.fecha),105,y,{align:'center'});y+=12;
 
-    // Info
-    const sec=(t)=>{doc.setFillColor(27,111,216);doc.rect(10,y-4,190,7,'F');doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(255,255,255);doc.text(t,14,y+0.5);doc.setTextColor(0,0,0);doc.setFont('helvetica','normal');y+=12;};
     sec('DATOS DEL VEHÍCULO');
-    doc.setFontSize(10);
-    doc.text('Placa: '+REG_detalle.placa,14,y);doc.text('Modelo: '+(REG_detalle.modelo||'—'),80,y);y+=6;
-    doc.text('Inspector: '+(REG_detalle.inspector||'—'),14,y);doc.text('Hallazgos: '+REG_detalle.totalHallazgos,80,y);y+=10;
-
+    doc.setFontSize(10);doc.setTextColor(0,0,0);
+    doc.text('N° Revisión: '+(REG_detalle.numRevision||'—'),14,y);y+=6;
+    doc.text('Placa: '+REG_detalle.placa,14,y);doc.text('Chasis: '+(REG_detalle.chasis||'—'),100,y);y+=6;
+    doc.text('Modelo: '+(REG_detalle.modelo||'—'),14,y);doc.text('Inspector: '+(REG_detalle.inspector||'—'),100,y);y+=6;
     const est=ESTADOS[REG_detalle.estado]||ESTADOS.sin_inversion;
-    doc.setFontSize(9);doc.text('Estado: '+est.label,14,y);y+=10;
+    doc.text('Estado: '+est.label,14,y);doc.text('Hallazgos: '+REG_detalle.totalHallazgos,100,y);y+=10;
 
     if(hallazgos.length){
       sec('HALLAZGOS DETECTADOS ('+hallazgos.length+')');
-      for(let h of hallazgos){
-        if(y>240){doc.addPage();y=20;}
-        doc.setFont('helvetica','bold');doc.setFontSize(10);
-        const lines=doc.splitTextToSize(String(h[2]||''),170);
-        doc.text(lines,14,y);y+=lines.length*5+2;
+      for(let i=0;i<hallazgos.length;i++){
+        const h=hallazgos[i];
+        if(y>255){doc.addPage();y=20;}
+
+        // Hallazgo header
+        doc.setFillColor(240,240,240);doc.rect(10,y-3,190,6,'F');
+        doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(0,0,0);
+        const titulo=doc.splitTextToSize((i+1)+'. '+String(h[2]||''),170);
+        doc.text(titulo,14,y+0.5);y+=titulo.length*5+4;
+
+        // Observación
         doc.setFont('helvetica','normal');doc.setFontSize(9);
         if(h[4]&&h[4]!=='—'){
-          const obs=doc.splitTextToSize('Obs: '+h[4],170);
-          doc.text(obs,18,y);y+=obs.length*4+2;
+          const obs=doc.splitTextToSize('Observación: '+h[4],170);
+          doc.text(obs,18,y);y+=obs.length*4+3;
         }
+
+        // Foto — intentar cargar desde Drive como imagen en el PDF
         if(h[5]&&h[5]!=='—'){
-          doc.setTextColor(27,111,216);
-          doc.text('📎 Foto: '+String(h[5]).substring(0,80),18,y);
-          doc.setTextColor(0,0,0);y+=5;
+          try{
+            // Get fileId from URL
+            const fileIdMatch=String(h[5]).match(/\/d\/([a-zA-Z0-9_-]+)/);
+            if(fileIdMatch){
+              const fileId=fileIdMatch[1];
+              // Fetch photo via Apps Script
+              const fr=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'getPhoto',fileId})});
+              const fd=await fr.json();
+              if(fd.base64&&fd.mimeType){
+                const imgData='data:'+fd.mimeType+';base64,'+fd.base64;
+                if(y>220){doc.addPage();y=20;}
+                doc.addImage(imgData,fd.mimeType.includes('png')?'PNG':'JPEG',18,y,80,60);
+                y+=65;
+              } else {
+                doc.setTextColor(27,111,216);doc.setFontSize(8);
+                doc.text('📎 Ver foto: '+String(h[5]).substring(0,80),18,y);
+                doc.setTextColor(0,0,0);y+=5;
+              }
+            }
+          }catch(fe){
+            doc.setTextColor(27,111,216);doc.setFontSize(8);
+            doc.text('📎 '+String(h[5]).substring(0,80),18,y);
+            doc.setTextColor(0,0,0);y+=5;
+          }
         }
-        y+=3;
+        y+=4;
       }
     } else {
       doc.setFontSize(10);doc.text('Sin hallazgos registrados.',14,y);
     }
+
     doc.setFontSize(8);doc.setTextColor(150);
     doc.text('Sistema de Inspecciones — División Vehículos Usados',105,285,{align:'center'});
-    doc.save('Revision_Taller_'+REG_detalle.placa+'_'+REG_detalle.fecha.replace(/\//g,'-')+'.pdf');
+    doc.save('Revision_Taller_'+(REG_detalle.numRevision||REG_detalle.placa)+'_'+REG_formatFecha(REG_detalle.fecha).replace(/\//g,'-')+'.pdf');
     showToast('✅ PDF descargado', false);
-  }catch(e){showToast('⚠ Error: '+e.message);}
+  }catch(e){showToast('⚠ Error: '+e.message);console.error(e);}
 }
 
 async function REG_descargarPDF_autorizado(){
