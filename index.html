@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- VERSION: 9.6 - FIXES: progress en descarga PDF revision -->
+<!-- VERSION: 9.7 - FIXES: numRevision como clave primaria cotizaciones -->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -3008,14 +3008,15 @@ const ESTADOS = {
 };
 
 function REG_calcularEstado(reg, cotizacion){
-  // Si no tiene hallazgos (todos bien/na) -> sin inversiones
   if(!reg.totalHallazgos || reg.totalHallazgos===0) return 'sin_inversion';
-  // Si tiene hallazgos pero sin cotización -> espera presupuesto
-  if(!cotizacion || !cotizacion.items || cotizacion.items.length===0) return 'espera_presup';
-  // Si tiene cotización pero sin autorizados -> espera autorización
-  const autorizados = cotizacion.autorizados||[];
+  // Match cotizacion by numRevision
+  const cot = cotizacion && (
+    (reg.numRevision && cotizacion.numRevision === reg.numRevision) ||
+    (!reg.numRevision && cotizacion.placa && cotizacion.placa.toUpperCase() === reg.placa.toUpperCase())
+  ) ? cotizacion : null;
+  if(!cot || !cot.items || cot.items.length===0) return 'espera_presup';
+  const autorizados = cot.autorizados||[];
   if(autorizados.length===0) return 'espera_autorizar';
-  // Tiene al menos uno autorizado -> autorizada
   return 'autorizada';
 }
 
@@ -3029,12 +3030,18 @@ async function REG_render(){
     const d=await r.json();
     if(d.error)throw new Error(d.error);
     REG_lista=d.data||[];
-    // Load all cotizaciones to calculate states
     const rc=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'getAllCotizaciones'})});
     const dc=await rc.json();
     const cotsMap={};
-    (dc.data||[]).forEach(c=>{ cotsMap[c.placa]=c; });
-    REG_lista.forEach(r=>{ r.cotizacion=cotsMap[r.placa]||null; r.estado=REG_calcularEstado(r,r.cotizacion); });
+    // Map by numRevision (primary) and placa (fallback)
+    (dc.data||[]).forEach(c=>{
+      if(c.numRevision) cotsMap[c.numRevision]=c;
+      else if(c.placa) cotsMap[c.placa.toUpperCase()]=c;
+    });
+    REG_lista.forEach(r=>{
+      r.cotizacion=cotsMap[r.numRevision]||cotsMap[r.placa.toUpperCase()]||null;
+      r.estado=REG_calcularEstado(r,r.cotizacion);
+    });
     REG_renderLista();
   }catch(e){
     app.innerHTML=`<div style="padding:20px;text-align:center;color:var(--red)">⚠ ${e.message}</div>`;
@@ -3104,7 +3111,7 @@ async function REG_verDetalle(idx){
   // Reload cotizacion fresh
   let cotizacion=REG_detalle.cotizacion||null;
   try{
-    const r=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'getCotizacion',placa:REG_detalle.placa})});
+    const r=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'getCotizacion',placa:REG_detalle.placa,numRevision:REG_detalle.numRevision||''})});
     const d=await r.json();
     if(!d.error&&d.data){ cotizacion=d.data; REG_detalle.cotizacion=cotizacion; }
   }catch(e){}
@@ -3187,7 +3194,7 @@ function REG_nuevaCotizacion(){
 }
 
 async function REG_editarCotizacion(){
-  const r=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'getCotizacion',placa:REG_detalle.placa})});
+  const r=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'getCotizacion',placa:REG_detalle.placa,numRevision:REG_detalle.numRevision||''})});
   const d=await r.json();
   REG_cotEdit=d.data||{items:[], rowIndex:-1};
   REG_renderCotEditor();
@@ -3255,6 +3262,7 @@ async function REG_cotGuardar(){
     const r=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({
       action:'saveCotizacion',
       placa:REG_detalle.placa,
+      numRevision:REG_detalle.numRevision||'',
       modelo:REG_detalle.modelo||'—',
       rowIndex:REG_cotEdit.rowIndex||-1,
       items:REG_cotEdit.items,
@@ -3276,7 +3284,7 @@ async function REG_autorizar(){
   try{
     const [ra, rc] = await Promise.all([
       fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'getAutorizadores'})}),
-      fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'getCotizacion',placa:REG_detalle.placa})})
+      fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'getCotizacion',placa:REG_detalle.placa,numRevision:REG_detalle.numRevision||''})})
     ]);
     const da=await ra.json(); REG_autorizadores=da.data||[];
     const dc=await rc.json();
@@ -3363,6 +3371,7 @@ async function AUT2_guardar(){
     const r=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({
       action:'saveAutorizacion',
       placa:REG_detalle.placa,
+      numRevision:REG_detalle.numRevision||'',
       rowIndex:AUT2_rowIndex,
       indicesAutorizados:Array.from(AUT2_autorizados),
       totalAutorizado:AUT2_items.filter((_,i)=>AUT2_autorizados.has(i)).reduce((s,it)=>s+(parseFloat(it.total)||0),0),
@@ -3512,7 +3521,7 @@ async function REG_descargarPDF_revision(){
 async function REG_descargarPDF_autorizado(){
   showToast('⏳ Generando PDF...', false);
   try{
-    const rc=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'getCotizacion',placa:REG_detalle.placa})});
+    const rc=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'getCotizacion',placa:REG_detalle.placa,numRevision:REG_detalle.numRevision||''})});
     const dc=await rc.json();
     if(dc.error||!dc.data){showToast('⚠ Sin cotización');return;}
     const cot=dc.data;
@@ -3572,7 +3581,7 @@ async function REG_descargarPDF_autorizado(){
 async function REG_descargarPDF_pendiente(){
   showToast('⏳ Generando PDF...', false);
   try{
-    const rc=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'getCotizacion',placa:REG_detalle.placa})});
+    const rc=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'getCotizacion',placa:REG_detalle.placa,numRevision:REG_detalle.numRevision||''})});
     const dc=await rc.json();
     if(dc.error||!dc.data){showToast('⚠ Sin cotización');return;}
     const cot=dc.data;
