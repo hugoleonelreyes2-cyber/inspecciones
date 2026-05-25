@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- VERSION: 9.4 - FIXES: client filter hallazgos por fecha -->
+<!-- VERSION: 9.6 - FIXES: progress en descarga PDF revision -->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -2530,7 +2530,7 @@ async function T_guardarRegistro(){
           const fr=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({
             action:'uploadPhoto',
             base64,mimeType,
-            filename:'taller_'+k+'_'+T_VEH.placa+'.jpg',
+            filename:'taller_'+(T_VEH.numRevisionActual||'REV')+'_'+k+'_'+T_VEH.placa+'.jpg',
             folderId
           })});
           const fd=await fr.json();
@@ -3402,8 +3402,15 @@ async function REG_getHallazgosConFotos(){
 }
 
 async function REG_descargarPDF_revision(){
-  showToast('⏳ Generando PDF con fotos...', false);
+  // Show progress overlay
+  const ov=document.getElementById('taller-progress-overlay');
+  const T_STEPS_PDF=['Cargando hallazgos','Descargando fotos','Generando PDF','Descargando archivo'];
+  const origSteps=T_STEPS;
+  T_STEPS.length=0;
+  T_STEPS_PDF.forEach(s=>T_STEPS.push(s));
+  T_showProgress('Preparando PDF...','Paso 1 de 4');
   try{
+    T_updateProgress('Cargando hallazgos...','Paso 1 de 4');
     const hallazgos=await REG_getHallazgosConFotos();
     const {jsPDF}=window.jspdf;
     const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
@@ -3450,6 +3457,7 @@ async function REG_descargarPDF_revision(){
         }
 
         // Foto — intentar cargar desde Drive como imagen en el PDF
+        T_updateProgress('Descargando fotos... ('+(i+1)+' de '+hallazgos.length+')','Paso 2 de 4');
         if(h[5]&&h[5]!=='—'){
           try{
             // Get fileId from URL
@@ -3482,11 +3490,23 @@ async function REG_descargarPDF_revision(){
       doc.setFontSize(10);doc.text('Sin hallazgos registrados.',14,y);
     }
 
+    T_updateProgress('Generando PDF...','Paso 3 de 4');
     doc.setFontSize(8);doc.setTextColor(150);
     doc.text('Sistema de Inspecciones — División Vehículos Usados',105,285,{align:'center'});
+    T_updateProgress('Descargando archivo...','Paso 4 de 4');
+    await new Promise(r=>setTimeout(r,400));
     doc.save('Revision_Taller_'+(REG_detalle.numRevision||REG_detalle.placa)+'_'+REG_formatFecha(REG_detalle.fecha).replace(/\//g,'-')+'.pdf');
+    T_hideProgress();
+    // Restore original steps
+    T_STEPS.length=0;
+    ['Preparando registro','Subiendo fotos a Drive','Guardando en Sheets','Finalizando'].forEach(s=>T_STEPS.push(s));
     showToast('✅ PDF descargado', false);
-  }catch(e){showToast('⚠ Error: '+e.message);console.error(e);}
+  }catch(e){
+    T_hideProgress();
+    T_STEPS.length=0;
+    ['Preparando registro','Subiendo fotos a Drive','Guardando en Sheets','Finalizando'].forEach(s=>T_STEPS.push(s));
+    showToast('⚠ Error: '+e.message);console.error(e);
+  }
 }
 
 async function REG_descargarPDF_autorizado(){
