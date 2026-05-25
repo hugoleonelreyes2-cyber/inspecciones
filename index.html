@@ -1884,6 +1884,11 @@ async function T_buscarVehiculo(){
           motor:get('Motor'),
           hallazgos:[],
           folderLink:get('Carpeta Drive'),
+          folderVehId:get('Folder Veh ID')||(()=>{
+            const fl=get('Carpeta Drive')||'';
+            const m=fl.match(/folders\/([a-zA-Z0-9_-]+)/);
+            return m?m[1]:'';
+          })(),
           totalPintura:0,
           hallazgosPintura:[],
         };
