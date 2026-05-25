@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- VERSION: 9.0 - FIXES: progress steps, revisiones independientes, editar revision -->
+<!-- VERSION: 9.1 - FIXES: overlay global, edit button, progress steps -->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -296,19 +296,20 @@ textarea{resize:vertical;line-height:1.5}
   <div id="cfg-app"></div>
 </div>
 
+<!-- OVERLAY PROGRESO GLOBAL -->
+<div id="taller-progress-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,0.97);z-index:99999;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px;box-sizing:border-box">
+  <div style="width:48px;height:48px;border:4px solid var(--b2);border-top:4px solid var(--blue);border-radius:50%;animation:spin 0.8s linear infinite"></div>
+  <div id="taller-progress-msg" style="font-size:15px;font-weight:600;color:var(--t);text-align:center">Guardando...</div>
+  <div id="taller-progress-step" style="font-size:12px;color:var(--t3);text-align:center"></div>
+  <div style="width:100%;max-width:300px;background:var(--b2);border-radius:4px;height:6px;overflow:hidden">
+    <div id="taller-prog-bar" style="height:100%;background:var(--blue);border-radius:4px;transition:width 0.4s;width:0%"></div>
+  </div>
+  <div id="taller-prog-steps" style="display:flex;flex-direction:column;gap:8px;width:100%;max-width:300px;margin-top:8px"></div>
+</div>
+
 <!-- MÓDULO TALLER -->
 <div id="taller-modulo" style="display:none;position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;height:100%;background:var(--bg);z-index:490;overflow-y:auto">
   <div id="taller-app"></div>
-  <!-- Overlay de progreso del taller -->
-  <div id="taller-progress-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,0.97);z-index:9999;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px;box-sizing:border-box">
-    <div style="width:48px;height:48px;border:4px solid var(--b2);border-top:4px solid var(--blue);border-radius:50%;animation:spin 0.8s linear infinite"></div>
-    <div id="taller-progress-msg" style="font-size:15px;font-weight:600;color:var(--t);text-align:center">Guardando...</div>
-    <div id="taller-progress-step" style="font-size:12px;color:var(--t3);text-align:center"></div>
-    <div style="width:100%;max-width:300px;background:var(--b2);border-radius:4px;height:6px;overflow:hidden">
-      <div id="taller-prog-bar" style="height:100%;background:var(--blue);border-radius:4px;transition:width 0.4s;width:0%"></div>
-    </div>
-    <div id="taller-prog-steps" style="display:flex;flex-direction:column;gap:8px;width:100%;max-width:300px;margin-top:8px"></div>
-  </div>
 </div>
 
 <div class="app" id="app">
@@ -1741,7 +1742,10 @@ let T_currentStep=0;
 function T_showProgress(msg,step){
   T_currentStep=0;
   const ov=document.getElementById('taller-progress-overlay');
-  if(ov)ov.style.display='flex';
+  if(ov){
+    ov.style.display='flex';
+    ov.style.flexDirection='column';
+  }
   T_renderProgSteps(0,msg);
 }
 
@@ -2488,8 +2492,6 @@ async function T_guardarRegistro(){
 
   // 2. Mostrar progreso
   T_showProgress('Preparando registro...','Paso 1 de 4');
-  const overlay=document.getElementById('taller-progress-overlay');
-  if(overlay)overlay.style.display='flex';
 
   try{
     const fechaObj=new Date();
@@ -3123,7 +3125,10 @@ async function REG_verDetalle(idx){
       </div>
     </div>
 
-    <button onclick="REG_descargarPDF_revision()" style="width:100%;padding:10px;background:var(--sf2);color:var(--t2);border:1px solid var(--b2);border-radius:var(--rsm);font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;margin-bottom:12px">📋 PDF Revisión de taller</button>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+      <button onclick="REG_descargarPDF_revision()" style="padding:10px;background:var(--sf2);color:var(--t);border:1px solid var(--b2);border-radius:var(--rsm);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">📋 PDF Revisión</button>
+      <button onclick="REG_editarRevision()" style="padding:10px;background:var(--blue);color:#fff;border:none;border-radius:var(--rsm);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">✏️ Editar revisión</button>
+    </div>
 
     <div id="reg-cot-section">
       ${cotizacion && cotizacion.items && cotizacion.items.length>0 ? REG_renderCotizacionHTML(cotizacion) : `
