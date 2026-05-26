@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- VERSION: 9.7 - FIXES: numRevision como clave primaria cotizaciones -->
+<!-- VERSION: 9.8 - FIXES: flujo seleccion inspeccion y revision -->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -1933,6 +1933,154 @@ const ETAPAS=[
   {id:'prueba',label:'Prueba din.',  ico:'🚦',sub:'En movimiento'},
 ];
 
+// ── SELECCIÓN DE INSPECCIÓN Y REVISIÓN ──
+function T_mostrarSeleccionInspeccion(matches, headers){
+  const get=(row,h)=>row[headers.indexOf(h)]||'';
+  const st=document.getElementById('buscar-st');
+  st.innerHTML=`
+    <div style="margin-top:16px;text-align:left">
+      <div style="font-size:13px;font-weight:600;color:var(--t);margin-bottom:10px">Seleccione la inspección:</div>
+      ${matches.map((row,i)=>`
+        <div onclick="T_seleccionarInspeccion_idx(${i})" style="background:var(--sf);border:1px solid var(--b);border-radius:var(--rsm);padding:12px;margin-bottom:8px;cursor:pointer;display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--t)">${get(row,'Placa')} — ${get(row,'Modelo')||'—'}</div>
+            <div style="font-size:11px;color:var(--t3)">Fecha: ${get(row,'Fecha')||'—'} · Inspector: ${get(row,'Inspector')||'—'}</div>
+          </div>
+          <span style="color:var(--t3)">›</span>
+        </div>`).join('')}
+    </div>`;
+  // Store matches for later use
+  window._T_matches=matches;
+  window._T_headers=headers;
+}
+
+async function T_seleccionarInspeccion_idx(idx){
+  await T_seleccionarInspeccion(window._T_matches[idx], window._T_headers);
+}
+
+async function T_seleccionarInspeccion(row, headers){
+  const get=(h)=>row[headers.indexOf(h)]||'';
+  const placa=get('Placa').toUpperCase();
+  const st=document.getElementById('buscar-st');
+  st.innerHTML='<div style="color:var(--t2)">🔍 Buscando revisiones existentes...</div>';
+
+  // Build T_VEH from inspection
+  const veh={
+    placa,
+    modelo:get('Modelo'),
+    color:get('Color'),
+    km:String(get('Km')||'—'),
+    inspector:get('Inspector'),
+    fecha:get('Fecha')||new Date().toLocaleDateString('es-GT'),
+    chasis:get('Chasis'),
+    motor:get('Motor'),
+    hallazgos:[],
+    folderLink:get('Carpeta Drive'),
+    folderVehId:get('Folder Veh ID')||(()=>{
+      const fl=get('Carpeta Drive')||'';
+      const m=fl.match(/folders\/([a-zA-Z0-9_-]+)/);
+      return m?m[1]:'';
+    })(),
+    totalPintura:0,
+    hallazgosPintura:[],
+  };
+
+  // Load hallazgos from reception inspection
+  try{
+    const hResp=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'getHallazgos',id:get('ID')})});
+    const hData=await hResp.json();
+    if(hData.status==='OK'&&hData.data){
+      const SECS_PINTURA=['Exterior'];
+      const TIPOS_PINTURA=['D2','D3','X2','X3','P3'];
+      hData.data.forEach(h=>{
+        const sec=h[2]||'';
+        const tipo=h[4]||'';
+        const costoRaw=parseFloat(h[6])||0;
+        const item={sec,desc:h[3]+(h[4]?' ('+h[4]+')':''),costo:costoRaw,urgente:h[7]==='Sí'};
+        const esPintura=SECS_PINTURA.includes(sec)&&TIPOS_PINTURA.some(t=>tipo.includes(t));
+        if(esPintura){veh.hallazgosPintura.push(item);}
+        else{veh.hallazgos.push(item);}
+      });
+      veh.totalPintura=veh.hallazgosPintura.reduce((s,h)=>s+h.costo,0);
+    }
+  }catch(e){}
+
+  // Load existing taller revisions for this placa
+  try{
+    const rResp=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'getRegistros'})});
+    const rData=await rResp.json();
+    const revisiones=(rData.data||[]).filter(r=>
+      String(r.placa||'').toUpperCase()===placa
+    );
+    if(revisiones.length>0){
+      T_mostrarSeleccionRevision(veh, revisiones);
+      return;
+    }
+  }catch(e){}
+
+  // No existing revisions — start new
+  T_VEH=veh;
+  T_initST();
+  T_renderApp();
+}
+
+function T_mostrarSeleccionRevision(veh, revisiones){
+  const st=document.getElementById('buscar-st');
+  st.innerHTML=`
+    <div style="margin-top:16px;text-align:left">
+      <div style="font-size:13px;font-weight:600;color:var(--t);margin-bottom:10px">Revisiones de taller para ${veh.placa}:</div>
+      ${revisiones.map((r,i)=>{
+        const est=({sin_inversion:'⚪',espera_presup:'🟡',espera_autorizar:'🟠',autorizada:'🟢'})[r.estado]||'⚪';
+        return`<div onclick="T_cargarRevision('${r.numRevision||''}','${r.fecha||''}')" style="background:var(--sf);border:1px solid var(--b);border-radius:var(--rsm);padding:12px;margin-bottom:8px;cursor:pointer;display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--t)">${r.numRevision||'—'} ${est}</div>
+            <div style="font-size:11px;color:var(--t3)">Fecha: ${REG_formatFecha(r.fecha)} · Hallazgos: ${r.totalHallazgos||0}</div>
+          </div>
+          <span style="color:var(--t3)">›</span>
+        </div>`;
+      }).join('')}
+      <button onclick="T_nuevaRevision()" style="width:100%;margin-top:8px;padding:12px;background:var(--blue);color:#fff;border:none;border-radius:var(--rsm);font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">+ Nueva revisión</button>
+    </div>`;
+  window._T_vehPending=veh;
+}
+
+function T_nuevaRevision(){
+  T_VEH=window._T_vehPending;
+  T_VEH.numRevisionActual='';
+  T_VEH.editMode=false;
+  T_initST();
+  T_renderApp();
+}
+
+async function T_cargarRevision(numRevision, fecha){
+  const veh=window._T_vehPending;
+  const st=document.getElementById('buscar-st');
+  st.innerHTML='<div style="color:var(--t2)">⏳ Cargando revisión...</div>';
+  try{
+    const r=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({
+      action:'getHallazgosTaller',
+      placa:veh.placa,
+      numRevision,
+      fecha
+    })});
+    const d=await r.json();
+    const hallazgosGuardados=d.data||[];
+    T_VEH={...veh, numRevisionActual:numRevision, editMode:true};
+    T_initST();
+    // Restore answers from saved hallazgos
+    hallazgosGuardados.forEach(h=>{
+      const nombre=String(h[2]||'');
+      const punto=Object.values(PUNTOS).flat().find(p=>(p.q||'').substring(0,80)===nombre||p.id===nombre);
+      if(punto) T_ST[punto.id]={val:'mal',obs:h[4]||'',foto:null};
+    });
+    T_renderApp();
+    showToast('✅ Revisión '+numRevision+' cargada', false);
+  }catch(e){
+    st.innerHTML='<div style="color:var(--red)">⚠ Error: '+e.message+'</div>';
+  }
+}
+
+
 function T_initST(){
   T_ST={};
   Object.values(PUNTOS).flat().forEach(p=>{T_ST[p.id]={val:null,obs:'',foto:null};});
@@ -1967,76 +2115,34 @@ async function T_buscarVehiculo(){
   const busqueda=document.getElementById('buscar-placa').value.trim().toUpperCase();
   if(!busqueda){showToast('⚠ Ingrese placa o número de chasis');return;}
   const st=document.getElementById('buscar-st');
-  st.textContent='🔍 Buscando en Google Sheets...';
+  st.innerHTML='<div style="color:var(--t2)">🔍 Buscando...</div>';
   try{
     const resp=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'getInspections'})});
     const data=await resp.json();
     if(data.status==='OK'&&data.data&&data.data.length>1){
       const headers=data.data[0];
       const rows=data.data.slice(1);
-      // Search by placa OR chasis
-      const row=rows.filter(r=>
+      // Find ALL matching inspections by placa OR chasis
+      const matches=rows.filter(r=>
         String(r[headers.indexOf('Placa')]||'').toUpperCase()===busqueda ||
         String(r[headers.indexOf('Chasis')]||'').toUpperCase()===busqueda
-      ).pop();
-      if(row){
-        const get=(h)=>row[headers.indexOf(h)]||'';
-        T_VEH={
-          placa:get('Placa'),
-          modelo:get('Modelo'),
-          color:get('Color'),
-          km:String(get('Km')||'—'),
-          inspector:get('Inspector'),
-          fecha:get('Fecha')||new Date().toLocaleDateString('es-GT'),
-          chasis:get('Chasis'),
-          motor:get('Motor'),
-          hallazgos:[],
-          folderLink:get('Carpeta Drive'),
-          folderVehId:get('Folder Veh ID')||(()=>{
-            const fl=get('Carpeta Drive')||'';
-            const m=fl.match(/folders\/([a-zA-Z0-9_-]+)/);
-            return m?m[1]:'';
-          })(),
-          totalPintura:0,
-          hallazgosPintura:[],
-        };
-        // Leer hallazgos desde Sheets
-        const hResp=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'getHallazgos',id:get('ID')})});
-        const hData=await hResp.json();
-        if(hData.status==='OK'&&hData.data){
-          // Separar hallazgos: mecánica vs pintura/carrocería
-          const SECS_PINTURA=['Exterior'];
-          const TIPOS_PINTURA=['D2','D3','X2','X3','P3'];
-          T_VEH.hallazgos=[];
-          T_VEH.hallazgosPintura=[];
-          hData.data.forEach(h=>{
-            const sec=h[2]||'';
-            const tipo=h[4]||'';
-            const costoRaw=parseFloat(h[6])||0;
-            const item={sec,desc:h[3]+(h[4]?' ('+h[4]+')':''),costo:costoRaw,urgente:h[7]==='Sí'};
-            const esPintura=SECS_PINTURA.includes(sec)&&TIPOS_PINTURA.some(t=>tipo.includes(t));
-            if(esPintura){T_VEH.hallazgosPintura.push(item);}
-            else{T_VEH.hallazgos.push(item);}
-          });
-          // Total estimado de pintura
-          T_VEH.totalPintura=T_VEH.hallazgosPintura.reduce((s,h)=>s+h.costo,0);
-        }
-        T_initST();
-        T_renderApp();
-      }else{
-        st.textContent='⚠ No se encontró ninguna inspección con: '+busqueda;
+      );
+      if(matches.length===0){
+        st.innerHTML='<div style="color:var(--red)">⚠ No se encontró inspección de recepción para: '+busqueda+'</div>';
+        return;
+      }
+      if(matches.length===1){
+        // Only one inspection — go directly to revision selection
+        await T_seleccionarInspeccion(matches[0], headers);
+      } else {
+        // Multiple inspections — show selection list
+        T_mostrarSeleccionInspeccion(matches, headers);
       }
     }else{
-      // Demo si no hay conexión
-      T_VEH={placa:busqueda,modelo:'Vehículo demo',color:'—',km:'—',inspector:'—',fecha:new Date().toLocaleDateString('es-GT'),chasis:'—',motor:'—',hallazgos:[],folderLink:''};
-      T_initST();
-      T_renderApp();
+      st.innerHTML='<div style="color:var(--red)">⚠ No se pudo conectar con Google Sheets</div>';
     }
   }catch(e){
-    // Demo offline
-    T_VEH={placa:busqueda,modelo:'Vehículo demo',color:'—',km:'—',inspector:'—',fecha:new Date().toLocaleDateString('es-GT'),chasis:'—',motor:'—',hallazgos:[],folderLink:''};
-    T_initST();
-    T_renderApp();
+    st.innerHTML='<div style="color:var(--red)">⚠ Error: '+e.message+'</div>';
   }
 }
 
@@ -2567,6 +2673,8 @@ async function T_guardarRegistro(){
     const resp=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify(payload)});
     const data=await resp.json();
     if(data.error)throw new Error(data.error);
+    // Store numRevision for future use
+    if(data.numRevision) T_VEH.numRevisionActual=data.numRevision;
 
     T_updateProgress('Finalizando...','Paso 4 de 4');
     await new Promise(r=>setTimeout(r,600));
