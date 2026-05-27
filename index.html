@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- VERSION: 10.4 - FIXES: PDFs con costos, chasis, mecanico en encabezado -->
+<!-- VERSION: 10.5 - FIXES: preservar fotos y mecanico al editar revision -->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -2063,6 +2063,7 @@ async function T_cargarRevision(numRevision, fecha){
   const st=document.getElementById('buscar-st');
   st.innerHTML='<div style="color:var(--t2)">⏳ Cargando revisión...</div>';
   try{
+    // 1. Get hallazgos with foto links
     const r=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({
       action:'getHallazgosTaller',
       placa:veh.placa,
@@ -2071,16 +2072,37 @@ async function T_cargarRevision(numRevision, fecha){
     })});
     const d=await r.json();
     const hallazgosGuardados=d.data||[];
-    T_VEH={...veh, numRevisionActual:numRevision, editMode:true, mecanico:veh.mecanico||window._T_mecanico||'—'};
+
+    // 2. Get mecanico from Revision Taller registry
+    let mecanicoGuardado=window._T_mecanico||'—';
+    try{
+      const rReg=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'getRegistros'})});
+      const dReg=await rReg.json();
+      const reg=(dReg.data||[]).find(r=>String(r.numRevision)===String(numRevision));
+      if(reg&&reg.mecanico&&reg.mecanico!=='—') mecanicoGuardado=reg.mecanico;
+    }catch(e){}
+
+    T_VEH={...veh, numRevisionActual:numRevision, editMode:true, mecanico:mecanicoGuardado};
     T_initST();
-    // Restore answers from saved hallazgos — preserve existing foto links
+
+    // 3. Restore answers with foto links preserved
     hallazgosGuardados.forEach(h=>{
       const nombre=String(h[2]||'');
+      const fotoLink=String(h[5]||'—');
+      const obs=String(h[4]||'');
       const punto=Object.values(PUNTOS).flat().find(p=>(p.q||'').substring(0,80)===nombre||p.id===nombre);
-      if(punto) T_ST[punto.id]={val:'mal',obs:h[4]||'',foto:null,fotoLinkExistente:h[5]||'—'};
+      if(punto){
+        T_ST[punto.id]={
+          val:'mal',
+          obs:obs,
+          foto:null, // new photo if taken
+          fotoLinkExistente:fotoLink!=='—'?fotoLink:'' // preserve existing link
+        };
+      }
     });
+
     T_renderApp();
-    showToast('✅ Revisión '+numRevision+' cargada', false);
+    showToast('✅ Revisión '+numRevision+' cargada — Mecánico: '+mecanicoGuardado, false);
   }catch(e){
     st.innerHTML='<div style="color:var(--red)">⚠ Error: '+e.message+'</div>';
   }
@@ -2649,7 +2671,7 @@ async function T_guardarRegistro(){
           const fr=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({
             action:'uploadPhoto',
             base64,mimeType,
-            filename:'taller_'+(numRevPrevio||'NEW')+'_'+k+'_'+T_VEH.placa+'.jpg',
+            filename:'taller_'+(numRevPrevio||T_VEH.numRevisionActual||'NEW')+'_'+k+'_'+T_VEH.placa+'.jpg',
             folderId
           })});
           const fd=await fr.json();
@@ -2657,8 +2679,9 @@ async function T_guardarRegistro(){
         }catch(fe){console.warn('Error subiendo foto:',fe);}
       }
       if(v.val==='mal'){
-        // Use existing link if no new photo was taken
-        const linkFinal = fotoLink!=='—' ? fotoLink : (v.fotoLinkExistente||'—');
+        // Use new uploaded link, else preserve existing link, else '—'
+        const linkFinal = (fotoLink&&fotoLink!=='—') ? fotoLink : 
+                          (v.fotoLinkExistente&&v.fotoLinkExistente!==''&&v.fotoLinkExistente!=='—') ? v.fotoLinkExistente : '—';
         hallazgos.push([T_VEH.placa,fecha,p?.q?.substring(0,80)||k,v.val,v.obs||'—',linkFinal]);
       }
     }
