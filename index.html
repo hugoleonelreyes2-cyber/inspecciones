@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- VERSION: 9.9 - FIXES: hallazgos por numRevision correctamente -->
+<!-- VERSION: 10.0 - FIXES: numRevision antes de fotos y hallazgos -->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -1736,7 +1736,7 @@ document.getElementById('main-menu').style.display='block';
 
 // Modificar función T_showToast para usar el toast global
 function T_showToast(msg,err=true){showToast(msg,err);}
-const T_STEPS=['Preparando registro','Subiendo fotos a Drive','Guardando en Sheets','Finalizando'];
+const T_STEPS=['Preparando registro','Registrando en Sheets','Subiendo fotos','Guardando hallazgos'];
 let T_currentStep=0;
 
 function T_showProgress(msg,step){
@@ -2610,9 +2610,38 @@ async function T_guardarRegistro(){
     const fechaObj=new Date();
     const fecha=fechaObj.toLocaleDateString('es-GT',{day:'2-digit',month:'2-digit',year:'numeric'});
 
-    // 3. Subir fotos de hallazgos a Drive
-    T_updateProgress('Preparando carpeta en Drive...','Paso 2 de 4');
-    // Ensure folder exists — create if missing
+    // 3. Obtener/generar numRevision PRIMERO
+    T_updateProgress('Registrando en Sheets...','Paso 2 de 4');
+    const numRevisionFinal = T_VEH.numRevisionActual||'';
+    
+    // Guardar revisión sin hallazgos primero para obtener numRevision
+    const payloadBase={
+      action:'saveTallerRevision',
+      placa:T_VEH.placa,
+      modelo:T_VEH.modelo||'—',
+      chasis:T_VEH.chasis||'—',
+      fecha,
+      inspector:T_VEH.inspector||'—',
+      totalHallazgos:0, // provisional
+      totalAutorizado:0,
+      totalPendiente:0,
+      totalPintura:T_VEH.totalPintura||0,
+      totalInversion:0,
+      trabajosAutorizados:'—',
+      trabajosPendientes:'—',
+      numRevision:numRevisionFinal,
+      hallazgos:[],
+      asesores:ASESORES.filter(a=>a),
+      produccion:PROD_DEST.filter(a=>a),
+    };
+    const respBase=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify(payloadBase)});
+    const dataBase=await respBase.json();
+    if(dataBase.error)throw new Error(dataBase.error);
+    const numRevision=dataBase.numRevision||numRevisionFinal;
+    T_VEH.numRevisionActual=numRevision;
+
+    // 4. Preparar carpeta Drive y subir fotos con numRevision correcto
+    T_updateProgress('Preparando carpeta en Drive...','Paso 3 de 4');
     let folderId=T_VEH.folderVehId||'';
     if(!folderId){
       try{
@@ -2621,7 +2650,7 @@ async function T_guardarRegistro(){
       }catch(fe){console.warn('No se pudo crear carpeta Drive:',fe);}
     }
 
-    T_updateProgress('Subiendo fotos...','Paso 2 de 4');
+    T_updateProgress('Subiendo fotos...','Paso 3 de 4');
     const hallazgos=[];
     const puntosConFoto=Object.entries(T_ST).filter(([k,v])=>v.val==='mal'&&v.foto);
     let fotoCount=0;
@@ -2630,18 +2659,17 @@ async function T_guardarRegistro(){
       let fotoLink='—';
       if(v.val==='mal'&&v.foto&&folderId){
         try{
-          T_updateProgress(`Subiendo foto ${++fotoCount} de ${puntosConFoto.length}...`,'Paso 2 de 4');
+          T_updateProgress(`Subiendo foto ${++fotoCount} de ${puntosConFoto.length}...`,'Paso 3 de 4');
           const base64=v.foto.split(',')[1];
           const mimeType=v.foto.split(';')[0].split(':')[1]||'image/jpeg';
           const fr=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({
             action:'uploadPhoto',
             base64,mimeType,
-            filename:'taller_'+(T_VEH.numRevisionActual||'REV')+'_'+k+'_'+T_VEH.placa+'.jpg',
+            filename:'taller_'+numRevision+'_'+k+'_'+T_VEH.placa+'.jpg',
             folderId
           })});
           const fd=await fr.json();
           if(fd.webViewLink)fotoLink=fd.webViewLink;
-          if(fd.fileId)v.fileId=fd.fileId;
         }catch(fe){console.warn('Error subiendo foto:',fe);}
       }
       if(v.val==='mal'){
@@ -2649,8 +2677,8 @@ async function T_guardarRegistro(){
       }
     }
 
-    // 4. Guardar en Sheets
-    T_updateProgress('Guardando en Sheets...','Paso 3 de 4');
+    // 5. Actualizar revisión con hallazgos y fotos completos
+    T_updateProgress('Guardando hallazgos...','Paso 4 de 4');
     const payload={
       action:'saveTallerRevision',
       placa:T_VEH.placa,
@@ -2665,7 +2693,7 @@ async function T_guardarRegistro(){
       totalInversion:0,
       trabajosAutorizados:'—',
       trabajosPendientes:'—',
-      numRevision:T_VEH.numRevisionActual||'',
+      numRevision,
       hallazgos,
       asesores:ASESORES.filter(a=>a),
       produccion:PROD_DEST.filter(a=>a),
@@ -2673,8 +2701,6 @@ async function T_guardarRegistro(){
     const resp=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify(payload)});
     const data=await resp.json();
     if(data.error)throw new Error(data.error);
-    // Store numRevision for future use
-    if(data.numRevision) T_VEH.numRevisionActual=data.numRevision;
 
     T_updateProgress('Finalizando...','Paso 4 de 4');
     await new Promise(r=>setTimeout(r,600));
