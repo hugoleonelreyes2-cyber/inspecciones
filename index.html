@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- VERSION: 10.3 - FIXES: mecanico duplicado, PDF mecanico, fotos edicion -->
+<!-- VERSION: 10.4 - FIXES: PDFs con costos, chasis, mecanico en encabezado -->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -3646,54 +3646,79 @@ async function REG_descargarPDF_autorizado(){
     const items=cot.items||[];
     const autorizados=new Set((cot.autorizados||[]).map(Number));
     const itemsAuth=items.filter((_,i)=>autorizados.has(i));
+    const totalAuth=itemsAuth.reduce((s,it)=>s+(parseFloat(it.total)||0),0);
     const hallazgos=await REG_getHallazgosConFotos();
 
     const {jsPDF}=window.jspdf;
     const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
-    let y=20;
+    let y=18;
 
-    doc.setFontSize(16);doc.setFont('helvetica','bold');doc.setTextColor(27,111,216);
+    const sec=(t,color=[27,111,216])=>{
+      if(y>265){doc.addPage();y=18;}
+      doc.setFillColor(...color);doc.rect(10,y-4,190,7,'F');
+      doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(255,255,255);
+      doc.text(t,14,y+0.5);doc.setTextColor(0,0,0);doc.setFont('helvetica','normal');y+=12;
+    };
+
+    // Header
+    doc.setFontSize(15);doc.setFont('helvetica','bold');doc.setTextColor(34,197,94);
     doc.text('ORDEN DE TRABAJO — AUTORIZADO',105,y,{align:'center'});y+=8;
     doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(100);
-    doc.text('División Vehículos Usados · '+REG_detalle.fecha,105,y,{align:'center'});y+=12;
+    doc.text('División Vehículos Usados · '+REG_formatFecha(REG_detalle.fecha),105,y,{align:'center'});y+=12;
 
-    const sec=(t,color=[27,111,216])=>{doc.setFillColor(...color);doc.rect(10,y-4,190,7,'F');doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(255,255,255);doc.text(t,14,y+0.5);doc.setTextColor(0,0,0);doc.setFont('helvetica','normal');y+=12;};
-
+    // Datos vehículo
     sec('DATOS DEL VEHÍCULO');
-    doc.setFontSize(10);
-    doc.text('Placa: '+REG_detalle.placa,14,y);doc.text('Modelo: '+(REG_detalle.modelo||'—'),80,y);y+=6;
-    doc.text('Inspector: '+(REG_detalle.inspector||'—'),14,y);y+=10;
+    doc.setFontSize(10);doc.setTextColor(0,0,0);
+    doc.text('N° Revisión: '+(REG_detalle.numRevision||'—'),14,y);y+=6;
+    doc.text('Placa: '+REG_detalle.placa,14,y);doc.text('Chasis: '+(REG_detalle.chasis||'—'),105,y);y+=6;
+    doc.text('Modelo: '+(REG_detalle.modelo||'—'),14,y);y+=6;
+    doc.text('Mecánico: '+(REG_detalle.mecanico||'—'),14,y);doc.text('Inspector: '+(REG_detalle.inspector||'—'),105,y);y+=10;
 
+    // Autorización
     if(cot.autorizadoPor){
       sec('AUTORIZACIÓN',[34,197,94]);
       doc.setFontSize(10);
-      doc.text('Autorizado por: '+cot.autorizadoPor,14,y);doc.text('Fecha: '+(cot.fechaAutorizacion||'—'),110,y);y+=10;
+      doc.text('Autorizado por: '+cot.autorizadoPor,14,y);
+      doc.text('Fecha: '+(cot.fechaAutorizacion||'—'),125,y);y+=10;
     }
 
+    // Trabajos autorizados con costos
     sec('TRABAJOS AUTORIZADOS',[34,197,94]);
     if(itemsAuth.length){
       itemsAuth.forEach(it=>{
-        if(y>270){doc.addPage();y=20;}
+        if(y>265){doc.addPage();y=18;}
         doc.setFont('helvetica','bold');doc.setFontSize(10);
-        const lines=doc.splitTextToSize('• '+it.descripcion,170);
-        doc.text(lines,14,y);y+=lines.length*5+3;
-        // Buscar foto relacionada
+        const lines=doc.splitTextToSize('• '+it.descripcion,140);
+        doc.text(lines,14,y);
+        doc.text('Q '+parseFloat(it.total||0).toLocaleString('es-GT',{minimumFractionDigits:2}),195,y,{align:'right'});
+        y+=lines.length*5+2;
+        doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(80,80,80);
+        doc.text('Cant: '+it.cantidad+' × Q '+parseFloat(it.precio||0).toLocaleString('es-GT',{minimumFractionDigits:2}),18,y);
+        doc.setTextColor(0,0,0);y+=4;
         const hallazgo=hallazgos.find(h=>String(h[2]||'').toLowerCase().includes(it.descripcion.toLowerCase().substring(0,15)));
         if(hallazgo&&hallazgo[5]&&hallazgo[5]!=='—'){
-          doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(27,111,216);
-          doc.text('📎 '+String(hallazgo[5]).substring(0,80),18,y);doc.setTextColor(0,0,0);y+=5;
+          doc.setFontSize(8);doc.setTextColor(27,111,216);
+          doc.text('📎 '+String(hallazgo[5]).substring(0,90),18,y);
+          doc.setTextColor(0,0,0);y+=5;
         }
-        y+=2;
+        y+=3;
       });
+      // Total autorizado
+      y+=2;
+      doc.setFillColor(220,252,231);doc.rect(10,y-4,190,9,'F');
+      doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor(21,128,61);
+      doc.text('TOTAL AUTORIZADO:',14,y+1);
+      doc.text('Q '+totalAuth.toLocaleString('es-GT',{minimumFractionDigits:2}),195,y+1,{align:'right'});
+      doc.setTextColor(0,0,0);y+=12;
     } else {
-      doc.text('Sin trabajos autorizados.',14,y);y+=8;
+      doc.setFontSize(10);doc.text('Sin trabajos autorizados.',14,y);y+=8;
     }
 
     doc.setFontSize(8);doc.setTextColor(150);
     doc.text('Sistema de Inspecciones — División Vehículos Usados',105,285,{align:'center'});
-    doc.save('Autorizado_'+REG_detalle.placa+'_'+REG_detalle.fecha.replace(/\//g,'-')+'.pdf');
+    doc.save('Autorizado_'+(REG_detalle.numRevision||REG_detalle.placa)+'_'+REG_formatFecha(REG_detalle.fecha).replace(/\//g,'-')+'.pdf');
     showToast('✅ PDF Autorizado descargado', false);
-  }catch(e){showToast('⚠ Error: '+e.message);}
+  }catch(e){showToast('⚠ Error: '+e.message);console.error(e);}
 }
 
 async function REG_descargarPDF_pendiente(){
@@ -3711,53 +3736,66 @@ async function REG_descargarPDF_pendiente(){
 
     const {jsPDF}=window.jspdf;
     const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
-    let y=20;
+    let y=18;
 
-    doc.setFontSize(16);doc.setFont('helvetica','bold');doc.setTextColor(245,158,11);
+    const sec=(t,color=[245,158,11])=>{
+      if(y>265){doc.addPage();y=18;}
+      doc.setFillColor(...color);doc.rect(10,y-4,190,7,'F');
+      doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(255,255,255);
+      doc.text(t,14,y+0.5);doc.setTextColor(0,0,0);doc.setFont('helvetica','normal');y+=12;
+    };
+
+    // Header
+    doc.setFontSize(15);doc.setFont('helvetica','bold');doc.setTextColor(245,158,11);
     doc.text('PRESUPUESTO PENDIENTE DE AUTORIZAR',105,y,{align:'center'});y+=8;
     doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(100);
-    doc.text('División Vehículos Usados · '+REG_detalle.fecha,105,y,{align:'center'});y+=12;
+    doc.text('División Vehículos Usados · '+REG_formatFecha(REG_detalle.fecha),105,y,{align:'center'});y+=12;
 
-    const sec=(t,color=[245,158,11])=>{doc.setFillColor(...color);doc.rect(10,y-4,190,7,'F');doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(255,255,255);doc.text(t,14,y+0.5);doc.setTextColor(0,0,0);doc.setFont('helvetica','normal');y+=12;};
-
+    // Datos vehículo
     sec('DATOS DEL VEHÍCULO',[27,111,216]);
-    doc.setFontSize(10);
-    doc.text('Placa: '+REG_detalle.placa,14,y);doc.text('Modelo: '+(REG_detalle.modelo||'—'),80,y);y+=6;
-    doc.text('Inspector: '+(REG_detalle.inspector||'—'),14,y);y+=10;
+    doc.setFontSize(10);doc.setTextColor(0,0,0);
+    doc.text('N° Revisión: '+(REG_detalle.numRevision||'—'),14,y);y+=6;
+    doc.text('Placa: '+REG_detalle.placa,14,y);doc.text('Chasis: '+(REG_detalle.chasis||'—'),105,y);y+=6;
+    doc.text('Modelo: '+(REG_detalle.modelo||'—'),14,y);y+=6;
+    doc.text('Mecánico: '+(REG_detalle.mecanico||'—'),14,y);doc.text('Inspector: '+(REG_detalle.inspector||'—'),105,y);y+=10;
 
+    // Trabajos pendientes con costos
     sec('TRABAJOS PENDIENTES DE AUTORIZAR');
     if(itemsPend.length){
       itemsPend.forEach(it=>{
-        if(y>255){doc.addPage();y=20;}
+        if(y>255){doc.addPage();y=18;}
         doc.setFont('helvetica','bold');doc.setFontSize(10);
         const lines=doc.splitTextToSize('• '+it.descripcion,140);
         doc.text(lines,14,y);
         doc.text('Q '+parseFloat(it.total||0).toLocaleString('es-GT',{minimumFractionDigits:2}),195,y,{align:'right'});
-        y+=lines.length*5+3;
-        // Buscar foto relacionada
+        y+=lines.length*5+2;
+        doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(80,80,80);
+        doc.text('Cant: '+it.cantidad+' × Q '+parseFloat(it.precio||0).toLocaleString('es-GT',{minimumFractionDigits:2}),18,y);
+        doc.setTextColor(0,0,0);y+=4;
         const hallazgo=hallazgos.find(h=>String(h[2]||'').toLowerCase().includes(it.descripcion.toLowerCase().substring(0,15)));
         if(hallazgo&&hallazgo[5]&&hallazgo[5]!=='—'){
-          doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(27,111,216);
-          doc.text('📎 '+String(hallazgo[5]).substring(0,80),18,y);doc.setTextColor(0,0,0);y+=5;
+          doc.setFontSize(8);doc.setTextColor(27,111,216);
+          doc.text('📎 '+String(hallazgo[5]).substring(0,90),18,y);
+          doc.setTextColor(0,0,0);y+=5;
         }
-        y+=2;
+        y+=3;
       });
-      // Total
-      y+=4;
+      // Total pendiente
+      y+=2;
       doc.setFillColor(254,243,199);doc.rect(10,y-4,190,9,'F');
       doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor(146,64,14);
       doc.text('TOTAL PENDIENTE:',14,y+1);
       doc.text('Q '+totalPend.toLocaleString('es-GT',{minimumFractionDigits:2}),195,y+1,{align:'right'});
-      doc.setTextColor(0,0,0);
+      doc.setTextColor(0,0,0);y+=12;
     } else {
-      doc.text('Sin trabajos pendientes.',14,y);
+      doc.setFontSize(10);doc.text('Sin trabajos pendientes.',14,y);y+=8;
     }
 
     doc.setFontSize(8);doc.setTextColor(150);
     doc.text('Sistema de Inspecciones — División Vehículos Usados',105,285,{align:'center'});
-    doc.save('Pendiente_'+REG_detalle.placa+'_'+REG_detalle.fecha.replace(/\//g,'-')+'.pdf');
+    doc.save('Pendiente_'+(REG_detalle.numRevision||REG_detalle.placa)+'_'+REG_formatFecha(REG_detalle.fecha).replace(/\//g,'-')+'.pdf');
     showToast('✅ PDF Pendiente descargado', false);
-  }catch(e){showToast('⚠ Error: '+e.message);}
+  }catch(e){showToast('⚠ Error: '+e.message);console.error(e);}
 }
 
 
