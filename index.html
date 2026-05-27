@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- VERSION: 10.6 - FIXES: REG_editarRevision preserva fotos y mecanico -->
+<!-- VERSION: 10.7 - FIXES: fecha original al editar, fotos nuevas en PDF -->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -2653,8 +2653,10 @@ async function T_guardarRegistro(){
   T_showProgress('Preparando registro...','Paso 1 de 4');
 
   try{
+    // When editing, preserve original fecha; for new revision use today
     const fechaObj=new Date();
-    const fecha=fechaObj.toLocaleDateString('es-GT',{day:'2-digit',month:'2-digit',year:'numeric'});
+    const fechaHoy=fechaObj.toLocaleDateString('es-GT',{day:'2-digit',month:'2-digit',year:'numeric'});
+    const fecha=T_VEH.editMode && T_VEH.fecha ? T_VEH.fecha : fechaHoy;
 
     // 3. Preparar carpeta Drive y subir fotos
     T_updateProgress('Preparando carpeta en Drive...','Paso 2 de 4');
