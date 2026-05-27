@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- VERSION: 9.8 - FIXES: flujo seleccion inspeccion y revision -->
+<!-- VERSION: 9.9 - FIXES: hallazgos por numRevision correctamente -->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -3501,20 +3501,13 @@ async function AUT2_guardar(){
 async function REG_getHallazgosConFotos(){
   try{
     const r=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({
-      action:'getHallazgosTaller', placa:REG_detalle.placa, fecha:REG_detalle.fecha, numRevision:REG_detalle.numRevision||''
+      action:'getHallazgosTaller',
+      placa:REG_detalle.placa,
+      fecha:REG_detalle.fecha,
+      numRevision:REG_detalle.numRevision||''
     })});
     const d=await r.json();
-    let hallazgos=d.data||[];
-    // Client-side filter by fecha if multiple revisions exist for same placa
-    if(hallazgos.length>0 && REG_detalle.fecha){
-      const fechaFmt=REG_formatFecha(REG_detalle.fecha);
-      const filtered=hallazgos.filter(h=>{
-        const hFecha=REG_formatFecha(String(h[1]||h[0]||''));
-        return hFecha===fechaFmt || String(h[1]||'')===REG_detalle.fecha || String(h[0]||'')===REG_detalle.fecha;
-      });
-      if(filtered.length>0) hallazgos=filtered;
-    }
-    return hallazgos;
+    return d.data||[];
   }catch(e){return [];}
 }
 
