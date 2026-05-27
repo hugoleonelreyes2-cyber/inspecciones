@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- VERSION: 10.7 - FIXES: fecha original al editar, fotos nuevas en PDF -->
+<!-- VERSION: 10.8 - FIXES: folderVehId desde Inspecciones al editar -->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -544,16 +544,39 @@ async function REG_editarRevision(){
   const idx=REG_lista.indexOf(REG_detalle);
   showToast('⏳ Cargando revisión...', false);
   try{
-    const r=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({
-      action:'getHallazgosTaller',
-      placa:REG_detalle.placa,
-      numRevision:REG_detalle.numRevision,
-      fecha:REG_detalle.fecha
-    })});
-    const d=await r.json();
-    const hallazgosGuardados=d.data||[];
+    // Load hallazgos and inspections in parallel
+    const [rHall, rInsp] = await Promise.all([
+      fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({
+        action:'getHallazgosTaller',
+        placa:REG_detalle.placa,
+        numRevision:REG_detalle.numRevision,
+        fecha:REG_detalle.fecha
+      })}),
+      fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'getInspections'})})
+    ]);
+    const dHall=await rHall.json();
+    const dInsp=await rInsp.json();
+    const hallazgosGuardados=dHall.data||[];
 
-    // Set T_VEH preserving mecanico and folderVehId
+    // Get folderVehId from inspection record
+    let folderVehId='', folderLink='';
+    if(dInsp.status==='OK'&&dInsp.data&&dInsp.data.length>1){
+      const headers=dInsp.data[0];
+      const rows=dInsp.data.slice(1);
+      const row=rows.filter(r=>
+        String(r[headers.indexOf('Placa')]||'').toUpperCase()===REG_detalle.placa.toUpperCase()
+      ).pop();
+      if(row){
+        const get=(h)=>row[headers.indexOf(h)]||'';
+        folderLink=get('Carpeta Drive');
+        folderVehId=get('Folder Veh ID')||(()=>{
+          const m=folderLink.match(/folders\/([a-zA-Z0-9_-]+)/);
+          return m?m[1]:'';
+        })();
+      }
+    }
+
+    // Set T_VEH with all necessary data
     T_VEH={
       placa:REG_detalle.placa,
       modelo:REG_detalle.modelo||'—',
@@ -562,12 +585,8 @@ async function REG_editarRevision(){
       mecanico:REG_detalle.mecanico||'—',
       fecha:REG_detalle.fecha||'',
       hallazgos:[],hallazgosPintura:[],totalPintura:0,
-      folderVehId:(()=>{
-        const fl=REG_detalle.folderLink||'';
-        const m=fl.match(/folders\/([a-zA-Z0-9_-]+)/);
-        return m?m[1]:'';
-      })(),
-      folderLink:REG_detalle.folderLink||'',
+      folderVehId,
+      folderLink,
       numRevisionActual:REG_detalle.numRevision,
       editMode:true,
       editIdx:idx
