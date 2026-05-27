@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- VERSION: 10.5 - FIXES: preservar fotos y mecanico al editar revision -->
+<!-- VERSION: 10.6 - FIXES: REG_editarRevision preserva fotos y mecanico -->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -542,7 +542,6 @@ let moduloActual='menu';
 
 async function REG_editarRevision(){
   const idx=REG_lista.indexOf(REG_detalle);
-  // Load full hallazgos for this revision
   showToast('⏳ Cargando revisión...', false);
   try{
     const r=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({
@@ -554,30 +553,42 @@ async function REG_editarRevision(){
     const d=await r.json();
     const hallazgosGuardados=d.data||[];
 
-    // Set T_VEH from detalle
+    // Set T_VEH preserving mecanico and folderVehId
     T_VEH={
       placa:REG_detalle.placa,
       modelo:REG_detalle.modelo||'—',
       chasis:REG_detalle.chasis||'—',
       inspector:REG_detalle.inspector||'—',
+      mecanico:REG_detalle.mecanico||'—',
       fecha:REG_detalle.fecha||'',
       hallazgos:[],hallazgosPintura:[],totalPintura:0,
-      folderVehId:'',folderLink:'',
+      folderVehId:(()=>{
+        const fl=REG_detalle.folderLink||'';
+        const m=fl.match(/folders\/([a-zA-Z0-9_-]+)/);
+        return m?m[1]:'';
+      })(),
+      folderLink:REG_detalle.folderLink||'',
       numRevisionActual:REG_detalle.numRevision,
       editMode:true,
       editIdx:idx
     };
 
-    // Restore T_ST from saved hallazgos
+    // Restore T_ST preserving existing foto links
     T_initST();
     hallazgosGuardados.forEach(h=>{
-      // Find punto by name
       const nombre=String(h[2]||'');
+      const fotoLink=String(h[5]||'');
+      const obs=String(h[4]||'');
       const punto=Object.values(PUNTOS).flat().find(p=>
         (p.q||'').substring(0,80)===nombre || p.id===nombre
       );
       if(punto){
-        T_ST[punto.id]={val:'mal', obs:h[4]||'', foto:null};
+        T_ST[punto.id]={
+          val:'mal',
+          obs:obs,
+          foto:null,
+          fotoLinkExistente:fotoLink!=='—'&&fotoLink!==''?fotoLink:''
+        };
       }
     });
 
@@ -587,7 +598,7 @@ async function REG_editarRevision(){
     const appEl=document.getElementById('taller-app');
     appEl.innerHTML='<div id="app"></div>';
     T_renderApp();
-    showToast('✅ Revisión cargada — modifique y guarde', false);
+    showToast('✅ Revisión '+REG_detalle.numRevision+' cargada', false);
   }catch(e){
     showToast('⚠ Error: '+e.message);
   }
