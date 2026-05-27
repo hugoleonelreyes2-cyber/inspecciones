@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- VERSION: 10.8 - FIXES: folderVehId desde Inspecciones al editar -->
+<!-- VERSION: 10.9 - FIXES: fecha autorización, sin links Drive en PDF -->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -3356,7 +3356,7 @@ function REG_renderCotizacionHTML(cot){
       <span style="font-size:12px;color:var(--t2)">Total: <b>Q ${total.toLocaleString('es-GT',{minimumFractionDigits:2})}</b></span>
       <span style="font-size:12px;color:var(--green)">Auth: <b>Q ${totalAuth.toLocaleString('es-GT',{minimumFractionDigits:2})}</b></span>
     </div>
-    ${cot.autorizadoPor?`<div style="font-size:11px;color:var(--t3);margin-top:6px">🔑 Autorizado por: <b>${cot.autorizadoPor}</b> · ${cot.fechaAutorizacion||''}</div>`:''}
+    ${cot.autorizadoPor?`<div style="font-size:11px;color:var(--t3);margin-top:6px">🔑 Autorizado por: <b>${cot.autorizadoPor}</b> · ${REG_formatFecha(cot.fechaAutorizacion||'')}</div>`:''}
     <button onclick="REG_autorizar()" style="width:100%;margin-top:12px;padding:12px;background:var(--blue);color:#fff;border:none;border-radius:var(--rsm);font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">🔑 Gestionar autorización</button>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
       <button onclick="REG_descargarPDF_autorizado()" style="padding:10px;background:var(--green-bg);color:var(--green);border:1px solid var(--green-b);border-radius:var(--rsm);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">📄 PDF Autorizado</button>
@@ -3733,8 +3733,13 @@ async function REG_descargarPDF_autorizado(){
     if(cot.autorizadoPor){
       sec('AUTORIZACIÓN',[34,197,94]);
       doc.setFontSize(10);
+      // Format fecha - handle both string and date formats
+      const fechaAuthStr=cot.fechaAutorizacion||'—';
+      const fechaAuthFmt=fechaAuthStr.includes('GMT')||fechaAuthStr.includes('May')||fechaAuthStr.includes('Jan')
+        ? REG_formatFecha(new Date(fechaAuthStr).toISOString())
+        : fechaAuthStr;
       doc.text('Autorizado por: '+cot.autorizadoPor,14,y);
-      doc.text('Fecha: '+(cot.fechaAutorizacion||'—'),125,y);y+=10;
+      doc.text('Fecha: '+fechaAuthFmt,125,y);y+=10;
     }
 
     // Trabajos autorizados con costos
@@ -3828,11 +3833,6 @@ async function REG_descargarPDF_pendiente(){
         doc.text('Cant: '+it.cantidad+' × Q '+parseFloat(it.precio||0).toLocaleString('es-GT',{minimumFractionDigits:2}),18,y);
         doc.setTextColor(0,0,0);y+=4;
         const hallazgo=hallazgos.find(h=>String(h[2]||'').toLowerCase().includes(it.descripcion.toLowerCase().substring(0,15)));
-        if(hallazgo&&hallazgo[5]&&hallazgo[5]!=='—'){
-          doc.setFontSize(8);doc.setTextColor(27,111,216);
-          doc.text('📎 '+String(hallazgo[5]).substring(0,90),18,y);
-          doc.setTextColor(0,0,0);y+=5;
-        }
         y+=3;
       });
       // Total pendiente
