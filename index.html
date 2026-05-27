@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- VERSION: 10.1 - FIXES: una sola llamada save con numRevision correcto -->
+<!-- VERSION: 10.2 - FIXES: mecanico, cotizaciones por numRevision, fotos edit -->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -1971,6 +1971,7 @@ async function T_seleccionarInspeccion(row, headers){
     color:get('Color'),
     km:String(get('Km')||'—'),
     inspector:get('Inspector'),
+    mecanico:window._T_mecanico||'—',
     fecha:get('Fecha')||new Date().toLocaleDateString('es-GT'),
     chasis:get('Chasis'),
     motor:get('Motor'),
@@ -2039,7 +2040,12 @@ function T_mostrarSeleccionRevision(veh, revisiones){
           <span style="color:var(--t3)">›</span>
         </div>`;
       }).join('')}
-      <button onclick="T_nuevaRevision()" style="width:100%;margin-top:8px;padding:12px;background:var(--blue);color:#fff;border:none;border-radius:var(--rsm);font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">+ Nueva revisión</button>
+      <div style="margin-top:12px;padding:12px;background:var(--sf2);border-radius:var(--rsm);border:1px solid var(--b)">
+        <label style="font-size:12px;color:var(--t2);font-weight:500">Mecánico (para nueva revisión)</label>
+        <input id="mecanico-nueva" type="text" placeholder="Nombre del mecánico" value="${window._T_mecanico||''}"
+          style="width:100%;padding:8px;border:1px solid var(--b);border-radius:var(--rsm);font-size:13px;background:var(--sf);color:var(--t);box-sizing:border-box;margin-top:6px">
+      </div>
+      <button onclick="window._T_mecanico=document.getElementById('mecanico-nueva').value||window._T_mecanico||'—';T_nuevaRevision();" style="width:100%;margin-top:8px;padding:12px;background:var(--blue);color:#fff;border:none;border-radius:var(--rsm);font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">+ Nueva revisión</button>
     </div>`;
   window._T_vehPending=veh;
 }
@@ -2065,7 +2071,7 @@ async function T_cargarRevision(numRevision, fecha){
     })});
     const d=await r.json();
     const hallazgosGuardados=d.data||[];
-    T_VEH={...veh, numRevisionActual:numRevision, editMode:true};
+    T_VEH={...veh, numRevisionActual:numRevision, editMode:true, mecanico:veh.mecanico||window._T_mecanico||'—'};
     T_initST();
     // Restore answers from saved hallazgos
     hallazgosGuardados.forEach(h=>{
@@ -2105,6 +2111,10 @@ function T_renderBusqueda(){
         <label class="lbl">Placa o N° de chasis</label>
         <input class="inp" id="buscar-placa" placeholder="Ej. P880CZR o VIN123456" style="text-transform:uppercase;font-size:15px;letter-spacing:1px" oninput="this.value=this.value.toUpperCase()">
       </div>
+      <div class="field" style="margin-top:12px">
+        <label class="lbl">Nombre del mecánico</label>
+        <input class="inp" id="buscar-mecanico" placeholder="Ej. Juan García" style="font-size:15px">
+      </div>
       <button onclick="T_buscarVehiculo()" class="btn-pri" style="width:100%;margin-top:4px">🔍 Buscar vehículo</button>
       <div id="buscar-st" style="margin-top:12px;font-size:13px;text-align:center;color:var(--t3)"></div>
     </div>`;
@@ -2113,7 +2123,10 @@ function T_renderBusqueda(){
 
 async function T_buscarVehiculo(){
   const busqueda=document.getElementById('buscar-placa').value.trim().toUpperCase();
+  const mecanico=document.getElementById('buscar-mecanico')?.value.trim()||'';
   if(!busqueda){showToast('⚠ Ingrese placa o número de chasis');return;}
+  if(!mecanico){showToast('⚠ Ingrese el nombre del mecánico');return;}
+  window._T_mecanico=mecanico;
   const st=document.getElementById('buscar-st');
   st.innerHTML='<div style="color:var(--t2)">🔍 Buscando...</div>';
   try{
@@ -2657,6 +2670,7 @@ async function T_guardarRegistro(){
       chasis:T_VEH.chasis||'—',
       fecha,
       inspector:T_VEH.inspector||'—',
+      mecanico:T_VEH.mecanico||'—',
       totalHallazgos:hallazgos.length,
       totalAutorizado:0,
       totalPendiente:0,
@@ -3243,6 +3257,8 @@ async function REG_verDetalle(idx){
         <div><span style="color:var(--t3)">Hallazgos:</span> ${REG_detalle.totalHallazgos||0}</div>
         <div><span style="color:var(--t3)">Chasis:</span> ${REG_detalle.chasis||'—'}</div>
         <div><span style="color:var(--t3)">Inspector:</span> ${REG_detalle.inspector||'—'}</div>
+        <div style="grid-column:span 2"><span style="color:var(--t3)">Mecánico:</span> ${REG_detalle.mecanico||'—'}</div>
+        <div><span style="color:var(--t3)">Mecánico:</span> ${REG_detalle.mecanico||'—'}</div>
       </div>
     </div>
 
