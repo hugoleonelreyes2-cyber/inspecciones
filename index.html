@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- VERSION: 10.2 - FIXES: mecanico, cotizaciones por numRevision, fotos edit -->
+<!-- VERSION: 10.3 - FIXES: mecanico duplicado, PDF mecanico, fotos edicion -->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -2073,11 +2073,11 @@ async function T_cargarRevision(numRevision, fecha){
     const hallazgosGuardados=d.data||[];
     T_VEH={...veh, numRevisionActual:numRevision, editMode:true, mecanico:veh.mecanico||window._T_mecanico||'—'};
     T_initST();
-    // Restore answers from saved hallazgos
+    // Restore answers from saved hallazgos — preserve existing foto links
     hallazgosGuardados.forEach(h=>{
       const nombre=String(h[2]||'');
       const punto=Object.values(PUNTOS).flat().find(p=>(p.q||'').substring(0,80)===nombre||p.id===nombre);
-      if(punto) T_ST[punto.id]={val:'mal',obs:h[4]||'',foto:null};
+      if(punto) T_ST[punto.id]={val:'mal',obs:h[4]||'',foto:null,fotoLinkExistente:h[5]||'—'};
     });
     T_renderApp();
     showToast('✅ Revisión '+numRevision+' cargada', false);
@@ -2657,7 +2657,9 @@ async function T_guardarRegistro(){
         }catch(fe){console.warn('Error subiendo foto:',fe);}
       }
       if(v.val==='mal'){
-        hallazgos.push([T_VEH.placa,fecha,p?.q?.substring(0,80)||k,v.val,v.obs||'—',fotoLink]);
+        // Use existing link if no new photo was taken
+        const linkFinal = fotoLink!=='—' ? fotoLink : (v.fotoLinkExistente||'—');
+        hallazgos.push([T_VEH.placa,fecha,p?.q?.substring(0,80)||k,v.val,v.obs||'—',linkFinal]);
       }
     }
 
@@ -3258,7 +3260,6 @@ async function REG_verDetalle(idx){
         <div><span style="color:var(--t3)">Chasis:</span> ${REG_detalle.chasis||'—'}</div>
         <div><span style="color:var(--t3)">Inspector:</span> ${REG_detalle.inspector||'—'}</div>
         <div style="grid-column:span 2"><span style="color:var(--t3)">Mecánico:</span> ${REG_detalle.mecanico||'—'}</div>
-        <div><span style="color:var(--t3)">Mecánico:</span> ${REG_detalle.mecanico||'—'}</div>
       </div>
     </div>
 
@@ -3559,8 +3560,9 @@ async function REG_descargarPDF_revision(){
     doc.text('N° Revisión: '+(REG_detalle.numRevision||'—'),14,y);y+=6;
     doc.text('Placa: '+REG_detalle.placa,14,y);doc.text('Chasis: '+(REG_detalle.chasis||'—'),100,y);y+=6;
     doc.text('Modelo: '+(REG_detalle.modelo||'—'),14,y);doc.text('Inspector: '+(REG_detalle.inspector||'—'),100,y);y+=6;
+    doc.text('Mecánico: '+(REG_detalle.mecanico||'—'),14,y);doc.text('Hallazgos: '+REG_detalle.totalHallazgos,100,y);y+=6;
     const est=ESTADOS[REG_detalle.estado]||ESTADOS.sin_inversion;
-    doc.text('Estado: '+est.label,14,y);doc.text('Hallazgos: '+REG_detalle.totalHallazgos,100,y);y+=10;
+    doc.text('Estado: '+est.label,14,y);y+=10;
 
     if(hallazgos.length){
       sec('HALLAZGOS DETECTADOS ('+hallazgos.length+')');
