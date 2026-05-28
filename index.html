@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- VERSION: 11.5 - FIXES: inspeccion rapida 3 recientes y busqueda -->
+<!-- VERSION: 11.6 - FIXES: syntax error inspecciones rapida -->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -1429,31 +1429,8 @@ function openRecords(){
         recs.forEach(r=>{SHEETS_RECS[r.id]=r;});
         window._ALL_INSP_RECS=recs;
         renderInspRecs(recs.slice(0,3), list, recs.length);
-        // Reset search
         const sp=document.getElementById('search-placa');
         if(sp) sp.value='';
-      } else {
-          const div=document.createElement('div');div.className='rec-item';div.setAttribute('data-rec-id',rec.id);
-          const tb=rec.tallerItems?.length?`<span style="font-size:10px;background:#FFF3CD;color:#856404;padding:1px 5px;border-radius:3px;border:1px solid #FFCC00">🔧 ${rec.tallerItems.length} pts.</span>`:'';
-          const mod=rec.fechaMod&&rec.fechaMod!==rec.fecha?` · mod. ${rec.fechaMod}`:'';
-          const localBadge=rec.hasLocal?`<span style="font-size:9px;color:var(--green);margin-left:4px">● Local</span>`:'';
-          div.innerHTML=`
-            <div class="rec-modelo">${rec.modelo||'Sin modelo'}${localBadge}</div>
-            <div class="rec-meta">${rec.placa} · ${rec.color||''} · ${rec.km} km · ${rec.inspector}</div>
-            <div class="rec-meta">${rec.fecha}${mod}</div>
-            <div class="rec-footer">
-              <span class="rec-cost">${fQ(rec.totalCost||0)}</span>
-              <span style="font-size:12px;font-weight:500;color:${rc(rec.ranking?.global||3)}">${rec.ranking?.global||'—'}/5 ${tb}</span>
-            </div>
-            <div style="display:flex;gap:5px;margin-top:9px">
-              <button onclick="viewRec('${rec.id}')" style="flex:1;padding:7px 4px;font-size:11px;font-weight:500;border:1px solid var(--b2);border-radius:var(--rsm);background:var(--sf2);color:var(--t2);cursor:pointer;font-family:'DM Sans',sans-serif">👁 Ver</button>
-              <button onclick="loadRec('${rec.id}')" style="flex:1;padding:7px 4px;font-size:11px;font-weight:500;border:1px solid var(--blue-b);border-radius:var(--rsm);background:var(--blue-bg);color:var(--blue-t);cursor:pointer;font-family:'DM Sans',sans-serif">✏️ Editar</button>
-              <button onclick="pdfRecSheets('${rec.id}')" style="flex:1;padding:7px 4px;font-size:11px;font-weight:500;border:1px solid #C9B8F5;border-radius:var(--rsm);background:#F0EBFE;color:#4B2D9F;cursor:pointer;font-family:'DM Sans',sans-serif">📄 PDF</button>
-              ${rec.folderLink?`<button onclick="window.open('${rec.folderLink}','_blank')" style="flex:0.7;padding:7px 4px;font-size:11px;font-weight:500;border:1px solid var(--green-b);border-radius:var(--rsm);background:var(--green-bg);color:var(--green-t);cursor:pointer;font-family:'DM Sans',sans-serif">📁</button>`:''}
-              <button onclick="delRecSheets('${rec.id}',this)" style="flex:0.5;padding:7px 4px;font-size:11px;border:1px solid var(--red-b);border-radius:var(--rsm);background:var(--red-bg);color:var(--red-t);cursor:pointer;font-family:'DM Sans',sans-serif">🗑</button>
-            </div>`;
-          list.appendChild(div);
-        });
       } else {
         list.innerHTML='<div style="text-align:center;padding:40px;color:var(--t3);font-size:13px">No hay registros guardados.<br><br>Complete una inspección y presione Guardar.</div>';
       }
