@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- VERSION: 11.2 - FIXES: campo busqueda visible correcto -->
+<!-- VERSION: 11.4 - FIXES: logica 3 registros y busqueda -->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -3230,7 +3230,16 @@ function REG_renderLista(){
   const app=document.getElementById('reg-app');
   const orden={espera_presup:0, espera_autorizar:1, autorizada:2, sin_inversion:3};
   let lista=[...REG_lista];
-  // Apply filters — by numRevision, placa or chasis
+
+  // Sort always
+  lista.sort((a,b)=>{
+    const oa=orden[a.estado]??3, ob=orden[b.estado]??3;
+    if(oa!==ob)return oa-ob;
+    return new Date(b.fecha||0)-new Date(a.fecha||0);
+  });
+
+  // Apply filters
+  const hayFiltro=!!(REG_filtro||REG_filtroEstado);
   if(REG_filtro){
     const f=REG_filtro.toUpperCase();
     lista=lista.filter(r=>
@@ -3240,24 +3249,28 @@ function REG_renderLista(){
     );
   }
   if(REG_filtroEstado) lista=lista.filter(r=>r.estado===REG_filtroEstado);
-  lista.sort((a,b)=>{
-    const oa=orden[a.estado]??3, ob=orden[b.estado]??3;
-    if(oa!==ob)return oa-ob;
-    return 0;
-  });
+
+  // Limit to 3 if no filter active
+  const totalSinFiltro=lista.length;
+  const mostrandoTodos=hayFiltro;
+  if(!hayFiltro) lista=lista.slice(0,3);
 
   app.innerHTML=`<div style="padding:12px 16px">
-    <div style="display:flex;gap:8px;margin-bottom:12px">
-      <input id="reg-filtro-placa" type="text" placeholder="🔍 Buscar placa..." value="${REG_filtro}"
-        oninput="REG_filtro=this.value;REG_renderLista()"
-        style="flex:1;padding:9px 12px;border:1px solid var(--b);border-radius:var(--rsm);font-size:13px;background:var(--sf);color:var(--t)" placeholder="🔍 Placa, chasis o N° rev...">
+    <input id="reg-filtro-placa" type="text" 
+      placeholder="🔍 Buscar por placa, chasis o N° revisión..."
+      value="${REG_filtro}"
+      oninput="REG_filtro=this.value;REG_renderLista()"
+      style="width:100%;padding:11px 14px;border:1.5px solid var(--blue);border-radius:var(--rsm);font-size:13px;background:var(--sf);color:var(--t);box-sizing:border-box;margin-bottom:10px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div style="font-size:11px;color:var(--t3)">
+        ${mostrandoTodos?lista.length+' registro(s) encontrado(s)':'3 más recientes de '+totalSinFiltro+' — busque para ver más'}
+      </div>
       <select id="reg-filtro-estado" onchange="REG_filtroEstado=this.value;REG_renderLista()"
-        style="padding:9px 10px;border:1px solid var(--b);border-radius:var(--rsm);font-size:12px;background:var(--sf);color:var(--t)">
+        style="padding:6px 8px;border:1px solid var(--b);border-radius:var(--rsm);font-size:11px;background:var(--sf);color:var(--t)">
         <option value="">Todos</option>
         ${Object.entries(ESTADOS).map(([k,v])=>`<option value="${k}" ${REG_filtroEstado===k?'selected':''}>${v.label}</option>`).join('')}
       </select>
     </div>
-    <div style="font-size:11px;color:var(--t3);margin-bottom:10px">${lista.length} registro(s)</div>
     ${lista.length===0?'<div style="text-align:center;padding:40px;color:var(--t3)">Sin registros</div>':
     lista.map((r,i)=>{
       const est=ESTADOS[r.estado]||ESTADOS.sin_inversion;
