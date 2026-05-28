@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- VERSION: 11.4 - FIXES: logica 3 registros y busqueda -->
+<!-- VERSION: 11.5 - FIXES: inspeccion rapida 3 recientes y busqueda -->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -531,7 +531,8 @@ textarea{resize:vertical;line-height:1.5}
 <div class="panel" id="records-panel">
   <div class="panel-hdr"><div class="panel-title">📋 Registros guardados</div><span class="panel-close" onclick="closeRecords()">✕ Cerrar</span></div>
   <div style="padding:10px 15px;background:var(--sf);border-bottom:1px solid var(--b)">
-    <input type="text" id="search-placa" placeholder="🔍 Buscar por placa..." oninput="filtrarRegistros(this.value)" style="width:100%;padding:8px 11px;border:1px solid var(--b2);border-radius:var(--rsm);font-size:13px;background:var(--sf2);color:var(--t);font-family:'DM Sans',sans-serif">
+    <input type="text" id="search-placa" placeholder="🔍 Buscar por placa, modelo o inspector..." oninput="filtrarRegistros(this.value)" style="width:100%;padding:10px 12px;border:1.5px solid var(--blue);border-radius:var(--rsm);font-size:13px;background:var(--sf);color:var(--t);font-family:'DM Sans',sans-serif;box-sizing:border-box;margin-bottom:6px">
+    <div id="insp-rec-info" style="font-size:11px;color:var(--t3);margin-bottom:8px"></div>
   </div>
   <div class="panel-body"><div id="records-list"></div></div>
 </div>
@@ -1424,10 +1425,14 @@ function openRecords(){
       }).filter(r=>r.id&&r.placa);
       if(recs.length){
         recs.sort((a,b)=>Number(b.id)-Number(a.id));
-        // Guardar en memoria para viewRec
+        // Guardar en memoria para viewRec y filtrado
         recs.forEach(r=>{SHEETS_RECS[r.id]=r;});
-        list.innerHTML='';
-        recs.forEach(rec=>{
+        window._ALL_INSP_RECS=recs;
+        renderInspRecs(recs.slice(0,3), list, recs.length);
+        // Reset search
+        const sp=document.getElementById('search-placa');
+        if(sp) sp.value='';
+      } else {
           const div=document.createElement('div');div.className='rec-item';div.setAttribute('data-rec-id',rec.id);
           const tb=rec.tallerItems?.length?`<span style="font-size:10px;background:#FFF3CD;color:#856404;padding:1px 5px;border-radius:3px;border:1px solid #FFCC00">🔧 ${rec.tallerItems.length} pts.</span>`:'';
           const mod=rec.fechaMod&&rec.fechaMod!==rec.fecha?` · mod. ${rec.fechaMod}`:'';
@@ -1499,13 +1504,52 @@ async function pdfRecSheets(id){
   // Llamar pdfRec con enviarCorreo=true para que envíe el correo
   pdfRec(Number(id), true);
 }
+function renderInspRecs(recs, listEl, total){
+  const list=listEl||document.getElementById('records-list');
+  if(!list)return;
+  list.innerHTML='';
+  const mostrandoTodos=recs.length===total;
+  const info=document.getElementById('insp-rec-info');
+  if(info) info.textContent=mostrandoTodos?recs.length+' registro(s) encontrado(s)':'3 más recientes de '+total+' — busque para ver más';
+  recs.forEach(rec=>{
+    const div=document.createElement('div');div.className='rec-item';div.setAttribute('data-rec-id',rec.id);
+    const tb=rec.tallerItems?.length?`<span style="font-size:10px;background:#FFF3CD;color:#856404;padding:1px 5px;border-radius:3px;border:1px solid #FFCC00">🔧 ${rec.tallerItems.length} pts.</span>`:'';
+    const mod=rec.fechaMod&&rec.fechaMod!==rec.fecha?` · mod. ${rec.fechaMod}`:'';
+    const localBadge=rec.hasLocal?`<span style="font-size:9px;color:var(--green);margin-left:4px">● Local</span>`:'';
+    div.innerHTML=`
+      <div class="rec-modelo">${rec.modelo||'Sin modelo'}${localBadge}</div>
+      <div class="rec-meta">${rec.placa} · ${rec.color||''} · ${rec.km} km · ${rec.inspector}</div>
+      <div class="rec-meta">${rec.fecha}${mod}</div>
+      <div class="rec-footer">
+        <span class="rec-cost">${fQ(rec.totalCost||0)}</span>
+        <span style="font-size:12px;font-weight:500;color:${rc(rec.ranking?.global||3)}">${rec.ranking?.global||'—'}/5 ${tb}</span>
+      </div>
+      <div style="display:flex;gap:5px;margin-top:9px">
+        <button onclick="viewRec('${rec.id}')" style="flex:1;padding:7px 4px;font-size:11px;font-weight:500;border:1px solid var(--b2);border-radius:var(--rsm);background:var(--sf2);color:var(--t2);cursor:pointer;font-family:'DM Sans',sans-serif">👁 Ver</button>
+        <button onclick="loadRec('${rec.id}')" style="flex:1;padding:7px 4px;font-size:11px;font-weight:500;border:1px solid var(--blue-b);border-radius:var(--rsm);background:var(--blue-bg);color:var(--blue-t);cursor:pointer;font-family:'DM Sans',sans-serif">✏️ Editar</button>
+        <button onclick="pdfRecSheets('${rec.id}')" style="flex:1;padding:7px 4px;font-size:11px;font-weight:500;border:1px solid #C9B8F5;border-radius:var(--rsm);background:#F0EBFE;color:#4B2D9F;cursor:pointer;font-family:'DM Sans',sans-serif">📄 PDF</button>
+        ${rec.folderLink?`<button onclick="window.open('${rec.folderLink}','_blank')" style="flex:0.7;padding:7px 4px;font-size:11px;font-weight:500;border:1px solid var(--green-b);border-radius:var(--rsm);background:var(--green-bg);color:var(--green-t);cursor:pointer;font-family:'DM Sans',sans-serif">📁</button>`:''}
+        <button onclick="delRecSheets('${rec.id}',this)" style="flex:0.5;padding:7px 4px;font-size:11px;border:1px solid var(--red-b);border-radius:var(--rsm);background:var(--red-bg);color:var(--red-t);cursor:pointer;font-family:'DM Sans',sans-serif">🗑</button>
+      </div>`;
+    list.appendChild(div);
+  });
+}
+
 function filtrarRegistros(query){
   const q=query.trim().toUpperCase();
-  document.querySelectorAll('#records-list .rec-item').forEach(item=>{
-    const placa=item.querySelector('.rec-meta')?.textContent?.toUpperCase()||'';
-    const modelo=item.querySelector('.rec-modelo')?.textContent?.toUpperCase()||'';
-    item.style.display=(!q||placa.includes(q)||modelo.includes(q))?'':'none';
-  });
+  const all=window._ALL_INSP_RECS||[];
+  const list=document.getElementById('records-list');
+  if(!list)return;
+  if(!q){
+    renderInspRecs(all.slice(0,3), list, all.length);
+  } else {
+    const filtered=all.filter(r=>
+      (r.placa||'').toUpperCase().includes(q)||
+      (r.modelo||'').toUpperCase().includes(q)||
+      (r.inspector||'').toUpperCase().includes(q)
+    );
+    renderInspRecs(filtered, list, filtered.length);
+  }
 }
 function closeRecords(){document.getElementById('records-panel').classList.remove('open');}
 function delRec(key,btn){if(!confirm('¿Eliminar este registro?'))return;try{localStorage.removeItem(key);}catch(e){}btn.closest('.rec-item').remove();showToast('Registro eliminado localmente',false);}
