@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- VERSION: 12.2 - FIXES: costos sin clave desde Configuracion -->
+<!-- VERSION: 12.4 - FIXES: camara OCR tarjeta circulacion -->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -329,8 +329,12 @@ textarea{resize:vertical;line-height:1.5}
   <div class="field"><label class="lbl">Inspector <span class="req">*</span></label><input type="text" id="inspector" placeholder="Nombre completo"></div>
   <div class="field">
     <label class="lbl">Leer tarjeta de circulación</label>
-    <button class="ocr-btn" onclick="document.getElementById('ocr-cam').click()">📷 Fotografiar tarjeta de circulación</button>
-    <input type="file" id="ocr-cam" class="cam-input" accept="image/*" onchange="handleOCR(this)">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <button class="ocr-btn" onclick="document.getElementById('ocr-cam').click()">📷 Tomar foto</button>
+      <button class="ocr-btn" onclick="document.getElementById('ocr-gal').click()">🖼 Cargar imagen</button>
+    </div>
+    <input type="file" id="ocr-cam" class="cam-input" accept="image/*" capture="environment" onchange="handleOCR(this)">
+    <input type="file" id="ocr-gal" class="cam-input" accept="image/*" onchange="handleOCR(this)">
     <div class="ocr-st" id="ocr-st"></div>
   </div>
   <div class="field"><label class="lbl">Placa <span class="req">*</span></label><input type="text" id="placa" placeholder="Ej. P123ABC"></div>
@@ -351,7 +355,7 @@ textarea{resize:vertical;line-height:1.5}
       </div>
     </div>
     <div class="field">
-      <label class="lbl">Estado del historial</label>
+      <label class="lbl">Estado del historial de servicio <span style="color:var(--red)">*</span></label>
       <div class="srow" id="historial-row">
         <button class="sbtn" onclick="setHistorial(this,'vigente_cofiño')">✅ Vigente Cofiño</button>
         <button class="sbtn" onclick="setHistorial(this,'vigente_externa')">✅ Vigente externa</button>
@@ -1099,7 +1103,30 @@ function buildSummary(){
 // ── NAVEGACIÓN ──
 function navigate(d){if(d===1&&!validate(cur))return;if(d===1&&cur===TOTAL-2)buildSummary();jumpTo(Math.max(0,Math.min(TOTAL-1,cur+d)));}
 function jumpTo(n){document.querySelectorAll('.sec').forEach(s=>s.classList.remove('active'));document.querySelectorAll('.pstep').forEach((b,i)=>b.className='pstep'+(i===n?' active':i<n?' done':''));document.getElementById('s'+n).classList.add('active');document.getElementById('prog-fill').style.width=Math.round(((n+1)/TOTAL)*100)+'%';document.getElementById('h-sub').textContent=`PASO ${n+1} DE ${TOTAL}`;document.getElementById('btn-prev').style.display=n>0?'':'none';document.getElementById('btn-next').style.display=n<TOTAL-1?'':'none';document.querySelectorAll('.pstep')[n].scrollIntoView({behavior:'smooth',inline:'center'});window.scrollTo(0,0);cur=n;}
-function validate(n){if(n===0){if(!document.getElementById('inspector').value.trim()){showToast('⚠ Ingrese el nombre del inspector');return false;}if(!document.getElementById('placa').value.trim()){showToast('⚠ Ingrese la placa del vehículo');return false;}if(!ST.vtype){showToast('⚠ Seleccione el tipo de vehículo');return false;}}return true;}
+function validate(n){
+  if(n===0){
+    if(!document.getElementById('inspector').value.trim()){showToast('⚠ Ingrese el nombre del inspector');return false;}
+    if(!document.getElementById('placa').value.trim()){showToast('⚠ Ingrese la placa del vehículo');return false;}
+    const modelo=document.getElementById('modelo');
+    if(modelo&&!modelo.value.trim()){showToast('⚠ Ingrese el modelo del vehículo');return false;}
+    const km=document.getElementById('km');
+    if(km&&(!km.value.trim()||km.value.trim()==='0')){showToast('⚠ Ingrese el kilometraje del vehículo');return false;}
+    const color=document.getElementById('color');
+    if(color&&!color.value.trim()){showToast('⚠ Ingrese el color del vehículo');return false;}
+    const chasis=document.getElementById('chasis');
+    if(chasis&&!chasis.value.trim()){showToast('⚠ Ingrese el número de chasis');return false;}
+    const motor=document.getElementById('motor');
+    if(motor&&!motor.value.trim()){showToast('⚠ Ingrese el número de motor');return false;}
+    if(!ST.vtype){showToast('⚠ Seleccione el tipo de vehículo');return false;}
+  }
+  if(n===1){
+    if(!ST.svc.combustible){showToast('⚠ Seleccione el tipo de combustible');return false;}
+    if(!ST.svc.historial){showToast('⚠ Seleccione el estado del historial de servicio');return false;}
+    if(ST.svc.historial!=='sin_historial'&&!ST.svc.omitio){showToast('⚠ Indique si el cliente omitió algún cambio recomendado');return false;}
+    if(ST.svc.historial==='vencido'&&!ST.svc.tipo){showToast('⚠ Seleccione el tipo de servicio requerido');return false;}
+  }
+  return true;
+}
 function showProgress(msg,step=''){
   document.getElementById('progress-msg').textContent=msg;
   document.getElementById('progress-step').textContent=step;
