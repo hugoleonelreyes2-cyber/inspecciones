@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- VERSION: 12.0 - FIXES: Sistema de archivo automatico -->
+<!-- VERSION: 12.1 - FIXES: admin panel z-index desde Configuracion -->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -524,7 +524,7 @@ textarea{resize:vertical;line-height:1.5}
   <div class="progress-step" id="progress-step"></div>
 </div>
 
-<div class="panel" id="admin-panel">
+<div class="panel" id="admin-panel" style="z-index:9998">
   <div class="panel-hdr"><div class="panel-title">⚙ Tabla de costos</div><span class="panel-close" onclick="closeAdmin()">✕ Cerrar</span></div>
   <div class="panel-body"><div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px" id="admin-vtype-sel"></div><div id="admin-cost-content"></div></div>
 </div>
