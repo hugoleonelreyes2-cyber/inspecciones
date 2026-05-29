@@ -956,15 +956,32 @@ const IMGS={};
 function fileToB64(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(file);});}
 function fileToDataURL(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(file);});}
 
+async function comprimirImagen(file, maxWidth=1200, quality=0.82){
+  return new Promise((res)=>{
+    const img=new Image();
+    const url=URL.createObjectURL(file);
+    img.onload=()=>{
+      const canvas=document.createElement('canvas');
+      let w=img.width, h=img.height;
+      if(w>maxWidth){h=Math.round(h*maxWidth/w);w=maxWidth;}
+      canvas.width=w;canvas.height=h;
+      canvas.getContext('2d').drawImage(img,0,0,w,h);
+      URL.revokeObjectURL(url);
+      res(canvas.toDataURL('image/jpeg',quality));
+    };
+    img.src=url;
+  });
+}
+
 async function handleOCR(input){
   if(!input.files||!input.files[0])return;
   const s=document.getElementById('ocr-st');s.style.display='block';s.style.color='var(--t3)';s.textContent='🔍 Analizando tarjeta de circulación con IA...';
   try{
-    // Guardar foto de tarjeta como parte de las fotos de llegada
-    const dataURL=await fileToDataURL(input.files[0]);
+    // Comprimir imagen antes de enviar (cámaras generan fotos muy pesadas)
+    const dataURL=await comprimirImagen(input.files[0]);
     IMGS['photo_tarjeta']=dataURL;
     const b64=dataURL.split(',')[1];
-    const mimeType=input.files[0].type||'image/jpeg';
+    const mimeType='image/jpeg';
     // Route through Apps Script to avoid CORS
     const resp=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({
       action:'ocrTarjeta',
@@ -992,19 +1009,16 @@ async function handleOCR(input){
 async function ocrLlanta(input,qId){
   if(!input.files||!input.files[0])return;
   const res=document.getElementById('llr-'+qId);res.className='llanta-result show';res.innerHTML='🔍 Leyendo medida con IA...';
-  const apiKey=localStorage.getItem('anthropic_api_key')||'';
-  if(!apiKey){res.innerHTML='⚠ Configure su API Key en ⚙️ Configuración para usar esta función';return;}
   try{
     const b64=await fileToB64(input.files[0]);
-    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:100,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:input.files[0].type||'image/jpeg',data:b64}},{type:'text',text:'Lee la medida de llanta que aparece en esta imagen. Responde ÚNICAMENTE con la medida en formato estándar como 265/65R17 o 235/70R16. Sin explicación ni texto adicional.'}]}]})});
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:100,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:input.files[0].type||'image/jpeg',data:b64}},{type:'text',text:'Lee la medida de llanta que aparece en esta imagen. Responde ÚNICAMENTE con la medida en formato estándar como 265/65R17 o 235/70R16. Sin explicación ni texto adicional.'}]}]})});
     const data=await resp.json();
-    if(data.error)throw new Error(data.error.message||JSON.stringify(data.error));
     const medida=(data.content?.find(c=>c.type==='text')?.text||'').trim().toUpperCase().replace(/\s/g,'');
     if(medida){
       document.getElementById('llm-'+qId).value=medida;
       bLL(qId);
     }else{res.innerHTML='⚠ No se pudo leer la medida — ingrésela manualmente';}
-  }catch(e){res.innerHTML='⚠ Error: '+e.message+' — ingrésela manualmente';}
+  }catch(e){res.innerHTML='⚠ Error al leer imagen — ingrésela manualmente';}
 }
 
 function showHallazgoMenu(camId,galId,okId,imgKey){
@@ -2584,7 +2598,7 @@ async function T_procesarOCR(input){
     try{
       const b64=e.target.result.split(',')[1];
       const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1200,
+        body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1200,
           messages:[{role:'user',content:[
             isPDF?{type:'document',source:{type:'base64',media_type:'application/pdf',data:b64}}:{type:'image',source:{type:'base64',media_type:mediaType,data:b64}},
             {type:'text',text:'Esta es una cotización de taller automotriz. Extrae todos los ítems en formato JSON sin markdown: {"items":[{"descripcion":"","cantidad":1,"precioUnit":0,"total":0}],"totalGeneral":0}. Solo el JSON.'}
@@ -4029,15 +4043,6 @@ async function REG_descargarPDF_pendiente(){
 // ══════════════════════════════════════════════════════
 const CLAVE_MAESTRA_KEY='cfg_master_key';
 
-function CFG_guardarApiKey(){
-  const key=document.getElementById('cfg-apikey-input').value.trim();
-  const msg=document.getElementById('cfg-apikey-msg');
-  if(!key){localStorage.removeItem('anthropic_api_key');msg.style.color='var(--amber-t)';msg.textContent='⚠ API Key eliminada';return;}
-  if(!key.startsWith('sk-ant-')){msg.style.color='var(--red)';msg.textContent='⚠ Formato inválido — debe iniciar con sk-ant-';return;}
-  localStorage.setItem('anthropic_api_key',key);
-  msg.style.color='var(--green)';msg.textContent='✓ API Key guardada en este dispositivo';
-}
-
 function CFG_render(){
   document.getElementById('cfg-app').innerHTML=`<div style="padding:20px;text-align:center">
     <div style="font-size:40px;margin-bottom:8px">⚙️</div>
@@ -4089,16 +4094,6 @@ async function CFG_renderPanel(){
       <div style="background:var(--sf);border:1px solid var(--b);border-radius:var(--rsm);padding:14px;margin-bottom:14px">
         <div style="font-size:12px;font-weight:600;color:var(--t2);margin-bottom:10px">🔑 AUTORIZADORES</div>
         <div style="font-size:12px;color:var(--t3)">Edite directamente en Google Sheets → pestaña "Autorizadores" (columnas: Nombre | Clave)</div>
-      </div>
-
-      <div style="background:var(--sf);border:1px solid var(--b);border-radius:var(--rsm);padding:14px;margin-bottom:14px">
-        <div style="font-size:12px;font-weight:600;color:var(--t2);margin-bottom:8px">🤖 API KEY — ANTHROPIC (OCR llantas)</div>
-        <div style="font-size:12px;color:var(--t3);margin-bottom:10px">Necesaria para leer medidas de llantas con IA. Se guarda solo en este dispositivo.</div>
-        <div style="display:flex;gap:8px;align-items:center">
-          <input id="cfg-apikey-input" type="password" placeholder="sk-ant-api03-..." value="${localStorage.getItem('anthropic_api_key')||''}" style="flex:1;padding:10px;border:1px solid var(--b);border-radius:var(--rsm);font-size:13px;background:var(--bg);color:var(--t);font-family:monospace">
-          <button onclick="CFG_guardarApiKey()" style="padding:10px 16px;background:var(--blue);color:#fff;border:none;border-radius:var(--rsm);font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap">Guardar</button>
-        </div>
-        <div id="cfg-apikey-msg" style="font-size:12px;margin-top:8px"></div>
       </div>
 
       <div style="background:var(--sf);border:1px solid var(--b);border-radius:var(--rsm);padding:14px;margin-bottom:14px">
