@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- VERSION: 11.9 - FIXES: Config taller via Sheets -->
+<!-- VERSION: 12.0 - FIXES: Sistema de archivo automatico -->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -281,7 +281,7 @@ textarea{resize:vertical;line-height:1.5}
   <div style="background:var(--sf);border-bottom:1px solid var(--b);padding:11px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10">
     <button onclick="showMenu()" style="padding:6px 12px;border:1px solid var(--b);border-radius:var(--rsm);background:transparent;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--t2)">☰ Menú</button>
     <div style="font-size:14px;font-weight:600;color:var(--t)">📊 Registros</div>
-    <div style="width:60px"></div>
+    <button onclick="REG_abrirArchivo()" style="padding:6px 12px;border:1px solid var(--b);border-radius:var(--rsm);background:transparent;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--t2)">📦 Archivo</button>
   </div>
   <div id="reg-app"></div>
 </div>
@@ -624,6 +624,96 @@ async function REG_editarRevision(){
   }
 }
 
+
+// ══════════════════════════════════════
+// MÓDULO ARCHIVO
+// ══════════════════════════════════════
+function REG_abrirArchivo(){
+  const app=document.getElementById('reg-app');
+  const anioActual=new Date().getFullYear();
+  app.innerHTML=`<div style="padding:16px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+      <button onclick="REG_render()" style="padding:6px 12px;border:1px solid var(--b);border-radius:var(--rsm);background:var(--sf);font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--t2)">← Volver</button>
+      <div style="font-weight:700;font-size:16px;color:var(--t)">📦 Archivo</div>
+    </div>
+    <div style="background:var(--sf2);border:1px solid var(--b);border-radius:var(--rsm);padding:12px;margin-bottom:14px;font-size:12px;color:var(--t2)">
+      Registros archivados automáticamente después de 90 días con estado final.
+    </div>
+    <div style="display:grid;grid-template-columns:1fr auto;gap:8px;margin-bottom:12px">
+      <input id="archivo-query" type="text" placeholder="🔍 Buscar por placa, chasis o N° revisión..."
+        style="padding:10px 12px;border:1.5px solid var(--blue);border-radius:var(--rsm);font-size:13px;background:var(--sf);color:var(--t);box-sizing:border-box">
+      <select id="archivo-anio" style="padding:10px;border:1px solid var(--b);border-radius:var(--rsm);font-size:13px;background:var(--sf);color:var(--t)">
+        ${[anioActual, anioActual-1, anioActual-2].map(y=>`<option value="${y}">${y}</option>`).join('')}
+      </select>
+    </div>
+    <button onclick="REG_buscarArchivo()" style="width:100%;padding:12px;background:var(--blue);color:#fff;border:none;border-radius:var(--rsm);font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;margin-bottom:14px">🔍 Buscar en archivo</button>
+    <div id="archivo-resultados"></div>
+  </div>`;
+}
+
+async function REG_buscarArchivo(){
+  const query=document.getElementById('archivo-query').value.trim();
+  const anio=document.getElementById('archivo-anio').value;
+  const res=document.getElementById('archivo-resultados');
+  if(!query){showToast('⚠ Ingrese placa, chasis o N° revisión');return;}
+  res.innerHTML='<div style="text-align:center;padding:20px;color:var(--t2)">🔍 Buscando en archivo '+anio+'...</div>';
+  try{
+    const r=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({
+      action:'buscarEnArchivo', query, year:parseInt(anio)
+    })});
+    const d=await r.json();
+    if(d.error){res.innerHTML=`<div style="color:var(--red);padding:12px">⚠ ${d.error}</div>`;return;}
+    const lista=d.data||[];
+    if(!lista.length){
+      res.innerHTML=`<div style="text-align:center;padding:20px;color:var(--t3)">${d.mensaje||'Sin resultados para "'+query+'" en '+anio}</div>`;
+      return;
+    }
+    res.innerHTML=lista.map(r=>{
+      const est=ESTADOS[r.estado]||ESTADOS.sin_inversion;
+      return`<div style="background:var(--sf);border:1px solid var(--b);border-left:4px solid ${est.border};border-radius:var(--rsm);padding:12px 14px;margin-bottom:10px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-weight:700;font-size:15px;color:var(--t)">${r.placa}</span>
+            <span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--t3);background:var(--sf2);padding:2px 6px;border-radius:4px;border:1px solid var(--b)">${r.numRevision}</span>
+            <span style="font-size:10px;padding:2px 6px;border-radius:10px;background:#FEF3C7;color:#92400E;border:1px solid #FCD34D">📦 Archivado</span>
+          </div>
+          <span style="font-size:10px;padding:2px 8px;border-radius:20px;font-weight:600;background:${est.bg};color:${est.color};border:1px solid ${est.border}">${est.label}</span>
+        </div>
+        <div style="font-size:12px;color:var(--t2)">${r.modelo||'—'} · ${r.inspector||'—'}</div>
+        ${r.chasis&&r.chasis!=='—'?`<div style="font-size:11px;color:var(--t3)">Chasis: ${r.chasis}</div>`:''}
+        <div style="display:flex;justify-content:space-between;margin-top:4px">
+          <span style="font-size:11px;color:var(--t3)">${REG_formatFecha(r.fecha)}</span>
+          ${r.totalAutorizado>0?`<span style="font-size:12px;color:var(--green);font-weight:600">Q ${parseFloat(r.totalAutorizado).toLocaleString('es-GT',{minimumFractionDigits:2})} auth.</span>`:''}
+        </div>
+        <div style="font-size:11px;color:var(--t3);margin-top:4px">Mecánico: ${r.mecanico||'—'} · Hallazgos: ${r.totalHallazgos||0}</div>
+      </div>`;
+    }).join('');
+  }catch(e){
+    res.innerHTML=`<div style="color:var(--red);padding:12px">⚠ Error: ${e.message}</div>`;
+  }
+}
+
+
+async function CFG_instalarTrigger(){
+  showToast('⏳ Instalando trigger...', false);
+  try{
+    const r=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'instalarTrigger'})});
+    const d=await r.json();
+    if(d.error)throw new Error(d.error);
+    showToast('✅ Trigger diario instalado — archivará a las 2 AM', false);
+  }catch(e){showToast('⚠ Error: '+e.message);}
+}
+
+async function CFG_archivarAhora(){
+  if(!confirm('¿Archivar ahora todos los registros con más de 90 días y estado final?'))return;
+  showToast('⏳ Archivando registros...', false);
+  try{
+    const r=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'archivarRegistros'})});
+    const d=await r.json();
+    if(d.error)throw new Error(d.error);
+    showToast('✅ '+d.archivados+' registro(s) archivado(s)', false);
+  }catch(e){showToast('⚠ Error: '+e.message);}
+}
 
 function showMenu(){
   const menu=document.getElementById('main-menu');
@@ -3954,8 +4044,21 @@ async function CFG_renderPanel(){
         <div style="font-size:12px;color:var(--t3)">Edite directamente en Google Sheets → pestaña "Config Taller" (clave, asesores, producción)</div>
       </div>
 
+      <div style="background:var(--sf);border:1px solid var(--b);border-radius:var(--rsm);padding:14px;margin-bottom:14px">
+        <div style="font-size:12px;font-weight:600;color:var(--t2);margin-bottom:8px">📦 ARCHIVO AUTOMÁTICO</div>
+        <div style="font-size:12px;color:var(--t3);margin-bottom:10px">Los registros con estado "Autorizada" o "Sin inversiones" con más de 90 días se archivan automáticamente cada noche.</div>
+        <button onclick="CFG_instalarTrigger()" style="width:100%;padding:10px;background:var(--sf2);color:var(--t);border:1px solid var(--b2);border-radius:var(--rsm);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;margin-bottom:8px">⏰ Instalar trigger diario</button>
+        <button onclick="CFG_archivarAhora()" style="width:100%;padding:10px;background:var(--amber-bg);color:#92400E;border:1px solid var(--amber-b);border-radius:var(--rsm);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">▶ Archivar ahora (manual)</button>
+      </div>
       <a href="https://docs.google.com/spreadsheets/d/${typeof SHEETS_ID!=='undefined'?SHEETS_ID:''}/edit" target="_blank" style="display:block;width:100%;padding:12px;background:var(--green-bg);color:var(--green);border:1px solid var(--green-b);border-radius:var(--rsm);font-size:13px;font-weight:600;text-align:center;text-decoration:none;box-sizing:border-box">📊 Abrir Google Sheets</a>
-    </div>`;
+    
+
+      <div style="background:var(--sf);border:1px solid var(--b);border-radius:var(--rsm);padding:14px;margin-top:14px">
+        <div style="font-size:12px;font-weight:600;color:var(--t2);margin-bottom:8px">📦 ARCHIVO AUTOMÁTICO</div>
+        <div style="font-size:12px;color:var(--t3);margin-bottom:10px">Registros con más de 90 días y estado final se archivan cada noche a las 2 AM.</div>
+        <button onclick="CFG_instalarTrigger()" style="width:100%;padding:10px;background:var(--sf2);color:var(--t);border:1px solid var(--b2);border-radius:var(--rsm);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;margin-bottom:8px">⏰ Instalar trigger diario</button>
+        <button onclick="CFG_archivarAhora()" style="width:100%;padding:10px;background:#FEF3C7;color:#92400E;border:1px solid #FCD34D;border-radius:var(--rsm);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">▶ Archivar ahora (manual)</button>
+      </div></div>`;
   }catch(e){
     app.innerHTML=`<div style="padding:20px;text-align:center;color:var(--red)">⚠ ${e.message}</div>`;
   }
