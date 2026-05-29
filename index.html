@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- VERSION: 12.4 - FIXES: camara OCR tarjeta circulacion -->
+<!-- VERSION: 12.5 - FIXES: OCR via Apps Script evitar CORS -->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -964,9 +964,16 @@ async function handleOCR(input){
     const dataURL=await fileToDataURL(input.files[0]);
     IMGS['photo_tarjeta']=dataURL;
     const b64=dataURL.split(',')[1];
-    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:500,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:input.files[0].type||'image/jpeg',data:b64}},{type:'text',text:'Esta es una tarjeta de circulación de Guatemala. Extrae exactamente estos datos en formato JSON sin markdown ni explicación: {"placa":"","modelo":"","año":"","color":"","chasis":"","motor":""}. Si no encuentras un dato deja el campo vacío.'}]}]})});
+    const mimeType=input.files[0].type||'image/jpeg';
+    // Route through Apps Script to avoid CORS
+    const resp=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({
+      action:'ocrTarjeta',
+      base64:b64,
+      mimeType
+    })});
     const data=await resp.json();
-    const txt=data.content?.find(c=>c.type==='text')?.text||'';
+    if(data.error)throw new Error(data.error);
+    const txt=data.text||'';
     const clean=txt.replace(/```json|```/g,'').trim();
     const d=JSON.parse(clean);
     if(d.placa)document.getElementById('placa').value=d.placa;
