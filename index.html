@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- VERSION: 12.5 - FIXES: OCR via Apps Script evitar CORS -->
+<!-- VERSION: 12.6 - FIXES: OCR error visible -->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -982,7 +982,11 @@ async function handleOCR(input){
     if(d.chasis)document.getElementById('chasis').value=d.chasis;
     if(d.motor)document.getElementById('nmotor').value=d.motor;
     s.style.color='var(--green)';s.textContent='✓ Datos extraídos — revise y corrija si es necesario';
-  }catch(e){s.style.color='var(--amber-t)';s.textContent='⚠ No se pudo leer automáticamente — ingrese los datos manualmente';}
+  }catch(e){
+    s.style.color='var(--amber-t)';
+    s.textContent='⚠ Error: '+e.message+' — ingrese los datos manualmente';
+    console.error('OCR error:', e);
+  }
 }
 
 async function ocrLlanta(input,qId){
