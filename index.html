@@ -793,33 +793,34 @@ let extActivePiece=null,intActivePiece=null;
 // ── AUTODETECCIÓN TIPO VEHÍCULO ──
 const MARCAS_COFIÑO_ALTA = ['lexus','audi','land rover','landrover','byd'];
 const MARCAS_COFIÑO_NORMAL = ['toyota','chevrolet','subaru','renault','gac','dadao','omoda','jaecoo'];
-const MARCAS_EXT_ALTA = ['mercedes','mercedes-benz','bmw','porsche','volvo','infiniti','acura','jaguar','genesis','maserati','ferrari','bentley','rolls','lamborghini'];
-const MODELOS_TOYOTA_ALTA = ['land cruiser','landcruiser','4runner','sequoia','tundra','lc300','lc200','lc','prado'];
+const MARCAS_EXT_ALTA = ['mercedes','mercedes-benz','bmw','porsche','volvo','infiniti','acura','jaguar','genesis','maserati','ferrari','bentley','rolls','lamborghini','lincoln','cadillac','tesla'];
+const MARCAS_EXT_NORMAL = ['nissan','kia','hyundai','honda','mazda','ford','mitsubishi','suzuki','jeep','dodge','ram','volkswagen','vw','seat','skoda','peugeot','citroen','fiat','alfa','isuzu','great wall','haval','chery','mg','jac','foton','dfm','dongfeng','lifan','zotye','geely','wuling','jmc'];
+const MODELOS_TOYOTA_ALTA = ['land cruiser','landcruiser','4runner','sequoia','tundra','lc300','lc200','prado','fortuner sr5'];
 
 function detectarTipoVehiculo(modeloStr) {
-  if (!modeloStr) return null;
+  if (!modeloStr || modeloStr.trim().length < 3) return null;
   const m = modeloStr.toLowerCase().trim();
 
   // Detectar tipo de carrocería
-  const esPickup = /hilux|tacoma|tundra|ranger|frontier|d-max|dmax|l200|pickup|pick.?up|4x4.*cab|cabina/.test(m);
-  const esSUV = /rav4|rav 4|cr.?v|cx.?5|tucson|sportage|tiguan|4runner|fortuner|land cruiser|prado|pajero|outlander|suv|crossover|xr.?v|hr.?v|br.?v|rush|terios|duster|koleos|eclipse cross/.test(m);
-  const esCamioneta = /suburban|sequoia|expedition|patrol|land cruiser 200|lc200|lc300|defender|discovery|range rover|escalade|navigator|armada/.test(m);
-  const esSedan = /corolla|yaris|vios|camry|avalon|civic|accord|sentra|versa|jetta|golf|almera|altima|mazda3|mazda 3|elantra|accent|sonata|optima|k5|k3|impreza|legacy|fluence|logan/.test(m);
-  const esPanel = /hiace|h1|urvan|transit|master|sprinter|van|panel/.test(m);
+  const esPickup = /hilux|tacoma|tundra|ranger|frontier|d-max|dmax|l200|pickup|pick.?up|navara|np300|titan|ridgeline|amarok|triton|strada|4x4.*cab|cabina doble/.test(m);
+  const esCamioneta = /suburban|sequoia|expedition|patrol|land cruiser 200|land cruiser 300|lc200|lc300|defender|discovery|range rover|escalade|navigator|armada|tahoe/.test(m);
+  const esSUV = /rav4|rav 4|cr.?v|cx.?5|cx.?3|cx.?9|tucson|sportage|sorento|telluride|tiguan|4runner|fortuner|land cruiser prado|prado|pajero|montero|outlander|asx|suv|crossover|xr.?v|hr.?v|br.?v|rush|terios|duster|koleos|eclipse cross|qashqai|x-trail|xtrail|kicks|juke|rogue|murano|pathfinder|pilot|cr-v|passport|xc60|xc90|xc40|q3|q5|q7|q8|x1|x3|x5|x6|glc|gle|gla|glb|gle|cx5|cx-5|seltos|stonic|soul|niro|ioniq|tucson|santa fe|veracruz|palisade|t-cross|taos|tiguan|teramont|atlas|t-roc|rav|fortuner|rush|avanza.*4|innova|4runner/.test(m);
+  const esSedan = /corolla|yaris|vios|camry|avalon|civic|accord|city|fit|jazz|sentra|versa|tiida|jetta|golf|polo|almera|altima|maxima|mazda3|mazda 3|mazda6|mazda 6|elantra|accent|sonata|optima|k5|k3|k4|rio|cerato|stinger|impreza|legacy|outback|fluence|logan|sandero|duster.*2wd|clio|megane|swift|baleno|dzire|vitara.*2wd|lancer|galant|mirage|g4|g6|soul|stonic|picanto|morning|spark|sonic|cruze|malibu|trax.*2wd|onix|tracker.*2wd/.test(m);
+  const esPanel = /hiace|h1|urvan|transit|master|sprinter|van|panel|minivan|nv200|nv350|carry|super carry|n300/.test(m);
 
   // Detectar marca
   const esCofiñoAlta = MARCAS_COFIÑO_ALTA.some(mk => m.includes(mk));
-  const esToyota = m.includes('toyota') || m.includes('hilux') || m.includes('rav') || m.includes('corolla') || m.includes('yaris') || m.includes('fortuner') || m.includes('prado') || m.includes('4runner') || m.includes('land cruiser') || m.includes('sequoia') || m.includes('tundra') || m.includes('camry') || m.includes('rush') || m.includes('avanza');
+  const esToyota = m.includes('toyota') || /hilux|rav4|corolla|yaris|fortuner|prado|4runner|land cruiser|sequoia|tundra|camry|rush|avanza|hiace|innova/.test(m);
   const esToyotaAlta = esToyota && MODELOS_TOYOTA_ALTA.some(mod => m.includes(mod));
   const esCofiñoNormal = !esCofiñoAlta && !esToyotaAlta && (esToyota || MARCAS_COFIÑO_NORMAL.some(mk => m.includes(mk)));
   const esExtAlta = MARCAS_EXT_ALTA.some(mk => m.includes(mk));
+  const esExtNormal = !esCofiñoAlta && !esCofiñoNormal && !esToyotaAlta && !esExtAlta && MARCAS_EXT_NORMAL.some(mk => m.includes(mk));
   const esCofiño = esCofiñoAlta || esToyotaAlta || esCofiñoNormal;
 
   // Mapear a tipo
   if (esCamioneta) {
     if (esCofiñoAlta || esToyotaAlta) return 'CAMIONETA_COFIÑO_ALTA';
     if (esCofiñoNormal) return 'CAMIONETA_COFIÑO';
-    if (esExtAlta) return 'CAMIONETA_EXTERNA_ALTA';
     return 'CAMIONETA_EXTERNA_ALTA';
   }
   if (esPickup) {
@@ -839,21 +840,34 @@ function detectarTipoVehiculo(modeloStr) {
     return 'PANEL_EXTERNA';
   }
   if (esSedan) {
-    if (esCofiñoAlta || esToyotaAlta) return 'SUV_COFIÑO_ALTA';
+    if (esCofiñoAlta) return 'SUV_COFIÑO_ALTA';
     if (esCofiñoNormal) return 'SEDAN_COFIÑO';
     if (esExtAlta) return 'SUV_EXTERNA_ALTA';
     return 'SEDAN_EXTERNA';
   }
-  // Solo marca sin modelo claro
+  // Solo marca sin modelo reconocido — usar marca para clasificar
   if (esCofiñoAlta) return 'SUV_COFIÑO_ALTA';
   if (esCofiñoNormal) return 'SUV_COFIÑO';
   if (esExtAlta) return 'SUV_EXTERNA_ALTA';
+  if (esExtNormal) return 'SUV_EXTERNA';
   return null;
 }
 
 function autoSeleccionarTipo(modeloStr) {
   const tipo = detectarTipoVehiculo(modeloStr);
-  if (!tipo) return;
+  // Asegurar que el chip exista siempre
+  let chip = document.getElementById('vtype-auto-chip');
+  if (!chip) {
+    chip = document.createElement('div');
+    chip.id = 'vtype-auto-chip';
+    chip.style.cssText = 'font-size:11px;margin-top:6px;padding:5px 9px;border-radius:var(--rsm);display:none';
+    const grid = document.getElementById('vtype-grid');
+    if (grid) grid.after(chip);
+  }
+  if (!tipo) {
+    chip.style.display = 'none';
+    return;
+  }
   const btns = document.querySelectorAll('.vtype-btn');
   btns.forEach(b => b.classList.remove('sel'));
   btns.forEach(b => {
@@ -862,17 +876,11 @@ function autoSeleccionarTipo(modeloStr) {
       ST.vtype = tipo;
       renderExtSVG();
       renderIntSVG();
-      // Mostrar chip de confirmación
-      let chip = document.getElementById('vtype-auto-chip');
-      if (!chip) {
-        chip = document.createElement('div');
-        chip.id = 'vtype-auto-chip';
-        chip.style.cssText = 'font-size:11px;color:var(--green);margin-top:6px;padding:4px 8px;background:var(--green-bg);border:1px solid var(--green-b);border-radius:var(--rsm)';
-        document.getElementById('vtype-grid').after(chip);
-      }
-      chip.textContent = '✓ Tipo autodetectado: ' + (VTYPES.find(v=>v.k===tipo)?.l||tipo);
     }
   });
+  chip.style.display = 'block';
+  chip.style.cssText = 'font-size:11px;margin-top:6px;padding:5px 9px;border-radius:var(--rsm);color:var(--green-t);background:var(--green-bg);border:1px solid var(--green-b)';
+  chip.textContent = '✓ Tipo autodetectado: ' + (VTYPES.find(v=>v.k===tipo)?.l||tipo);
 }
 
 // ── HISTORIAL ──
