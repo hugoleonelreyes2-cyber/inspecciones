@@ -338,7 +338,7 @@ textarea{resize:vertical;line-height:1.5}
     <div class="ocr-st" id="ocr-st"></div>
   </div>
   <div class="field"><label class="lbl">Placa <span class="req">*</span></label><input type="text" id="placa" placeholder="Ej. P123ABC"></div>
-  <div class="field"><label class="lbl">Marca / Modelo / Año</label><input type="text" id="modelo" placeholder="Ej. Toyota Hilux 2022"></div>
+  <div class="field"><label class="lbl">Marca / Modelo / Año</label><input type="text" id="modelo" placeholder="Ej. Toyota Hilux 2022" oninput="autoSeleccionarTipo(this.value)" onblur="autoSeleccionarTipo(this.value)"></div>
   <div class="field"><label class="lbl">Kilometraje</label><input type="number" id="km" placeholder="0"></div>
   <div class="field"><label class="lbl">Color</label><input type="text" id="color" placeholder="Ej. Blanco Perla"></div>
   <div class="field"><label class="lbl">Número de chasis</label><input type="text" id="chasis" placeholder="Según documento"></div>
@@ -789,6 +789,92 @@ const COMP=[{id:'llave_copia',l:'¿El vehículo tiene copia de llave funcional?'
 let ST={vtype:null,extD:{},intD:{},ident:{},capoApagado:{},capoEncendido:{},elecExt:{},elecInt:{},dyn:{},comp:{},svc:{historial:null,combustible:null,tipo:null,costo:0,omitio:null,componente:''},llave:null,herram:null,photos:new Set(),totalCost:0,urgCost:0,recCost:0,tallerItems:[],ranking:{},_editingId:null,llantas:{medida:'',precio_unit:0,precio_x4:0}};
 let extActivePiece=null,intActivePiece=null;
 
+
+// ── AUTODETECCIÓN TIPO VEHÍCULO ──
+const MARCAS_COFIÑO_ALTA = ['lexus','audi','land rover','landrover','byd'];
+const MARCAS_COFIÑO_NORMAL = ['toyota','chevrolet','subaru','renault','gac','dadao','omoda','jaecoo'];
+const MARCAS_EXT_ALTA = ['mercedes','mercedes-benz','bmw','porsche','volvo','infiniti','acura','jaguar','genesis','maserati','ferrari','bentley','rolls','lamborghini'];
+const MODELOS_TOYOTA_ALTA = ['land cruiser','landcruiser','4runner','sequoia','tundra','lc300','lc200','lc','prado'];
+
+function detectarTipoVehiculo(modeloStr) {
+  if (!modeloStr) return null;
+  const m = modeloStr.toLowerCase().trim();
+
+  // Detectar tipo de carrocería
+  const esPickup = /hilux|tacoma|tundra|ranger|frontier|d-max|dmax|l200|pickup|pick.?up|4x4.*cab|cabina/.test(m);
+  const esSUV = /rav4|rav 4|cr.?v|cx.?5|tucson|sportage|tiguan|4runner|fortuner|land cruiser|prado|pajero|outlander|suv|crossover|xr.?v|hr.?v|br.?v|rush|terios|duster|koleos|eclipse cross/.test(m);
+  const esCamioneta = /suburban|sequoia|expedition|patrol|land cruiser 200|lc200|lc300|defender|discovery|range rover|escalade|navigator|armada/.test(m);
+  const esSedan = /corolla|yaris|vios|camry|avalon|civic|accord|sentra|versa|jetta|golf|almera|altima|mazda3|mazda 3|elantra|accent|sonata|optima|k5|k3|impreza|legacy|fluence|logan/.test(m);
+  const esPanel = /hiace|h1|urvan|transit|master|sprinter|van|panel/.test(m);
+
+  // Detectar marca
+  const esCofiñoAlta = MARCAS_COFIÑO_ALTA.some(mk => m.includes(mk));
+  const esToyota = m.includes('toyota') || m.includes('hilux') || m.includes('rav') || m.includes('corolla') || m.includes('yaris') || m.includes('fortuner') || m.includes('prado') || m.includes('4runner') || m.includes('land cruiser') || m.includes('sequoia') || m.includes('tundra') || m.includes('camry') || m.includes('rush') || m.includes('avanza');
+  const esToyotaAlta = esToyota && MODELOS_TOYOTA_ALTA.some(mod => m.includes(mod));
+  const esCofiñoNormal = !esCofiñoAlta && !esToyotaAlta && (esToyota || MARCAS_COFIÑO_NORMAL.some(mk => m.includes(mk)));
+  const esExtAlta = MARCAS_EXT_ALTA.some(mk => m.includes(mk));
+  const esCofiño = esCofiñoAlta || esToyotaAlta || esCofiñoNormal;
+
+  // Mapear a tipo
+  if (esCamioneta) {
+    if (esCofiñoAlta || esToyotaAlta) return 'CAMIONETA_COFIÑO_ALTA';
+    if (esCofiñoNormal) return 'CAMIONETA_COFIÑO';
+    if (esExtAlta) return 'CAMIONETA_EXTERNA_ALTA';
+    return 'CAMIONETA_EXTERNA_ALTA';
+  }
+  if (esPickup) {
+    if (esCofiñoAlta || esToyotaAlta) return 'PICKUP_COFIÑO_ALTA';
+    if (esCofiñoNormal) return 'PICKUP_COFIÑO_NORMAL';
+    if (esExtAlta) return 'PICKUP_EXTERNA_ALTA';
+    return 'PICKUP_EXTERNA_NORMAL';
+  }
+  if (esSUV) {
+    if (esCofiñoAlta || esToyotaAlta) return 'SUV_COFIÑO_ALTA';
+    if (esCofiñoNormal) return 'SUV_COFIÑO';
+    if (esExtAlta) return 'SUV_EXTERNA_ALTA';
+    return 'SUV_EXTERNA';
+  }
+  if (esPanel) {
+    if (esCofiño) return 'PANEL_INTERNA';
+    return 'PANEL_EXTERNA';
+  }
+  if (esSedan) {
+    if (esCofiñoAlta || esToyotaAlta) return 'SUV_COFIÑO_ALTA';
+    if (esCofiñoNormal) return 'SEDAN_COFIÑO';
+    if (esExtAlta) return 'SUV_EXTERNA_ALTA';
+    return 'SEDAN_EXTERNA';
+  }
+  // Solo marca sin modelo claro
+  if (esCofiñoAlta) return 'SUV_COFIÑO_ALTA';
+  if (esCofiñoNormal) return 'SUV_COFIÑO';
+  if (esExtAlta) return 'SUV_EXTERNA_ALTA';
+  return null;
+}
+
+function autoSeleccionarTipo(modeloStr) {
+  const tipo = detectarTipoVehiculo(modeloStr);
+  if (!tipo) return;
+  const btns = document.querySelectorAll('.vtype-btn');
+  btns.forEach(b => b.classList.remove('sel'));
+  btns.forEach(b => {
+    if (b.dataset.k === tipo) {
+      b.classList.add('sel');
+      ST.vtype = tipo;
+      renderExtSVG();
+      renderIntSVG();
+      // Mostrar chip de confirmación
+      let chip = document.getElementById('vtype-auto-chip');
+      if (!chip) {
+        chip = document.createElement('div');
+        chip.id = 'vtype-auto-chip';
+        chip.style.cssText = 'font-size:11px;color:var(--green);margin-top:6px;padding:4px 8px;background:var(--green-bg);border:1px solid var(--green-b);border-radius:var(--rsm)';
+        document.getElementById('vtype-grid').after(chip);
+      }
+      chip.textContent = '✓ Tipo autodetectado: ' + (VTYPES.find(v=>v.k===tipo)?.l||tipo);
+    }
+  });
+}
+
 // ── HISTORIAL ──
 function setComb(btn,val){document.querySelectorAll('#combustible-row .sbtn').forEach(b=>b.className='sbtn');btn.className='sbtn s-sel';ST.svc.combustible=val;updateSvcCosto();}
 function setHistorial(btn,val){
@@ -994,7 +1080,8 @@ async function handleOCR(input){
     const clean=txt.replace(/```json|```/g,'').trim();
     const d=JSON.parse(clean);
     if(d.placa)document.getElementById('placa').value=d.placa;
-    if(d.modelo||d.año)document.getElementById('modelo').value=((d.modelo||'')+' '+(d.año||'')).trim();
+    const modeloOCR=((d.modelo||'')+' '+(d.año||'')).trim();
+    if(d.modelo||d.año){document.getElementById('modelo').value=modeloOCR;autoSeleccionarTipo(modeloOCR);}
     if(d.color)document.getElementById('color').value=d.color;
     if(d.chasis)document.getElementById('chasis').value=d.chasis;
     if(d.motor)document.getElementById('nmotor').value=d.motor;
