@@ -1416,6 +1416,7 @@ async function saveRec(existingId){
     // 7. Guardar estado completo en Drive — incluyendo photoLinks
     showToast('☁ Guardando estado completo...',false);
     try{
+      // photoLinks incluye photo_tarjeta si fue tomada
       const stateConFotos={...rec.state, photoLinks};
       await gPost({
         action:'saveState',
@@ -1428,7 +1429,8 @@ async function saveRec(existingId){
     // 8. Actualizar local con links Y fotos de hallazgos
     rec.photoLinks=photoLinks;rec.folderLink=folderLink;rec.folderVehId=folderVeh;
     const hallazgoImgsLocal={};
-    Object.entries(IMGS).filter(([k])=>!k.startsWith('photo_')).forEach(([k,v])=>hallazgoImgsLocal[k]=v);
+    // Incluir foto de tarjeta + fotos de hallazgos (excluir solo fotos estándar photo_0 a photo_7)
+    Object.entries(IMGS).filter(([k])=>k==='photo_tarjeta'||!k.startsWith('photo_')).forEach(([k,v])=>hallazgoImgsLocal[k]=v);
     rec.imgs=hallazgoImgsLocal;
     try{localStorage.setItem('insp_'+id,JSON.stringify(rec));}catch(e){
       try{const r2={...rec,imgs:{}};localStorage.setItem('insp_'+id,JSON.stringify(r2));}catch(e2){console.warn('localStorage lleno');}
@@ -1859,6 +1861,7 @@ function viewRec(id){
 
   const fotosHtml=(()=>{
     const links=rec.photoLinks&&Object.keys(rec.photoLinks).length;
+    // local.imgs ya incluye photo_tarjeta desde el fix de guardado
     const imgsLocal=local?.imgs&&Object.keys(local.imgs).length;
     if(imgsLocal){
       return`<div class="card"><div class="card-title">Fotografías (${Object.keys(local.imgs).length})</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">${Object.entries(local.imgs).map(([k,v])=>{const lbl=fotoLbls[k]||k.replace('hallazgo_ext_','Ext: ').replace('hallazgo_int_','Int: ').replace('hallazgo_','').replace(/_/g,' ');return`<div style="border-radius:6px;overflow:hidden;border:1px solid var(--b)"><img src="${v}" style="width:100%;aspect-ratio:4/3;object-fit:cover;display:block"><div style="padding:3px 6px;font-size:9px;color:var(--t2);background:var(--sf2)">${lbl}</div></div>`;}).join('')}</div></div>`;
@@ -2005,7 +2008,8 @@ async function pdfRec(id, enviarCorreo=true){
     showToast('⏳ Generando PDF con fotos locales...',false);
   } else if(rec.photoLinks&&Object.keys(rec.photoLinks).length){
     // Descargar desde Drive — excluir fotos estándar
-    const hallazgoLinks=Object.entries(rec.photoLinks).filter(([k])=>!k.startsWith('photo_'));
+    // Incluir foto tarjeta + hallazgos (excluir solo fotos estándar photo_0 a photo_7)
+    const hallazgoLinks=Object.entries(rec.photoLinks).filter(([k])=>k==='photo_tarjeta'||!k.startsWith('photo_'));
     if(hallazgoLinks.length){
       updateProgress(`Descargando fotos...`,`Paso 2 de 4 — ${hallazgoLinks.length} foto(s) de hallazgos`);
       for(const [key,link] of hallazgoLinks){
