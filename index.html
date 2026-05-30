@@ -1435,6 +1435,7 @@ async function saveRec(existingId){
     }
     hideProgress();
     showToast('✅ Guardado correctamente — '+placa,false);
+    setTimeout(()=>showMenu(),1800);
   }catch(e){
     console.error('Error Google:',e);
     hideProgress();
@@ -1471,7 +1472,7 @@ async function generarPDFBlob(){
     else{doc.setFontSize(8);allF.forEach(f=>{if(y>270){doc.addPage();y=20;}doc.setFillColor(253,236,235);doc.rect(12,y-3.5,186,6.5,'F');doc.setFont('helvetica','bold');doc.setTextColor(192,57,43);doc.text('[COSTO]',14,y);doc.setFont('helvetica','normal');doc.setTextColor(0);const lines=doc.splitTextToSize(f.l,142);doc.text(lines,38,y);doc.setFont('helvetica','bold');doc.text(fQ(f.c),195,y,{align:'right'});y+=lines.length>1?lines.length*4.5+1:6;});}
     const obs=document.getElementById('obs').value;if(obs){y+=4;if(y>260){doc.addPage();y=20;}y=sec('OBSERVACIONES',y);doc.setFontSize(8);doc.setFont('helvetica','normal');doc.setTextColor(0);const lines=doc.splitTextToSize(obs,182);doc.text(lines,14,y);y+=lines.length*4+4;}
     // Fotos
-    const hallazgoImgs=Object.entries(IMGS).filter(([k])=>!k.startsWith('photo_'));
+    const tarjetaImg=IMGS['photo_tarjeta']?[['photo_tarjeta',IMGS['photo_tarjeta']]]:[]; const hallazgoImgs=[...tarjetaImg,...Object.entries(IMGS).filter(([k])=>!k.startsWith('photo_')&&k!=='photo_tarjeta')];
     if(hallazgoImgs.length){
       if(y>230){doc.addPage();y=20;}
       y=sec('FOTOGRAFÍAS DE HALLAZGOS',y);
@@ -1481,7 +1482,7 @@ async function generarPDFBlob(){
         if(y+rowH>280){doc.addPage();y=20;col=0;}
         const x=margin+col*(colW+gap);
         try{doc.addImage(v,'JPEG',x,y,colW,rowH-10);
-          const lbl=k.replace(/hallazgo_ext_|hallazgo_int_|hallazgo_|qfo_/g,'').replace(/_/g,' ');
+          const lbl=k==='photo_tarjeta'?'Tarjeta de circulación':k.replace(/hallazgo_ext_|hallazgo_int_|hallazgo_|qfo_/g,'').replace(/_/g,' ');
           doc.setFontSize(7);doc.setTextColor(80);doc.text(lbl.substring(0,32),x+colW/2,y+rowH-3,{align:'center'});
         }catch(e){}
         col++;if(col>=2){col=0;y+=rowH+2;}
@@ -1526,8 +1527,8 @@ function genPDF(){
   const obs=document.getElementById('obs').value;if(obs){y+=4;if(y>260){doc.addPage();y=20;}y=sec('OBSERVACIONES',y);doc.setFontSize(8);doc.setFont('helvetica','normal');doc.setTextColor(0);const lines=doc.splitTextToSize(obs,182);doc.text(lines,14,y);y+=lines.length*4+4;}
 
   // ── FOTOGRAFÍAS DE HALLAZGOS AGRUPADAS POR SECCIÓN ──
-  // Incluir todas las fotos excepto las fotos estándar (photo_0 a photo_7)
-  const hallazgoImgs=Object.entries(IMGS).filter(([k])=>!k.startsWith('photo_'));
+  // Tarjeta de circulación primero, luego hallazgos
+  const tarjetaImg=IMGS['photo_tarjeta']?[['photo_tarjeta',IMGS['photo_tarjeta']]]:[]; const hallazgoImgs=[...tarjetaImg,...Object.entries(IMGS).filter(([k])=>!k.startsWith('photo_')&&k!=='photo_tarjeta')];
   if(hallazgoImgs.length){
     if(y>230){doc.addPage();y=20;}
     y=sec('FOTOGRAFÍAS DE HALLAZGOS',y);
@@ -1556,7 +1557,7 @@ function genPDF(){
         try{
           doc.addImage(v,'JPEG',x,y,colW,rowH-10);
           doc.setFontSize(7);doc.setTextColor(80);doc.setFont('helvetica','normal');
-          const lbl=k.replace(/hallazgo_ext_|hallazgo_int_|hallazgo_|qfo_/g,'').replace(/_/g,' ');
+          const lbl=k==='photo_tarjeta'?'Tarjeta de circulación':k.replace(/hallazgo_ext_|hallazgo_int_|hallazgo_|qfo_/g,'').replace(/_/g,' ');
           doc.text(lbl.substring(0,32),x+colW/2,y+rowH-3,{align:'center'});
         }catch(e){}
         col++;if(col>=2){col=0;y+=rowH+2;}
@@ -1770,7 +1771,7 @@ function renderLocalRec(rec,list){
   div.innerHTML=`
     <div class="rec-modelo">${rec.modelo||'Sin modelo'}</div>
     <div class="rec-meta">${rec.placa} · ${rec.color||''} · ${rec.km} km · ${rec.inspector}</div>
-    <div class="rec-meta">${rec.fecha}${mod}</div>
+    <div class="rec-meta">${REG_formatFecha(rec.fecha)}${mod}</div>
     <div class="rec-footer"><span class="rec-cost">Q ${(rec.totalCost||0).toLocaleString()}</span><span style="font-size:12px;font-weight:500;color:${rc(rec.ranking?.global||3)}">${rec.ranking?.global||'—'}/5 ${tb}</span></div>
     <div style="display:flex;gap:5px;margin-top:9px">
       <button onclick="viewRec(${rec.id})" style="flex:1;padding:7px 4px;font-size:11px;font-weight:500;border:1px solid var(--b2);border-radius:var(--rsm);background:var(--sf2);color:var(--t2);cursor:pointer;font-family:'DM Sans',sans-serif">👁 Ver</button>
