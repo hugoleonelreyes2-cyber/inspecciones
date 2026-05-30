@@ -1297,7 +1297,8 @@ async function saveRec(existingId){
   const id=existingId||Date.now();
   let old={};try{old=JSON.parse(localStorage.getItem('insp_'+id)||'{}');}catch(e){}
   const placa=document.getElementById('placa').value||'SIN_PLACA';
-  const rec={id,fecha:old.fecha||new Date().toLocaleDateString('es-GT'),fechaMod:new Date().toLocaleDateString('es-GT'),inspector:document.getElementById('inspector').value,placa,modelo:document.getElementById('modelo').value,color:document.getElementById('color').value,km:document.getElementById('km').value,chasis:document.getElementById('chasis').value,nmotor:document.getElementById('nmotor').value,vtype:ST.vtype,ranking:ST.ranking,totalCost:ST.totalCost,urgCost:ST.urgCost,recCost:ST.recCost,tallerItems:ST.tallerItems,obs:document.getElementById('obs').value,svc:ST.svc,llantas:ST.llantas,imgs:{...IMGS},state:{ident:ST.ident,extD:ST.extD,intD:ST.intD,capoApagado:ST.capoApagado,capoEncendido:ST.capoEncendido,elecExt:ST.elecExt,elecInt:ST.elecInt,dyn:ST.dyn,comp:ST.comp,photos:Array.from(ST.photos),svc:ST.svc,llantas:ST.llantas}};
+  const _hoy=new Date().toLocaleDateString('es-GT',{day:'2-digit',month:'2-digit',year:'numeric'});
+  const rec={id,fecha:old.fecha||_hoy,fechaMod:_hoy,inspector:document.getElementById('inspector').value,placa,modelo:document.getElementById('modelo').value,color:document.getElementById('color').value,km:document.getElementById('km').value,chasis:document.getElementById('chasis').value,nmotor:document.getElementById('nmotor').value,vtype:ST.vtype,ranking:ST.ranking,totalCost:ST.totalCost,urgCost:ST.urgCost,recCost:ST.recCost,tallerItems:ST.tallerItems,obs:document.getElementById('obs').value,svc:ST.svc,llantas:ST.llantas,imgs:{...IMGS},state:{ident:ST.ident,extD:ST.extD,intD:ST.intD,capoApagado:ST.capoApagado,capoEncendido:ST.capoEncendido,elecExt:ST.elecExt,elecInt:ST.elecInt,dyn:ST.dyn,comp:ST.comp,photos:Array.from(ST.photos),svc:ST.svc,llantas:ST.llantas}};
 
   // Guardar local básico como respaldo inmediato (sin fotos)
   try{localStorage.setItem('insp_'+id,JSON.stringify({...rec,imgs:{}}));}catch(e){}
@@ -1372,27 +1373,45 @@ async function saveRec(existingId){
       hallazgos,
     });
 
-    // 6. Generar PDF y enviar por correo con adjunto
-    updateProgress('Enviando correo de notificación...','Paso 5 de 5 — Casi listo');
-    await gPost({
-      action:'generateAndEmailPDF',
-      inspector:rec.inspector,placa,
-      modelo:rec.modelo,color:rec.color,km:rec.km,
-      tipoVehiculo:VTYPES.find(v=>v.k===ST.vtype)?.l||'—',
-      fecha:rec.fecha,
-      rankingExterior:ST.ranking.exterior,rankingInterior:ST.ranking.interior,
-      rankingMecanica:ST.ranking.mecanica,rankingElectrico:ST.ranking.electrico,
-      rankingPrueba:ST.ranking.dinamica,rankingGeneral:ST.ranking.global,
-      costoTotal:fQ(ST.totalCost),
-      costoUrgente:fQ(ST.urgCost),
-      costoRecomendado:fQ(ST.recCost),
-      puntosTaller:ST.tallerItems.join(' | ')||'Ninguno',
-      alertaIdentidad:identIssue?'SÍ — Verificar urgente':'No',
-      observaciones:rec.obs||'—',
-      carpetaDrive:folderLink,
-      folderId:folderVeh,
-      hallazgos,
-    });
+    // 6. Generar PDF completo con fotos y enviar por correo
+    updateProgress('Generando PDF completo con fotos...','Paso 5 de 5 — Casi listo');
+    try{
+      // Generar PDF completo (con fotos) y convertir a base64 para adjuntar
+      const {jsPDF}=window.jspdf;
+      // Usar genPDF que ya incluye todas las fotos del IMGS actual
+      const pdfDoc=await generarPDFBlob();
+      if(pdfDoc){
+        const pdfB64=pdfDoc.split(',')[1];
+        await gPost({
+          action:'sendEmailWithPDF',
+          inspector:rec.inspector,placa,
+          modelo:rec.modelo,fecha:rec.fecha,
+          rankingGeneral:ST.ranking.global,
+          costoTotal:fQ(ST.totalCost),
+          puntosTaller:ST.tallerItems.join(' | ')||'Ninguno',
+          alertaIdentidad:identIssue?'SÍ — Verificar urgente':'No',
+          carpetaDrive:folderLink,
+          pdfBase64:pdfB64,
+          pdfName:'Inspeccion_'+placa+'_'+rec.fecha.replace(/\//g,'-')+'.pdf'
+        });
+      }
+    }catch(eEmail){
+      console.warn('Error enviando correo con PDF:',eEmail);
+      // Fallback al correo simple
+      await gPost({
+        action:'generateAndEmailPDF',
+        inspector:rec.inspector,placa,
+        modelo:rec.modelo,color:rec.color,km:rec.km,
+        tipoVehiculo:VTYPES.find(v=>v.k===ST.vtype)?.l||'—',
+        fecha:rec.fecha,
+        rankingExterior:ST.ranking.exterior,rankingInterior:ST.ranking.interior,
+        rankingMecanica:ST.ranking.mecanica,rankingElectrico:ST.ranking.electrico,
+        rankingPrueba:ST.ranking.dinamica,rankingGeneral:ST.ranking.global,
+        costoTotal:fQ(ST.totalCost),puntosTaller:ST.tallerItems.join(' | ')||'Ninguno',
+        alertaIdentidad:identIssue?'SÍ — Verificar urgente':'No',
+        observaciones:rec.obs||'—',carpetaDrive:folderLink,folderId:folderVeh,hallazgos,
+      });
+    }
 
     // 7. Guardar estado completo en Drive — incluyendo photoLinks
     showToast('☁ Guardando estado completo...',false);
@@ -1422,6 +1441,56 @@ async function saveRec(existingId){
     showToast('⚠ Guardado localmente — sin conexión a Google',true);
   }
   return id;
+}
+
+async function generarPDFBlob(){
+  try{
+    if(typeof window.jspdf==='undefined') return null;
+    const {jsPDF}=window.jspdf;
+    const doc=new jsPDF({orientation:'p',unit:'mm',format:'a4'});
+    const modelo=document.getElementById('modelo').value||'Sin modelo',placa=document.getElementById('placa').value||'Sin placa',color=document.getElementById('color').value||'—',inspector=document.getElementById('inspector').value||'—',km=document.getElementById('km').value||'—',chasis=document.getElementById('chasis').value||'—',nmotor=document.getElementById('nmotor').value||'—',fecha=new Date().toLocaleDateString('es-GT',{day:'2-digit',month:'2-digit',year:'numeric'}),r=ST.ranking;
+    let y=0;
+    doc.setFillColor(27,111,216);doc.rect(0,0,210,32,'F');doc.setTextColor(255,255,255);doc.setFontSize(17);doc.setFont('helvetica','bold');doc.text('INFORME TÉCNICO DE INSPECCIÓN',105,13,{align:'center'});doc.setFontSize(9);doc.setFont('helvetica','normal');doc.text('División de Vehículos Usados · Inspección Rápida · '+fecha,105,22,{align:'center'});y=40;
+    const sec=(title,yy)=>{doc.setFillColor(240,238,233);doc.rect(12,yy-4,186,7,'F');doc.setFontSize(10);doc.setFont('helvetica','bold');doc.setTextColor(27,111,216);doc.text(title,14,yy);return yy+7;};
+    y=sec('DATOS DEL VEHÍCULO',y);doc.setTextColor(0);doc.setFontSize(9);
+    [[' Vehículo',modelo],[' Placa',placa],[' Color',color],[' Km',km+' km'],[' Chasis',chasis],[' Motor',nmotor],[' Inspector',inspector],[' Categoría',VTYPES.find(v=>v.k===ST.vtype)?.l||'—']].forEach(([k,v])=>{doc.setFont('helvetica','bold');doc.text(k+':',14,y);doc.setFont('helvetica','normal');doc.text(String(v),58,y);y+=5;});
+    if(ST.svc.historial){y+=2;doc.setFont('helvetica','bold');doc.text(' Historial:',14,y);doc.setFont('helvetica','normal');const sl={vigente_cofiño:'Vigente — Cofiño',vigente_externa:'Vigente — Agencia externa',vencido:'Vencido',sin_historial:'Sin historial'};doc.text(sl[ST.svc.historial]||'—',58,y);y+=5;}
+    if(ST.svc.costo>0){doc.setFont('helvetica','bold');doc.text(' Servicio:',14,y);doc.setFont('helvetica','normal');doc.text(`${ST.svc.tipo}${ST.svc.combustible==='D'?'D':'G'} — Q ${ST.svc.costo.toLocaleString()}`,58,y);y+=5;}
+    if(ST.llantas.precio_x4>0){doc.setFont('helvetica','bold');doc.text(' Llantas:',14,y);doc.setFont('helvetica','normal');doc.text(`${ST.llantas.medida} × 4 = Q ${ST.llantas.precio_x4.toLocaleString()}`,58,y);y+=5;}
+    const identIssue=Object.values(ST.ident).some(v=>v.val==='No'||v.val==='NV');
+    if(identIssue){y+=2;doc.setFillColor(253,236,235);doc.rect(12,y-3,186,10,'F');doc.setFont('helvetica','bold');doc.setTextColor(192,57,43);doc.text('⚠ ALERTA: Discrepancia en identidad — validar urgente en taller',14,y+3);y+=14;doc.setTextColor(0);}
+    y+=3;y=sec('RANKING DE CONDICIÓN',y);doc.setFontSize(9);['exterior','interior','mecanica','electrico','dinamica','global'].forEach(k=>{const v=r[k]||0;doc.setFont('helvetica','bold');doc.setTextColor(0);doc.text((k.charAt(0).toUpperCase()+k.slice(1))+':',14,y);doc.setFont('helvetica','normal');doc.text(v+'/5 — '+rl(v),54,y);y+=5;});
+    y+=3;y=sec('ESTIMACIÓN DE INVERSIÓN',y);doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(0);doc.text('Total:',14,y);doc.text(fQ(ST.totalCost),195,y,{align:'right'});y+=8;
+    if(ST.tallerItems.length){y=sec('PUNTOS PARA REVISIÓN EN TALLER',y);doc.setFontSize(8);doc.setFont('helvetica','normal');ST.tallerItems.forEach(t=>{if(y>270){doc.addPage();y=20;}doc.setFillColor(255,243,205);doc.rect(12,y-3,186,5.5,'F');doc.text('• '+t,14,y);y+=6;});y+=3;}
+    y=sec('HALLAZGOS DETALLADOS',y);
+    const extH=Object.values(ST.extD).filter(d=>d.tipo&&d.tipo!=='OK'),intH=Object.values(ST.intD).filter(d=>d.tipo&&d.tipo!=='OK');
+    const allQ={...ST.capoApagado,...ST.capoEncendido,...ST.elecExt,...ST.elecInt,...ST.dyn,...ST.comp};
+    const qH=Object.values(allQ).filter(d=>d.val&&d.val!=='NA'&&d.val!=='Bien'&&((d.invertida&&d.val==='Si')||(!d.invertida&&(d.val==='Regular'||d.val==='Mal'))));
+    const allF=[...extH.filter(d=>d.costo>0).map(d=>({l:`Exterior: ${d.pieza} (${d.tipo}${d.nivel})`,c:d.costo})),...intH.filter(d=>d.costo>0).map(d=>({l:`Interior: ${d.pieza} (${d.tipo}${d.nivel})`,c:d.costo})),...qH.filter(d=>d.costo>0).map(d=>({l:d.l,c:d.costo})),...(ST.svc.costo>0?[{l:`Servicio ${ST.svc.tipo}${ST.svc.combustible}`,c:ST.svc.costo}]:[]),...(ST.llantas.precio_x4>0?[{l:`Llantas ${ST.llantas.medida} (x4)`,c:ST.llantas.precio_x4}]:[])];
+    if(!allF.length){doc.setFont('helvetica','italic');doc.setTextColor(150);doc.text('Sin hallazgos con costo.',14,y);y+=6;}
+    else{doc.setFontSize(8);allF.forEach(f=>{if(y>270){doc.addPage();y=20;}doc.setFillColor(253,236,235);doc.rect(12,y-3.5,186,6.5,'F');doc.setFont('helvetica','bold');doc.setTextColor(192,57,43);doc.text('[COSTO]',14,y);doc.setFont('helvetica','normal');doc.setTextColor(0);const lines=doc.splitTextToSize(f.l,142);doc.text(lines,38,y);doc.setFont('helvetica','bold');doc.text(fQ(f.c),195,y,{align:'right'});y+=lines.length>1?lines.length*4.5+1:6;});}
+    const obs=document.getElementById('obs').value;if(obs){y+=4;if(y>260){doc.addPage();y=20;}y=sec('OBSERVACIONES',y);doc.setFontSize(8);doc.setFont('helvetica','normal');doc.setTextColor(0);const lines=doc.splitTextToSize(obs,182);doc.text(lines,14,y);y+=lines.length*4+4;}
+    // Fotos
+    const hallazgoImgs=Object.entries(IMGS).filter(([k])=>!k.startsWith('photo_'));
+    if(hallazgoImgs.length){
+      if(y>230){doc.addPage();y=20;}
+      y=sec('FOTOGRAFÍAS DE HALLAZGOS',y);
+      const colW=88,rowH=72,margin=12,gap=5;
+      let col=0;
+      hallazgoImgs.forEach(([k,v])=>{
+        if(y+rowH>280){doc.addPage();y=20;col=0;}
+        const x=margin+col*(colW+gap);
+        try{doc.addImage(v,'JPEG',x,y,colW,rowH-10);
+          const lbl=k.replace(/hallazgo_ext_|hallazgo_int_|hallazgo_|qfo_/g,'').replace(/_/g,' ');
+          doc.setFontSize(7);doc.setTextColor(80);doc.text(lbl.substring(0,32),x+colW/2,y+rowH-3,{align:'center'});
+        }catch(e){}
+        col++;if(col>=2){col=0;y+=rowH+2;}
+      });
+      if(col>0)y+=rowH+2;
+    }
+    const pages=doc.internal.getNumberOfPages();for(let p=1;p<=pages;p++){doc.setPage(p);doc.setFontSize(7);doc.setTextColor(160);doc.text(`Pág. ${p} de ${pages}  ·  Sistema Inspección Vehículos Usados  ·  ${fecha}`,105,290,{align:'center'});}
+    return doc.output('datauristring');
+  }catch(e){console.error('Error generarPDFBlob:',e);return null;}
 }
 
 function genPDF(){
@@ -1715,15 +1784,11 @@ function renderLocalRec(rec,list){
 
 // PDF desde Sheets — descarga fotos desde Drive por fileId
 async function pdfRecSheets(id){
-  // Buscar en localStorage primero
-  let rec=null;
-  try{rec=JSON.parse(localStorage.getItem('insp_'+id));}catch(e){}
-  if(!rec||!rec.state){
-    showToast('⚠ Datos completos no disponibles localmente — use el botón 📁 para ver fotos en Drive',true);
-    return;
-  }
-  // Llamar pdfRec con enviarCorreo=true para que envíe el correo
-  pdfRec(Number(id), true);
+  // Mostrar progreso inmediatamente
+  showProgress('Preparando PDF completo...','Paso 1 de 4 — Buscando datos');
+  await new Promise(r=>setTimeout(r,100));
+  // Llamar pdfRec que maneja toda la lógica incluyendo descarga de fotos desde Drive
+  await pdfRec(Number(id), false);
 }
 function renderInspRecs(recs, listEl, total){
   const list=listEl||document.getElementById('records-list');
@@ -1918,7 +1983,8 @@ async function pdfRec(id, enviarCorreo=true){
   }
 
   const nLinks=rec.photoLinks?Object.keys(rec.photoLinks).length:0;
-  showToast(`⏳ Preparando PDF — ${nLinks} foto(s) en Drive...`,false);
+  showProgress('Preparando PDF con fotos...','Paso 1 de 4 — Cargando datos');
+  await new Promise(r=>setTimeout(r,200));
   const bak={inspector:document.getElementById('inspector').value,placa:document.getElementById('placa').value,modelo:document.getElementById('modelo').value,color:document.getElementById('color').value,km:document.getElementById('km').value,chasis:document.getElementById('chasis').value,nmotor:document.getElementById('nmotor').value,obs:document.getElementById('obs').value};
   const stBak=JSON.stringify({extD:ST.extD,intD:ST.intD,capoApagado:ST.capoApagado,capoEncendido:ST.capoEncendido,elecExt:ST.elecExt,elecInt:ST.elecInt,dyn:ST.dyn,comp:ST.comp,ident:ST.ident,vtype:ST.vtype,ranking:ST.ranking,totalCost:ST.totalCost,urgCost:ST.urgCost,recCost:ST.recCost,tallerItems:ST.tallerItems,svc:ST.svc,llantas:ST.llantas});
   document.getElementById('inspector').value=rec.inspector||'';document.getElementById('placa').value=rec.placa||'';document.getElementById('modelo').value=rec.modelo||'';document.getElementById('color').value=rec.color||'';document.getElementById('km').value=rec.km||'';document.getElementById('chasis').value=rec.chasis||'';document.getElementById('nmotor').value=rec.nmotor||'';document.getElementById('obs').value=rec.obs||'';
@@ -1940,7 +2006,7 @@ async function pdfRec(id, enviarCorreo=true){
     // Descargar desde Drive — excluir fotos estándar
     const hallazgoLinks=Object.entries(rec.photoLinks).filter(([k])=>!k.startsWith('photo_'));
     if(hallazgoLinks.length){
-      showToast(`⏳ Descargando ${hallazgoLinks.length} foto(s) de hallazgos...`,false);
+      updateProgress(`Descargando fotos...`,`Paso 2 de 4 — ${hallazgoLinks.length} foto(s) de hallazgos`);
       for(const [key,link] of hallazgoLinks){
         try{
           let fileId=null;
@@ -1960,7 +2026,12 @@ async function pdfRec(id, enviarCorreo=true){
     }
   }
 
+  updateProgress('Generando PDF...','Paso 3 de 4 — Construyendo documento');
+  await new Promise(r=>setTimeout(r,200));
   genPDF();
+  updateProgress('Finalizando...','Paso 4 de 4 — Descargando archivo');
+  await new Promise(r=>setTimeout(r,400));
+  hideProgress();
   // Enviar correo solo si se solicita explícitamente
   if(enviarCorreo){
     sendEmailNotification({
