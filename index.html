@@ -1555,20 +1555,87 @@ async function generarPDFBlob(){
     const extH=Object.values(ST.extD).filter(d=>d.tipo&&d.tipo!=='OK'),intH=Object.values(ST.intD).filter(d=>d.tipo&&d.tipo!=='OK');
     const allQ={...ST.capoApagado,...ST.capoEncendido,...ST.elecExt,...ST.elecInt,...ST.dyn,...ST.comp};
     const qH=Object.values(allQ).filter(d=>d.val&&d.val!=='NA'&&d.val!=='Bien'&&((d.invertida&&d.val==='Si')||(!d.invertida&&(d.val==='Regular'||d.val==='Mal'))));
-    const allFAll=[...extH.map(d=>({l:`Exterior: ${d.pieza} (${d.tipo}${d.nivel})`,c:d.costo||0})),...intH.map(d=>({l:`Interior: ${d.pieza} (${d.tipo}${d.nivel})`,c:d.costo||0})),...qH.map(d=>({l:d.l||'Hallazgo mecanico/electrico',c:d.costo||0})),...(ST.svc.costo>0?[{l:`Servicio ${ST.svc.tipo}${ST.svc.combustible}`,c:ST.svc.costo}]:[]),...(ST.llantas.precio_x4>0?[{l:`Llantas ${ST.llantas.medida} (x4)`,c:ST.llantas.precio_x4}]:[])];
+    const allFAll=[...extH.map(d=>({l:`Exterior: ${d.pieza} (${d.tipo}${d.nivel})`,c:d.costo||0})),...intH.map(d=>({l:`Interior: ${d.pieza} (${d.tipo}${d.nivel})`,c:d.costo||0})),...qH.map(function(d){
+        var lbl=d.l||d.label||'';
+        if(!lbl){
+          var allPts=[].concat(CAPO_APAGADO,CAPO_ENCENDIDO,ELEC_EXT,ELEC_INT,DYN,COMP);
+          var found=allPts.find(function(q){
+            return ST.capoApagado[q.id]===d||ST.capoEncendido[q.id]===d||
+                   ST.elecExt[q.id]===d||ST.elecInt[q.id]===d||
+                   ST.dyn[q.id]===d||ST.comp[q.id]===d;
+          });
+          lbl=found?found.l:'Hallazgo tecnico';
+        }
+        return{l:lbl,c:d.costo||0};
+      }),...(ST.svc.costo>0?[{l:`Servicio ${ST.svc.tipo}${ST.svc.combustible}`,c:ST.svc.costo}]:[]),...(ST.llantas.precio_x4>0?[{l:`Llantas ${ST.llantas.medida} (x4)`,c:ST.llantas.precio_x4}]:[])];
     const allFSin2=allFAll.filter(f=>f.c===0), allFCon2=allFAll.filter(f=>f.c>0);
     const totalDeducc2=allFCon2.reduce((s,f)=>s+f.c,0);
-    if(!allFAll.length){doc.setFont('helvetica','italic');doc.setTextColor(150);doc.text('Sin hallazgos.',14,y);y+=6;}
-    else{
+    if(!allFAll.length){
+      doc.setFont('helvetica','italic');doc.setTextColor(150);doc.text('Sin hallazgos.',14,y);y+=6;
+    } else {
       doc.setFontSize(8);
+      // ── SIN DEDUCCION ──
       if(allFSin2.length){
-        doc.setFont('helvetica','bold');doc.setTextColor(100,100,95);doc.text('Sin deduccion - solo registro',14,y);y+=5;
-        allFSin2.forEach(f=>{if(y>270){doc.addPage();y=20;}doc.setFillColor(247,246,243);doc.rect(12,y-3.5,186,6.5,'F');doc.setFillColor(180,178,169);doc.rect(12,y-3.5,2,6.5,'F');doc.setFont('helvetica','bold');doc.setTextColor(136,135,128);doc.text('[REGISTRO]',14,y);doc.setFont('helvetica','normal');doc.setTextColor(0);const lines=doc.splitTextToSize(f.l,138);doc.text(lines,44,y);y+=lines.length>1?lines.length*4.5+1:6;});y+=3;
+        // Encabezado sección
+        doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(120,118,112);
+        doc.text('SIN DEDUCCION - SOLO REGISTRO',14,y);y+=5;
+        allFSin2.forEach(function(f){
+          if(y>270){doc.addPage();y=20;}
+          const rowH=7;
+          // Fondo gris claro
+          doc.setFillColor(247,246,243);doc.rect(14,y-3.5,182,rowH,'F');
+          // Borde izquierdo gris
+          doc.setFillColor(178,176,166);doc.rect(14,y-3.5,2,rowH,'F');
+          // Badge REGISTRO
+          doc.setFillColor(136,135,128);doc.roundedRect(17,y-2.5,16,4.5,1,1,'F');
+          doc.setFont('helvetica','bold');doc.setFontSize(6);doc.setTextColor(255,255,255);
+          doc.text('REGISTRO',25,y+0.2,{align:'center'});
+          // Texto hallazgo
+          doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(30,30,28);
+          const lines=doc.splitTextToSize(f.l||'',138);
+          doc.text(lines,35,y);
+          // Dash derecho
+          doc.setTextColor(180);doc.text('--',193,y,{align:'right'});
+          y+=rowH+1;
+        });
+        y+=4;
       }
+      // ── CON DEDUCCION ──
       if(allFCon2.length){
-        doc.setFont('helvetica','bold');doc.setTextColor(192,57,43);doc.text('Con deduccion - afectan precio',14,y);y+=5;
-        allFCon2.forEach(f=>{if(y>270){doc.addPage();y=20;}doc.setFillColor(253,236,235);doc.rect(12,y-3.5,186,6.5,'F');doc.setFillColor(192,57,43);doc.rect(12,y-3.5,2,6.5,'F');doc.setFont('helvetica','bold');doc.setTextColor(192,57,43);doc.text('[DEDUCCION]',14,y);doc.setFont('helvetica','normal');doc.setTextColor(0);const lines=doc.splitTextToSize(f.l,132);doc.text(lines,46,y);doc.setFont('helvetica','bold');doc.text(fQ(f.c),195,y,{align:'right'});y+=lines.length>1?lines.length*4.5+1:6;});
-        if(totalDeducc2>0){y+=2;doc.setFillColor(253,236,235);doc.rect(12,y-3,186,8,'F');doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(192,57,43);doc.text('Total deducciones:',14,y+1);doc.text(fQ(totalDeducc2),195,y+1,{align:'right'});y+=10;}
+        // Encabezado sección
+        doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(192,57,43);
+        doc.text('CON DEDUCCION - AFECTAN PRECIO',14,y);y+=5;
+        allFCon2.forEach(function(f){
+          if(y>270){doc.addPage();y=20;}
+          const rowH=7;
+          // Fondo rojo claro
+          doc.setFillColor(253,236,235);doc.rect(14,y-3.5,182,rowH,'F');
+          // Borde izquierdo rojo
+          doc.setFillColor(192,57,43);doc.rect(14,y-3.5,2,rowH,'F');
+          // Badge DEDUCCION
+          doc.setFillColor(192,57,43);doc.roundedRect(17,y-2.5,20,4.5,1,1,'F');
+          doc.setFont('helvetica','bold');doc.setFontSize(6);doc.setTextColor(255,255,255);
+          doc.text('DEDUCCION',27,y+0.2,{align:'center'});
+          // Texto hallazgo
+          doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(30,30,28);
+          const lines=doc.splitTextToSize(f.l||'',126);
+          doc.text(lines,39,y);
+          // Monto derecho
+          doc.setFont('helvetica','bold');doc.setTextColor(192,57,43);
+          doc.text(fQ(f.c),195,y,{align:'right'});
+          y+=rowH+1;
+        });
+        // Total deducciones
+        if(totalDeducc2>0){
+          y+=2;
+          doc.setFillColor(253,236,235);doc.rect(14,y-3,182,8,'F');
+          doc.setDrawColor(192,57,43);doc.setLineWidth(0.3);doc.rect(14,y-3,182,8,'S');
+          doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(192,57,43);
+          doc.text('Total deducciones:',16,y+1);
+          doc.text(fQ(totalDeducc2),195,y+1,{align:'right'});
+          doc.setLineWidth(0.3);
+          y+=12;
+        }
       }
     }
     const obs=document.getElementById('obs').value;if(obs){y+=4;if(y>260){doc.addPage();y=20;}y=sec('OBSERVACIONES',y);doc.setFontSize(8);doc.setFont('helvetica','normal');doc.setTextColor(0);const lines=doc.splitTextToSize(obs,182);doc.text(lines,14,y);y+=lines.length*4+4;}
@@ -1603,33 +1670,56 @@ function dibujarDonaEnPDF(doc, r, x, y, size){
   const okPts=vals[0]+vals[1]+vals[2]+vals[3]+vals[4];
   const pct=Math.round(okPts/totalPts*100);
   const hexCol=pct>=80?'#3B6D11':pct>=60?'#BA7517':'#A32D2D';
-  const rgbCol=pct>=80?[59,109,17]:pct>=60?[186,117,23]:[160,45,45];
-  // Render dona to hidden canvas then add as image
-  const px=size*6; // resolution
+  // Alta resolucion para texto claro
+  const px=400;
   const cv=document.createElement('canvas');
   cv.width=px;cv.height=px;
   const ctx=cv.getContext('2d');
-  const cx2=px/2,cy2=px/2,outer=px/2-4,inner=outer*0.60;
-  // Background arc
-  ctx.beginPath();ctx.arc(cx2,cy2,outer,0,Math.PI*2);
+  ctx.clearRect(0,0,px,px);
+  const cx2=px/2,cy2=px/2,outer=px/2-8,inner=outer*0.58;
+  // Fondo blanco del canvas
+  ctx.fillStyle='#FFFFFF';
+  ctx.fillRect(0,0,px,px);
+  // Arco fondo gris
+  ctx.beginPath();
+  ctx.arc(cx2,cy2,outer,0,Math.PI*2);
   ctx.arc(cx2,cy2,inner,Math.PI*2,0,true);
-  ctx.closePath();ctx.fillStyle='#E8E5DF';ctx.fill();
-  // Value arc
+  ctx.closePath();
+  ctx.fillStyle='#E8E5DF';
+  ctx.fill();
+  // Arco valor coloreado
   const startA=-Math.PI/2;
   const endA=startA+(okPts/totalPts)*Math.PI*2;
-  ctx.beginPath();ctx.arc(cx2,cy2,outer,startA,endA);
+  ctx.beginPath();
+  ctx.arc(cx2,cy2,outer,startA,endA);
   ctx.arc(cx2,cy2,inner,endA,startA,true);
-  ctx.closePath();ctx.fillStyle=hexCol;ctx.fill();
-  // Center text
-  ctx.textAlign='center';ctx.textBaseline='middle';
-  ctx.fillStyle=hexCol;ctx.font='bold '+(px*0.22)+'px sans-serif';
-  ctx.fillText(pct+'%',cx2,cy2-px*0.07);
-  ctx.fillStyle='#9B9890';ctx.font=(px*0.11)+'px sans-serif';
-  ctx.fillText('condicion',cx2,cy2+px*0.13);
+  ctx.closePath();
+  ctx.fillStyle=hexCol;
+  ctx.fill();
+  // Circulo blanco interior
+  ctx.beginPath();
+  ctx.arc(cx2,cy2,inner-2,0,Math.PI*2);
+  ctx.fillStyle='#FFFFFF';
+  ctx.fill();
+  // Texto porcentaje
+  ctx.textAlign='center';
+  ctx.textBaseline='middle';
+  ctx.fillStyle=hexCol;
+  ctx.font='bold 80px Arial';
+  ctx.fillText(pct+'%',cx2,cy2-30);
+  // Texto pts OK
+  ctx.fillStyle='#6B6860';
+  ctx.font='bold 36px Arial';
+  ctx.fillText(okPts+'/'+totalPts+' pts OK',cx2,cy2+28);
+  // Linea separadora
+  ctx.strokeStyle='#E0DDD6';
+  ctx.lineWidth=1;
+  ctx.beginPath();
+  ctx.moveTo(cx2-60,cy2+10);
+  ctx.lineTo(cx2+60,cy2+10);
+  ctx.stroke();
   const imgData=cv.toDataURL('image/png');
-  // Size in mm — make it larger
-  const mm=size;
-  doc.addImage(imgData,'PNG',x,y,mm,mm);
+  doc.addImage(imgData,'PNG',x,y,size,size);
 }
 
 function rankingGridPDF(doc, r, x, y, w){
