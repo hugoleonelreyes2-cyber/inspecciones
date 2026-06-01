@@ -1568,6 +1568,14 @@ async function generarPDFBlob(){
         }
         return{l:lbl,c:d.costo||0};
       }),...(ST.svc.costo>0?[{l:`Servicio ${ST.svc.tipo}${ST.svc.combustible}`,c:ST.svc.costo}]:[]),...(ST.llantas.precio_x4>0?[{l:`Llantas ${ST.llantas.medida} (x4)`,c:ST.llantas.precio_x4}]:[])];
+    // Merge hallazgos from Sheets if available (for older records without full state)
+    const _sheetsH=window._pdf_hallazgos||[];
+    _sheetsH.forEach(function(h){
+      const sec=h[2]||'',desc=h[3]||'',costo=parseFloat(h[6])||0;
+      const label=sec+': '+desc;
+      const exists=allFAll.some(function(f){return f.l&&f.l.indexOf(desc.substring(0,20))>=0;});
+      if(!exists) allFAll.push({l:label,c:costo});
+    });
     const allFSin2=allFAll.filter(f=>f.c===0), allFCon2=allFAll.filter(f=>f.c>0);
     const totalDeducc2=allFCon2.reduce((s,f)=>s+f.c,0);
     if(!allFAll.length){
@@ -2415,8 +2423,14 @@ async function pdfRec(id, enviarCorreo=true){
   updateProgress('Generando PDF...','Paso 3 de 4 — Construyendo documento');
   await new Promise(r=>setTimeout(r,200));
   window._pdf_vendedor=rec.vendedor||'—';
+  // Load hallazgos from Sheets for older records
+  try{
+    const hResp=await gPost({action:'getHallazgos',id:String(id)});
+    window._pdf_hallazgos=(hResp.status==='OK'&&hResp.data)?hResp.data:[];
+  }catch(e){window._pdf_hallazgos=[];}
   genPDF();
   window._pdf_vendedor=undefined;
+  window._pdf_hallazgos=undefined;
   updateProgress('Finalizando...','Paso 4 de 4 — Descargando archivo');
   await new Promise(r=>setTimeout(r,400));
   hideProgress();
