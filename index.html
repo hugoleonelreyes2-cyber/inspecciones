@@ -1523,12 +1523,12 @@ async function generarPDFBlob(){
     const {jsPDF}=window.jspdf;
     const doc=new jsPDF({orientation:'p',unit:'mm',format:'a4'});
     const modelo=document.getElementById('modelo').value||'Sin modelo',placa=document.getElementById('placa').value||'Sin placa',color=document.getElementById('color').value||'—',inspector=document.getElementById('inspector').value||'—',km=document.getElementById('km').value||'—',chasis=document.getElementById('chasis').value||'—',nmotor=document.getElementById('nmotor').value||'—',fecha=new Date().toLocaleDateString('es-GT',{day:'2-digit',month:'2-digit',year:'numeric'}),r=ST.ranking;
-  const rec_vendedor=window._pdf_vendedor||'—';
+
     let y=0;
     doc.setFillColor(27,111,216);doc.rect(0,0,210,32,'F');doc.setTextColor(255,255,255);doc.setFontSize(17);doc.setFont('helvetica','bold');doc.text('INFORME TÉCNICO DE INSPECCIÓN',105,13,{align:'center'});doc.setFontSize(9);doc.setFont('helvetica','normal');doc.text('División de Vehículos Usados · Inspección Rápida · '+fecha,105,22,{align:'center'});y=40;
     const sec=(title,yy)=>{doc.setFillColor(240,238,233);doc.rect(12,yy-4,186,7,'F');doc.setFontSize(10);doc.setFont('helvetica','bold');doc.setTextColor(27,111,216);doc.text(title,14,yy);return yy+7;};
     y=sec('DATOS DEL VEHÍCULO',y);doc.setTextColor(0);doc.setFontSize(9);
-    const vendedor=document.getElementById('vendedor')?.value||rec_vendedor||'—';
+    const vendedor=document.getElementById('vendedor')?.value||window._pdf_vendedor||'—';
   const categoria=VTYPES.find(v=>v.k===ST.vtype)?.l||'—';
   const datosCol1=[[' Vehículo:',modelo],[' Placa:',placa],[' Color:',color],[' Km:',km+' km'],[' Chasis:',chasis]];
   const datosCol2=[[' Motor:',nmotor],[' Inspector:',inspector],[' Vendedor:',vendedor],[' Categoría:',categoria]];
@@ -1657,7 +1657,7 @@ function genPDF(){
   doc.setFillColor(27,111,216);doc.rect(0,0,210,32,'F');doc.setTextColor(255,255,255);doc.setFontSize(17);doc.setFont('helvetica','bold');doc.text('INFORME TÉCNICO DE INSPECCIÓN',105,13,{align:'center'});doc.setFontSize(9);doc.setFont('helvetica','normal');doc.text('División de Vehículos Usados · Inspección Rápida · '+fecha,105,22,{align:'center'});y=40;
   const sec=(title,yy)=>{doc.setFillColor(240,238,233);doc.rect(12,yy-4,186,7,'F');doc.setFontSize(10);doc.setFont('helvetica','bold');doc.setTextColor(27,111,216);doc.text(title,14,yy);return yy+7;};
   y=sec('DATOS DEL VEHÍCULO',y);doc.setTextColor(0);doc.setFontSize(9);
-  const vendedor=document.getElementById('vendedor')?.value||rec_vendedor||'—';
+  const vendedor=document.getElementById('vendedor')?.value||window._pdf_vendedor||'—';
   const categoria=VTYPES.find(v=>v.k===ST.vtype)?.l||'—';
   const datosCol1=[[' Vehículo:',modelo],[' Placa:',placa],[' Color:',color],[' Km:',km+' km'],[' Chasis:',chasis]];
   const datosCol2=[[' Motor:',nmotor],[' Inspector:',inspector],[' Vendedor:',vendedor],[' Categoría:',categoria]];
