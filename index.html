@@ -1546,16 +1546,16 @@ async function generarPDFBlob(){
     if(identIssue){y+=2;doc.setFillColor(253,236,235);doc.rect(12,y-3,186,10,'F');doc.setFont('helvetica','bold');doc.setTextColor(192,57,43);doc.text('! ALERTA: Discrepancia en identidad - validar urgente en taller',14,y+3);y+=14;doc.setTextColor(0);}
     y+=3;y=sec('CONDICIÓN GENERAL DEL VEHÍCULO',y);
   // Dona izquierda + grid derecha
-  dibujarDonaEnPDF(doc,r,14,y,28);
-  rankingGridPDF(doc,r,46,y,150);
-  y+=32;
+  dibujarDonaEnPDF(doc,r,14,y,40);
+  rankingGridPDF(doc,r,58,y,138);
+  y+=44;
     y+=3;y=sec('ESTIMACIÓN DE INVERSIÓN',y);doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(0);doc.text('Total:',14,y);doc.text(fQ(ST.totalCost),195,y,{align:'right'});y+=8;
     if(ST.tallerItems.length){y=sec('PUNTOS PARA REVISIÓN EN TALLER',y);doc.setFontSize(8);doc.setFont('helvetica','normal');ST.tallerItems.forEach(t=>{if(y>270){doc.addPage();y=20;}doc.setFillColor(255,243,205);doc.rect(12,y-3,186,5.5,'F');doc.text('• '+t,14,y);y+=6;});y+=3;}
     y=sec('HALLAZGOS DETALLADOS',y);
     const extH=Object.values(ST.extD).filter(d=>d.tipo&&d.tipo!=='OK'),intH=Object.values(ST.intD).filter(d=>d.tipo&&d.tipo!=='OK');
     const allQ={...ST.capoApagado,...ST.capoEncendido,...ST.elecExt,...ST.elecInt,...ST.dyn,...ST.comp};
     const qH=Object.values(allQ).filter(d=>d.val&&d.val!=='NA'&&d.val!=='Bien'&&((d.invertida&&d.val==='Si')||(!d.invertida&&(d.val==='Regular'||d.val==='Mal'))));
-    const allFAll=[...extH.map(d=>({l:`Exterior: ${d.pieza} (${d.tipo}${d.nivel})`,c:d.costo})),...intH.map(d=>({l:`Interior: ${d.pieza} (${d.tipo}${d.nivel})`,c:d.costo})),...qH.map(d=>({l:d.l,c:d.costo})),...(ST.svc.costo>0?[{l:`Servicio ${ST.svc.tipo}${ST.svc.combustible}`,c:ST.svc.costo}]:[]),...(ST.llantas.precio_x4>0?[{l:`Llantas ${ST.llantas.medida} (x4)`,c:ST.llantas.precio_x4}]:[])];
+    const allFAll=[...extH.map(d=>({l:`Exterior: ${d.pieza} (${d.tipo}${d.nivel})`,c:d.costo||0})),...intH.map(d=>({l:`Interior: ${d.pieza} (${d.tipo}${d.nivel})`,c:d.costo||0})),...qH.map(d=>({l:d.l||'Hallazgo mecanico/electrico',c:d.costo||0})),...(ST.svc.costo>0?[{l:`Servicio ${ST.svc.tipo}${ST.svc.combustible}`,c:ST.svc.costo}]:[]),...(ST.llantas.precio_x4>0?[{l:`Llantas ${ST.llantas.medida} (x4)`,c:ST.llantas.precio_x4}]:[])];
     const allFSin2=allFAll.filter(f=>f.c===0), allFCon2=allFAll.filter(f=>f.c>0);
     const totalDeducc2=allFCon2.reduce((s,f)=>s+f.c,0);
     if(!allFAll.length){doc.setFont('helvetica','italic');doc.setTextColor(150);doc.text('Sin hallazgos.',14,y);y+=6;}
@@ -1602,30 +1602,34 @@ function dibujarDonaEnPDF(doc, r, x, y, size){
   const vals=Object.values(r);
   const okPts=vals[0]+vals[1]+vals[2]+vals[3]+vals[4];
   const pct=Math.round(okPts/totalPts*100);
-  const col=pct>=80?[59,109,17]:pct>=60?[186,117,23]:[160,45,45];
-  const cx=x+size/2, cy=y+size/2, r2=size/2-2, r1=r2*0.62;
-  const rm=(r2+r1)/2, lw=r2-r1;
-  doc.setDrawColor(232,229,223);doc.setLineWidth(lw);
-  doc.circle(cx,cy,rm,'S');
-  const angle=(okPts/totalPts)*360;
-  doc.setDrawColor(col[0],col[1],col[2]);
-  const steps=Math.max(4,Math.round(angle/5));
-  doc.setLineWidth(lw);
-  if(angle>0){
-    const pts=[];
-    for(let i=0;i<=steps;i++){
-      const a=(-90+i*(angle/steps))*(Math.PI/180);
-      pts.push([cx+rm*Math.cos(a), cy+rm*Math.sin(a)]);
-    }
-    for(let i=0;i<pts.length-1;i++){
-      doc.line(pts[i][0],pts[i][1],pts[i+1][0],pts[i+1][1]);
-    }
-  }
-  doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(col[0],col[1],col[2]);
-  doc.text(pct+'%',cx,cy-1,{align:'center'});
-  doc.setFont('helvetica','normal');doc.setFontSize(6);doc.setTextColor(150,150,140);
-  doc.text('condicion',cx,cy+4,{align:'center'});
-  doc.setLineWidth(0.3);
+  const hexCol=pct>=80?'#3B6D11':pct>=60?'#BA7517':'#A32D2D';
+  const rgbCol=pct>=80?[59,109,17]:pct>=60?[186,117,23]:[160,45,45];
+  // Render dona to hidden canvas then add as image
+  const px=size*6; // resolution
+  const cv=document.createElement('canvas');
+  cv.width=px;cv.height=px;
+  const ctx=cv.getContext('2d');
+  const cx2=px/2,cy2=px/2,outer=px/2-4,inner=outer*0.60;
+  // Background arc
+  ctx.beginPath();ctx.arc(cx2,cy2,outer,0,Math.PI*2);
+  ctx.arc(cx2,cy2,inner,Math.PI*2,0,true);
+  ctx.closePath();ctx.fillStyle='#E8E5DF';ctx.fill();
+  // Value arc
+  const startA=-Math.PI/2;
+  const endA=startA+(okPts/totalPts)*Math.PI*2;
+  ctx.beginPath();ctx.arc(cx2,cy2,outer,startA,endA);
+  ctx.arc(cx2,cy2,inner,endA,startA,true);
+  ctx.closePath();ctx.fillStyle=hexCol;ctx.fill();
+  // Center text
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillStyle=hexCol;ctx.font='bold '+(px*0.22)+'px sans-serif';
+  ctx.fillText(pct+'%',cx2,cy2-px*0.07);
+  ctx.fillStyle='#9B9890';ctx.font=(px*0.11)+'px sans-serif';
+  ctx.fillText('condicion',cx2,cy2+px*0.13);
+  const imgData=cv.toDataURL('image/png');
+  // Size in mm — make it larger
+  const mm=size;
+  doc.addImage(imgData,'PNG',x,y,mm,mm);
 }
 
 function rankingGridPDF(doc, r, x, y, w){
@@ -1675,9 +1679,9 @@ function genPDF(){
   if(identIssue){y+=2;doc.setFillColor(253,236,235);doc.rect(12,y-3,186,10,'F');doc.setFont('helvetica','bold');doc.setTextColor(192,57,43);doc.text('! ALERTA: Discrepancia en identidad - validar urgente en taller',14,y+3);y+=14;doc.setTextColor(0);}
   y+=3;y=sec('CONDICIÓN GENERAL DEL VEHÍCULO',y);
   // Dona izquierda + grid derecha
-  dibujarDonaEnPDF(doc,r,14,y,28);
-  rankingGridPDF(doc,r,46,y,150);
-  y+=32;
+  dibujarDonaEnPDF(doc,r,14,y,40);
+  rankingGridPDF(doc,r,58,y,138);
+  y+=44;
   y+=3;y=sec('ESTIMACIÓN DE INVERSIÓN',y);doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(0);doc.text('Total:',14,y);doc.text(fQ(ST.totalCost),195,y,{align:'right'});y+=8;
   if(ST.tallerItems.length){y=sec('PUNTOS PARA REVISIÓN EN TALLER',y);doc.setFontSize(8);doc.setFont('helvetica','normal');ST.tallerItems.forEach(t=>{if(y>270){doc.addPage();y=20;}doc.setFillColor(255,243,205);doc.rect(12,y-3,186,5.5,'F');doc.text('• '+t,14,y);y+=6;});y+=3;}
   y=sec('HALLAZGOS DETALLADOS',y);
