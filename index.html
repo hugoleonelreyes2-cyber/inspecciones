@@ -1297,7 +1297,8 @@ async function saveRec(existingId){
   const id=existingId||Date.now();
   let old={};try{old=JSON.parse(localStorage.getItem('insp_'+id)||'{}');}catch(e){}
   const placa=document.getElementById('placa').value||'SIN_PLACA';
-  const _hoy=new Date().toLocaleDateString('es-GT',{day:'2-digit',month:'2-digit',year:'numeric'});
+  const _ahora=new Date();
+  const _hoy=_ahora.toLocaleDateString('es-GT',{day:'2-digit',month:'2-digit',year:'numeric'})+' '+_ahora.toLocaleTimeString('es-GT',{hour:'2-digit',minute:'2-digit',hour12:false});
   const rec={id,fecha:old.fecha||_hoy,fechaMod:_hoy,inspector:document.getElementById('inspector').value,placa,modelo:document.getElementById('modelo').value,color:document.getElementById('color').value,km:document.getElementById('km').value,chasis:document.getElementById('chasis').value,nmotor:document.getElementById('nmotor').value,vtype:ST.vtype,ranking:ST.ranking,totalCost:ST.totalCost,urgCost:ST.urgCost,recCost:ST.recCost,tallerItems:ST.tallerItems,obs:document.getElementById('obs').value,svc:ST.svc,llantas:ST.llantas,imgs:{...IMGS},state:{ident:ST.ident,extD:ST.extD,intD:ST.intD,capoApagado:ST.capoApagado,capoEncendido:ST.capoEncendido,elecExt:ST.elecExt,elecInt:ST.elecInt,dyn:ST.dyn,comp:ST.comp,photos:Array.from(ST.photos),svc:ST.svc,llantas:ST.llantas}};
 
   // Guardar local básico como respaldo inmediato (sin fotos)
@@ -1705,6 +1706,10 @@ function REG_formatFecha(f){
     const d=new Date(s);
     if(!isNaN(d)){
       const fecha=d.toLocaleDateString('es-GT',{timeZone:'America/Guatemala',day:'2-digit',month:'2-digit',year:'numeric'});
+      // Solo mostrar hora si no es medianoche (Sheets guarda solo fecha sin hora real)
+      const horaNum=d.getUTCHours()*60+d.getUTCMinutes();
+      const esSoloFecha=(horaNum===0||horaNum===360||horaNum===300); // 00:00, 06:00 o 05:00 UTC = medianoche GT
+      if(esSoloFecha) return fecha;
       const hora=d.toLocaleTimeString('es-GT',{timeZone:'America/Guatemala',hour:'2-digit',minute:'2-digit',hour12:false});
       return fecha+' '+hora;
     }
