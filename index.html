@@ -1192,6 +1192,44 @@ const rc=s=>s>=4?'#2A7A3B':s>=3?'#B45309':'#C0392B';
 const rl=s=>s===5?'Excelente':s===4?'Bueno':s===3?'Regular':'Necesita atención';
 
 // ── RESUMEN ──
+function initSumDona(){
+  const r2=ST.ranking;
+  if(!r2)return;
+  const sVals=[r2.exterior||0,r2.interior||0,r2.mecanica||0,r2.electrico||0,r2.dinamica||0];
+  const okPts2=sVals.reduce((s,v)=>s+v,0);
+  const totalPts2=25;
+  const pct2=Math.round(okPts2/totalPts2*100);
+  const col2=pct2>=80?'#3B6D11':pct2>=60?'#BA7517':'#A32D2D';
+  function doInit(){
+    const c=document.getElementById('sum-dona');
+    if(!c)return;
+    if(c._chartInstance)c._chartInstance.destroy();
+    const ch=new Chart(c,{
+      type:'doughnut',
+      data:{labels:['OK','Problema'],datasets:[{data:[okPts2,totalPts2-okPts2],backgroundColor:[col2,'#E8E5DF'],borderWidth:0,borderRadius:3}]},
+      options:{responsive:false,cutout:'70%',plugins:{legend:{display:false},tooltip:{enabled:false}}},
+      plugins:[{id:'ct2',afterDraw(chart){
+        const{ctx,chartArea:{left,top,right,bottom}}=chart;
+        const cx=(left+right)/2,cy=(top+bottom)/2;
+        ctx.save();ctx.textAlign='center';ctx.textBaseline='middle';
+        ctx.fillStyle=col2;ctx.font='bold 18px sans-serif';
+        ctx.fillText(pct2+'%',cx,cy-6);
+        ctx.fillStyle='#888';ctx.font='9px sans-serif';
+        ctx.fillText('condicion',cx,cy+7);
+        ctx.restore();
+      }}]
+    });
+    c._chartInstance=ch;
+  }
+  if(typeof Chart!=='undefined'){doInit();}
+  else{
+    const s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js';
+    s.onload=doInit;
+    document.head.appendChild(s);
+  }
+}
+
 function buildSummary(){
   calcCosts();calcRanking();const r=ST.ranking;
   const modelo=document.getElementById('modelo').value||'Sin modelo',placa=document.getElementById('placa').value||'Sin placa',km=document.getElementById('km').value||'—',color=document.getElementById('color').value||'—',inspector=document.getElementById('inspector').value||'—',fecha=new Date().toLocaleDateString('es-GT');
@@ -1199,8 +1237,16 @@ function buildSummary(){
   const intH=Object.values(ST.intD).filter(d=>d.tipo&&d.tipo!=='OK');
   const allQ={...ST.capoApagado,...ST.capoEncendido,...ST.elecExt,...ST.elecInt,...ST.dyn,...ST.comp};
   const qH=Object.values(allQ).filter(d=>d.val&&d.val!=='NA'&&d.val!=='Bien'&&((d.invertida&&d.val==='Si')||(!d.invertida&&(d.val==='Regular'||d.val==='Mal'))));
-  const fRows=[...extH.map(d=>({l:`Exterior: ${d.pieza} (${d.tipo}${d.nivel})`,c:d.costo,cat:d.costo>0?'u':'reg'})),...intH.map(d=>({l:`Interior: ${d.pieza} (${d.tipo}${d.nivel})`,c:d.costo,cat:d.costo>0?'u':'reg'})),...qH.map(d=>({l:d.l,c:d.costo,cat:d.taller&&(d.val==='Mal'||(d.invertida&&d.val==='Si'))?'t':d.costo>0?'r':'reg'})),...(ST.svc.costo>0?[{l:`Servicio ${ST.svc.tipo}${ST.svc.combustible}`,c:ST.svc.costo,cat:'r'}]:[]),...(ST.llantas.precio_x4>0?[{l:`Llantas ${ST.llantas.medida} (x4)`,c:ST.llantas.precio_x4,cat:'r'}]:[])];
-  const fHtml=fRows.length?fRows.map(f=>{const bc=f.c>0?'b-u':'b-reg';const lb=f.c>0?'DEDUCCIÓN':'REGISTRO';const cStr=f.c>0?`<span class="${f.cat==='u'?'fc-u':'fc-r'}">Q ${f.c.toLocaleString()}</span>`:'';return`<div class="f-item"><span><span class="badge ${bc}">${lb}</span>${f.l}</span>${cStr}</div>`;}).join(''):'<div style="font-size:12px;color:var(--t3)">Sin hallazgos.</div>';
+  const fRowsAll=[...extH.map(d=>({l:`Exterior: ${d.pieza} (${d.tipo}${d.nivel})`,c:d.costo,cat:d.costo>0?'u':'reg'})),...intH.map(d=>({l:`Interior: ${d.pieza} (${d.tipo}${d.nivel})`,c:d.costo,cat:d.costo>0?'u':'reg'})),...qH.map(d=>({l:d.l,c:d.costo,cat:d.taller&&(d.val==='Mal'||(d.invertida&&d.val==='Si'))?'t':d.costo>0?'r':'reg'})),...(ST.svc.costo>0?[{l:`Servicio ${ST.svc.tipo}${ST.svc.combustible}`,c:ST.svc.costo,cat:'r'}]:[]),...(ST.llantas.precio_x4>0?[{l:`Llantas ${ST.llantas.medida} (x4)`,c:ST.llantas.precio_x4,cat:'r'}]:[])];
+  const fRows=[...fRowsAll.filter(f=>f.c===0),...fRowsAll.filter(f=>f.c>0)];
+  const fSinCosto=fRows.filter(f=>f.c===0);
+  const fConCosto=fRows.filter(f=>f.c>0);
+  const totalDeducc=fConCosto.reduce((s,f)=>s+f.c,0);
+  const fHtml=(fRows.length?(
+    (fSinCosto.length?`<div style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.4px;padding:4px 0 2px">Sin deducción — solo registro</div>`+fSinCosto.map(f=>`<div class="f-item" style="border-left:2px solid var(--b2);padding-left:6px"><span><span class="badge b-reg">REGISTRO</span>${f.l}</span></div>`).join(''):'')
+    +(fConCosto.length?`<div style="font-size:10px;font-weight:600;color:var(--red-t);text-transform:uppercase;letter-spacing:.4px;padding:6px 0 2px">Con deducción — afectan precio</div>`+fConCosto.map(f=>`<div class="f-item" style="border-left:2px solid var(--red);padding-left:6px"><span><span class="badge b-u">DEDUCCIÓN</span>${f.l}</span><span class="fc-u">Q ${f.c.toLocaleString()}</span></div>`).join('')
+    +(totalDeducc>0?`<div style="background:var(--red-bg);border:1px solid var(--red-b);border-radius:var(--rsm);padding:6px 10px;display:flex;justify-content:space-between;margin-top:6px"><span style="font-size:12px;font-weight:600;color:var(--red-t)">Total deducciones:</span><span style="font-size:13px;font-weight:700;color:var(--red);font-family:'DM Mono',monospace">Q ${totalDeducc.toLocaleString('es-GT',{minimumFractionDigits:2})}</span></div>`:''):'')
+  ):'<div style="font-size:12px;color:var(--t3)">Sin hallazgos.</div>');
   const tallerHtml=ST.tallerItems.length?`<div class="taller-summary show"><strong>🔧 Puntos para revisión en taller (${ST.tallerItems.length})</strong><br>${ST.tallerItems.map(t=>`<div style="font-size:12px;margin-top:4px">• ${t}</div>`).join('')}<div style="font-size:11px;margin-top:8px;color:#856404">Agendar cita en taller.</div></div>`:'';
   const identIssue=Object.values(ST.ident).some(v=>v.val==='No'||v.val==='NV');
   // Fotos de hallazgos
@@ -1212,14 +1258,35 @@ function buildSummary(){
   };
   document.getElementById('sum-content').innerHTML=`
     ${identIssue?`<div class="ident-alert show"><strong>⚠️ Alerta de identidad</strong><br>Discrepancia en chasis, motor o color. Validar urgente.</div>`:''}
-    <div class="sum-global"><div class="sum-score" style="color:${rc(r.global)}">${r.global}<span style="font-size:22px;color:var(--t3);font-weight:400">/5</span></div><div class="sum-score-lbl">${rl(r.global)} — Ranking general</div></div>
     <div style="font-size:11px;color:var(--t3);font-family:'DM Mono',monospace;margin-bottom:10px;line-height:1.6">${modelo} · ${placa} · ${color} · ${km} km<br>${inspector} · ${fecha}</div>
-    <div class="card"><div class="card-title">Ranking por subsistema</div>${['exterior','interior','mecanica','electrico','dinamica'].map(k=>`<div class="rrow"><span class="rlbl">${k.charAt(0).toUpperCase()+k.slice(1)}</span><div class="rbar"><div class="rbar-f" style="width:${r[k]*20}%;background:${rc(r[k])}"></div></div><span class="rsco">${r[k]}/5</span></div>`).join('')}</div>
+    <div class="card">
+      <div class="card-title">Condición general del vehículo</div>
+      <div style="display:flex;align-items:center;gap:14px;margin-top:8px">
+        <div style="flex-shrink:0;position:relative;width:90px;height:90px">
+          <canvas id="sum-dona" width="90" height="90" role="img" aria-label="Condición general"></canvas>
+        </div>
+        <div style="flex:1;display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px">
+          ${['exterior','interior','mecanica','electrico','dinamica'].map(k=>{
+            const v=r[k]||0;
+            const bg=v>=4?'var(--green-bg)':v>=3?'var(--amber-bg)':'var(--red-bg)';
+            const col=v>=4?'var(--green-t)':v>=3?'var(--amber-t)':'var(--red-t)';
+            const lbl=k.charAt(0).toUpperCase()+k.slice(1);
+            return`<div style="display:flex;flex-direction:column;align-items:center;padding:5px 3px;background:${bg};border-radius:var(--rsm)"><span style="font-size:16px;font-weight:700;color:${col}">${v}/5</span><span style="font-size:9px;color:${col};margin-top:1px">${lbl}</span></div>`;
+  setTimeout(initSumDona,100);
+          }).join('')}
+          <div style="display:flex;flex-direction:column;align-items:center;padding:5px 3px;background:${r.global>=4?'var(--green-bg)':r.global>=3?'var(--amber-bg)':'var(--red-bg)'};border-radius:var(--rsm);border:1.5px solid ${rc(r.global)}">
+            <span style="font-size:16px;font-weight:700;color:${rc(r.global)}">${r.global}/5</span>
+            <span style="font-size:9px;color:${rc(r.global)};margin-top:1px">General</span>
+          </div>
+        </div>
+      </div>
+    </div>
     <div class="card"><div class="card-title">Estimación de inversión</div><div class="total-cost">${fQ(ST.totalCost)}</div></div>
     ${tallerHtml}
     <div class="card"><div class="card-title">Todos los hallazgos</div>${fHtml}</div>
     ${fotoHallazgosHtml()}
     ${document.getElementById('obs').value?`<div class="card"><div class="card-title">Observaciones</div><div style="font-size:13px;line-height:1.6">${document.getElementById('obs').value}</div></div>`:''}
+
     <div style="display:flex;gap:7px;margin-top:4px">
       <button onclick="saveRec(ST._editingId||null)" style="flex:1;padding:11px;border:none;border-radius:10px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600;background:var(--green);color:#fff">💾 ${ST._editingId?'Actualizar':'Guardar'}</button>
     </div>`;
@@ -1460,22 +1527,39 @@ async function generarPDFBlob(){
     doc.setFillColor(27,111,216);doc.rect(0,0,210,32,'F');doc.setTextColor(255,255,255);doc.setFontSize(17);doc.setFont('helvetica','bold');doc.text('INFORME TÉCNICO DE INSPECCIÓN',105,13,{align:'center'});doc.setFontSize(9);doc.setFont('helvetica','normal');doc.text('División de Vehículos Usados · Inspección Rápida · '+fecha,105,22,{align:'center'});y=40;
     const sec=(title,yy)=>{doc.setFillColor(240,238,233);doc.rect(12,yy-4,186,7,'F');doc.setFontSize(10);doc.setFont('helvetica','bold');doc.setTextColor(27,111,216);doc.text(title,14,yy);return yy+7;};
     y=sec('DATOS DEL VEHÍCULO',y);doc.setTextColor(0);doc.setFontSize(9);
-    [[' Vehículo',modelo],[' Placa',placa],[' Color',color],[' Km',km+' km'],[' Chasis',chasis],[' Motor',nmotor],[' Inspector',inspector],[' Categoría',VTYPES.find(v=>v.k===ST.vtype)?.l||'—']].forEach(([k,v])=>{doc.setFont('helvetica','bold');doc.text(k+':',14,y);doc.setFont('helvetica','normal');doc.text(String(v),58,y);y+=5;});
+    [[' Vehículo',modelo],[' Placa',placa],[' Color',color],[' Km',km+' km'],[' Chasis',chasis],[' Motor',nmotor],[' Inspector',inspector],[' Vendedor',document.getElementById('vendedor')?.value||'—'],[' Categoría',VTYPES.find(v=>v.k===ST.vtype)?.l||'—']].forEach(([k,v])=>{doc.setFont('helvetica','bold');doc.text(k+':',14,y);doc.setFont('helvetica','normal');doc.text(String(v),58,y);y+=5;});
     if(ST.svc.historial){y+=2;doc.setFont('helvetica','bold');doc.text(' Historial:',14,y);doc.setFont('helvetica','normal');const sl={vigente_cofiño:'Vigente — Cofiño',vigente_externa:'Vigente — Agencia externa',vencido:'Vencido',sin_historial:'Sin historial'};doc.text(sl[ST.svc.historial]||'—',58,y);y+=5;}
     if(ST.svc.costo>0){doc.setFont('helvetica','bold');doc.text(' Servicio:',14,y);doc.setFont('helvetica','normal');doc.text(`${ST.svc.tipo}${ST.svc.combustible==='D'?'D':'G'} — Q ${ST.svc.costo.toLocaleString()}`,58,y);y+=5;}
     if(ST.llantas.precio_x4>0){doc.setFont('helvetica','bold');doc.text(' Llantas:',14,y);doc.setFont('helvetica','normal');doc.text(`${ST.llantas.medida} × 4 = Q ${ST.llantas.precio_x4.toLocaleString()}`,58,y);y+=5;}
     const identIssue=Object.values(ST.ident).some(v=>v.val==='No'||v.val==='NV');
     if(identIssue){y+=2;doc.setFillColor(253,236,235);doc.rect(12,y-3,186,10,'F');doc.setFont('helvetica','bold');doc.setTextColor(192,57,43);doc.text('⚠ ALERTA: Discrepancia en identidad — validar urgente en taller',14,y+3);y+=14;doc.setTextColor(0);}
-    y+=3;y=sec('RANKING DE CONDICIÓN',y);doc.setFontSize(9);['exterior','interior','mecanica','electrico','dinamica','global'].forEach(k=>{const v=r[k]||0;doc.setFont('helvetica','bold');doc.setTextColor(0);doc.text((k.charAt(0).toUpperCase()+k.slice(1))+':',14,y);doc.setFont('helvetica','normal');doc.text(v+'/5 — '+rl(v),54,y);y+=5;});
+    y+=3;y=sec('CONDICIÓN GENERAL DEL VEHÍCULO',y);
+  // Dona izquierda + grid derecha
+  dibujarDonaEnPDF(doc,r,14,y,28);
+  rankingGridPDF(doc,r,46,y,150);
+  y+=32;
     y+=3;y=sec('ESTIMACIÓN DE INVERSIÓN',y);doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(0);doc.text('Total:',14,y);doc.text(fQ(ST.totalCost),195,y,{align:'right'});y+=8;
     if(ST.tallerItems.length){y=sec('PUNTOS PARA REVISIÓN EN TALLER',y);doc.setFontSize(8);doc.setFont('helvetica','normal');ST.tallerItems.forEach(t=>{if(y>270){doc.addPage();y=20;}doc.setFillColor(255,243,205);doc.rect(12,y-3,186,5.5,'F');doc.text('• '+t,14,y);y+=6;});y+=3;}
     y=sec('HALLAZGOS DETALLADOS',y);
     const extH=Object.values(ST.extD).filter(d=>d.tipo&&d.tipo!=='OK'),intH=Object.values(ST.intD).filter(d=>d.tipo&&d.tipo!=='OK');
     const allQ={...ST.capoApagado,...ST.capoEncendido,...ST.elecExt,...ST.elecInt,...ST.dyn,...ST.comp};
     const qH=Object.values(allQ).filter(d=>d.val&&d.val!=='NA'&&d.val!=='Bien'&&((d.invertida&&d.val==='Si')||(!d.invertida&&(d.val==='Regular'||d.val==='Mal'))));
-    const allF=[...extH.filter(d=>d.costo>0).map(d=>({l:`Exterior: ${d.pieza} (${d.tipo}${d.nivel})`,c:d.costo})),...intH.filter(d=>d.costo>0).map(d=>({l:`Interior: ${d.pieza} (${d.tipo}${d.nivel})`,c:d.costo})),...qH.filter(d=>d.costo>0).map(d=>({l:d.l,c:d.costo})),...(ST.svc.costo>0?[{l:`Servicio ${ST.svc.tipo}${ST.svc.combustible}`,c:ST.svc.costo}]:[]),...(ST.llantas.precio_x4>0?[{l:`Llantas ${ST.llantas.medida} (x4)`,c:ST.llantas.precio_x4}]:[])];
-    if(!allF.length){doc.setFont('helvetica','italic');doc.setTextColor(150);doc.text('Sin hallazgos con costo.',14,y);y+=6;}
-    else{doc.setFontSize(8);allF.forEach(f=>{if(y>270){doc.addPage();y=20;}doc.setFillColor(253,236,235);doc.rect(12,y-3.5,186,6.5,'F');doc.setFont('helvetica','bold');doc.setTextColor(192,57,43);doc.text('[COSTO]',14,y);doc.setFont('helvetica','normal');doc.setTextColor(0);const lines=doc.splitTextToSize(f.l,142);doc.text(lines,38,y);doc.setFont('helvetica','bold');doc.text(fQ(f.c),195,y,{align:'right'});y+=lines.length>1?lines.length*4.5+1:6;});}
+    const allFAll=[...extH.map(d=>({l:`Exterior: ${d.pieza} (${d.tipo}${d.nivel})`,c:d.costo})),...intH.map(d=>({l:`Interior: ${d.pieza} (${d.tipo}${d.nivel})`,c:d.costo})),...qH.map(d=>({l:d.l,c:d.costo})),...(ST.svc.costo>0?[{l:`Servicio ${ST.svc.tipo}${ST.svc.combustible}`,c:ST.svc.costo}]:[]),...(ST.llantas.precio_x4>0?[{l:`Llantas ${ST.llantas.medida} (x4)`,c:ST.llantas.precio_x4}]:[])];
+    const allFSin2=allFAll.filter(f=>f.c===0), allFCon2=allFAll.filter(f=>f.c>0);
+    const totalDeducc2=allFCon2.reduce((s,f)=>s+f.c,0);
+    if(!allFAll.length){doc.setFont('helvetica','italic');doc.setTextColor(150);doc.text('Sin hallazgos.',14,y);y+=6;}
+    else{
+      doc.setFontSize(8);
+      if(allFSin2.length){
+        doc.setFont('helvetica','bold');doc.setTextColor(100,100,95);doc.text('Sin deducción — solo registro',14,y);y+=5;
+        allFSin2.forEach(f=>{if(y>270){doc.addPage();y=20;}doc.setFillColor(247,246,243);doc.rect(12,y-3.5,186,6.5,'F');doc.setFillColor(180,178,169);doc.rect(12,y-3.5,2,6.5,'F');doc.setFont('helvetica','bold');doc.setTextColor(136,135,128);doc.text('[REGISTRO]',14,y);doc.setFont('helvetica','normal');doc.setTextColor(0);const lines=doc.splitTextToSize(f.l,138);doc.text(lines,44,y);y+=lines.length>1?lines.length*4.5+1:6;});y+=3;
+      }
+      if(allFCon2.length){
+        doc.setFont('helvetica','bold');doc.setTextColor(192,57,43);doc.text('Con deducción — afectan precio',14,y);y+=5;
+        allFCon2.forEach(f=>{if(y>270){doc.addPage();y=20;}doc.setFillColor(253,236,235);doc.rect(12,y-3.5,186,6.5,'F');doc.setFillColor(192,57,43);doc.rect(12,y-3.5,2,6.5,'F');doc.setFont('helvetica','bold');doc.setTextColor(192,57,43);doc.text('[DEDUCCIÓN]',14,y);doc.setFont('helvetica','normal');doc.setTextColor(0);const lines=doc.splitTextToSize(f.l,132);doc.text(lines,46,y);doc.setFont('helvetica','bold');doc.text(fQ(f.c),195,y,{align:'right'});y+=lines.length>1?lines.length*4.5+1:6;});
+        if(totalDeducc2>0){y+=2;doc.setFillColor(253,236,235);doc.rect(12,y-3,186,8,'F');doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(192,57,43);doc.text('Total deducciones:',14,y+1);doc.text(fQ(totalDeducc2),195,y+1,{align:'right'});y+=10;}
+      }
+    }
     const obs=document.getElementById('obs').value;if(obs){y+=4;if(y>260){doc.addPage();y=20;}y=sec('OBSERVACIONES',y);doc.setFontSize(8);doc.setFont('helvetica','normal');doc.setTextColor(0);const lines=doc.splitTextToSize(obs,182);doc.text(lines,14,y);y+=lines.length*4+4;}
     // Fotos
     const tarjetaImg=IMGS['photo_tarjeta']?[['photo_tarjeta',IMGS['photo_tarjeta']]]:[]; const hallazgoImgs=[...tarjetaImg,...Object.entries(IMGS).filter(([k])=>!k.startsWith('photo_')&&k!=='photo_tarjeta')];
@@ -1500,6 +1584,60 @@ async function generarPDFBlob(){
   }catch(e){console.error('Error generarPDFBlob:',e);return null;}
 }
 
+
+// ── HELPER: dibujar dona en jsPDF canvas ──
+function dibujarDonaEnPDF(doc, r, x, y, size){
+  const totalPts=25;
+  const vals=Object.values(r);
+  const okPts=vals[0]+vals[1]+vals[2]+vals[3]+vals[4];
+  const pct=Math.round(okPts/totalPts*100);
+  const col=pct>=80?[59,109,17]:pct>=60?[186,117,23]:[160,45,45];
+  const cx=x+size/2, cy=y+size/2, r2=size/2-2, r1=r2*0.62;
+  const rm=(r2+r1)/2, lw=r2-r1;
+  doc.setDrawColor(232,229,223);doc.setLineWidth(lw);
+  doc.circle(cx,cy,rm,'S');
+  const angle=(okPts/totalPts)*360;
+  doc.setDrawColor(col[0],col[1],col[2]);
+  const steps=Math.max(4,Math.round(angle/5));
+  doc.setLineWidth(lw);
+  if(angle>0){
+    const pts=[];
+    for(let i=0;i<=steps;i++){
+      const a=(-90+i*(angle/steps))*(Math.PI/180);
+      pts.push([cx+rm*Math.cos(a), cy+rm*Math.sin(a)]);
+    }
+    for(let i=0;i<pts.length-1;i++){
+      doc.line(pts[i][0],pts[i][1],pts[i+1][0],pts[i+1][1]);
+    }
+  }
+  doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(col[0],col[1],col[2]);
+  doc.text(pct+'%',cx,cy-1,{align:'center'});
+  doc.setFont('helvetica','normal');doc.setFontSize(6);doc.setTextColor(150,150,140);
+  doc.text('condicion',cx,cy+4,{align:'center'});
+  doc.setLineWidth(0.3);
+}
+
+function rankingGridPDF(doc, r, x, y, w){
+  const secs=[['Exterior',r.exterior||0],['Interior',r.interior||0],['Mecanica',r.mecanica||0],['Electrico',r.electrico||0],['Dinamica',r.dinamica||0],['General',r.global||0]];
+  const cellW=(w-8)/3, cellH=12, gap=2;
+  secs.forEach(function(item,i){
+    const lbl=item[0], val=item[1];
+    const ci=i%3, ri=Math.floor(i/3);
+    const cx2=x+ci*(cellW+gap), cy2=y+ri*(cellH+gap);
+    const isGeneral=(lbl==='General');
+    const bgCol=val>=4?[234,243,222]:val>=3?[250,238,218]:[252,235,235];
+    const txCol=val>=4?[59,109,17]:val>=3?[186,117,23]:[160,45,45];
+    doc.setFillColor(bgCol[0],bgCol[1],bgCol[2]);
+    if(isGeneral){doc.setDrawColor(txCol[0],txCol[1],txCol[2]);doc.setLineWidth(0.5);}
+    doc.roundedRect(cx2,cy2,cellW,cellH,1.5,1.5,isGeneral?'FD':'F');
+    doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(txCol[0],txCol[1],txCol[2]);
+    doc.text(val+'/5',cx2+cellW/2,cy2+5,{align:'center'});
+    doc.setFont('helvetica','normal');doc.setFontSize(6);doc.setTextColor(txCol[0],txCol[1],txCol[2]);
+    doc.text(lbl,cx2+cellW/2,cy2+9.5,{align:'center'});
+  });
+  doc.setLineWidth(0.3);
+}
+
 function genPDF(){
   if(typeof window.jspdf==='undefined'){showToast('⚠ Cargando PDF, reintente');return;}
   const {jsPDF}=window.jspdf;const doc=new jsPDF({orientation:'p',unit:'mm',format:'a4'});
@@ -1508,13 +1646,17 @@ function genPDF(){
   doc.setFillColor(27,111,216);doc.rect(0,0,210,32,'F');doc.setTextColor(255,255,255);doc.setFontSize(17);doc.setFont('helvetica','bold');doc.text('INFORME TÉCNICO DE INSPECCIÓN',105,13,{align:'center'});doc.setFontSize(9);doc.setFont('helvetica','normal');doc.text('División de Vehículos Usados · Inspección Rápida · '+fecha,105,22,{align:'center'});y=40;
   const sec=(title,yy)=>{doc.setFillColor(240,238,233);doc.rect(12,yy-4,186,7,'F');doc.setFontSize(10);doc.setFont('helvetica','bold');doc.setTextColor(27,111,216);doc.text(title,14,yy);return yy+7;};
   y=sec('DATOS DEL VEHÍCULO',y);doc.setTextColor(0);doc.setFontSize(9);
-  [[' Vehículo',modelo],[' Placa',placa],[' Color',color],[' Km',km+' km'],[' Chasis',chasis],[' Motor',nmotor],[' Inspector',inspector],[' Categoría',VTYPES.find(v=>v.k===ST.vtype)?.l||'—']].forEach(([k,v])=>{doc.setFont('helvetica','bold');doc.text(k+':',14,y);doc.setFont('helvetica','normal');doc.text(String(v),58,y);y+=5;});
+  [[' Vehículo',modelo],[' Placa',placa],[' Color',color],[' Km',km+' km'],[' Chasis',chasis],[' Motor',nmotor],[' Inspector',inspector],[' Vendedor',document.getElementById('vendedor')?.value||'—'],[' Categoría',VTYPES.find(v=>v.k===ST.vtype)?.l||'—']].forEach(([k,v])=>{doc.setFont('helvetica','bold');doc.text(k+':',14,y);doc.setFont('helvetica','normal');doc.text(String(v),58,y);y+=5;});
   if(ST.svc.historial){y+=2;doc.setFont('helvetica','bold');doc.text(' Historial:',14,y);doc.setFont('helvetica','normal');const sl={vigente_cofiño:'Vigente — Cofiño',vigente_externa:'Vigente — Agencia externa',vencido:'Vencido',sin_historial:'Sin historial'};doc.text(sl[ST.svc.historial]||'—',58,y);y+=5;}
   if(ST.svc.costo>0){doc.setFont('helvetica','bold');doc.text(' Servicio:',14,y);doc.setFont('helvetica','normal');doc.text(`${ST.svc.tipo}${ST.svc.combustible==='D'?'D':'G'} — Q ${ST.svc.costo.toLocaleString()}`,58,y);y+=5;}
   if(ST.llantas.precio_x4>0){doc.setFont('helvetica','bold');doc.text(' Llantas:',14,y);doc.setFont('helvetica','normal');doc.text(`${ST.llantas.medida} × 4 = Q ${ST.llantas.precio_x4.toLocaleString()}`,58,y);y+=5;}
   const identIssue=Object.values(ST.ident).some(v=>v.val==='No'||v.val==='NV');
   if(identIssue){y+=2;doc.setFillColor(253,236,235);doc.rect(12,y-3,186,10,'F');doc.setFont('helvetica','bold');doc.setTextColor(192,57,43);doc.text('⚠ ALERTA: Discrepancia en identidad — validar urgente en taller',14,y+3);y+=14;doc.setTextColor(0);}
-  y+=3;y=sec('RANKING DE CONDICIÓN',y);doc.setFontSize(9);['exterior','interior','mecanica','electrico','dinamica','global'].forEach(k=>{const v=r[k]||0;doc.setFont('helvetica','bold');doc.setTextColor(0);doc.text((k.charAt(0).toUpperCase()+k.slice(1))+':',14,y);doc.setFont('helvetica','normal');doc.text(v+'/5 — '+rl(v),54,y);y+=5;});
+  y+=3;y=sec('CONDICIÓN GENERAL DEL VEHÍCULO',y);
+  // Dona izquierda + grid derecha
+  dibujarDonaEnPDF(doc,r,14,y,28);
+  rankingGridPDF(doc,r,46,y,150);
+  y+=32;
   y+=3;y=sec('ESTIMACIÓN DE INVERSIÓN',y);doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(0);doc.text('Total:',14,y);doc.text(fQ(ST.totalCost),195,y,{align:'right'});y+=8;
   if(ST.tallerItems.length){y=sec('PUNTOS PARA REVISIÓN EN TALLER',y);doc.setFontSize(8);doc.setFont('helvetica','normal');ST.tallerItems.forEach(t=>{if(y>270){doc.addPage();y=20;}doc.setFillColor(255,243,205);doc.rect(12,y-3,186,5.5,'F');doc.text('• '+t,14,y);y+=6;});y+=3;}
   y=sec('HALLAZGOS DETALLADOS',y);
@@ -1528,8 +1670,49 @@ function genPDF(){
     ...(ST.svc.costo>0?[{l:`Servicio ${ST.svc.tipo}${ST.svc.combustible}`,c:ST.svc.costo}]:[]),
     ...(ST.llantas.precio_x4>0?[{l:`Llantas ${ST.llantas.medida} (x4)`,c:ST.llantas.precio_x4}]:[]),
   ];
-  if(!allF.length){doc.setFont('helvetica','italic');doc.setTextColor(150);doc.text('Sin hallazgos con costo.',14,y);y+=6;}
-  else{doc.setFontSize(8);allF.forEach(f=>{if(y>270){doc.addPage();y=20;}doc.setFillColor(253,236,235);doc.rect(12,y-3.5,186,6.5,'F');doc.setFont('helvetica','bold');doc.setTextColor(192,57,43);doc.text('[COSTO]',14,y);doc.setFont('helvetica','normal');doc.setTextColor(0);const lines=doc.splitTextToSize(f.l,142);doc.text(lines,38,y);doc.setFont('helvetica','bold');doc.text(fQ(f.c),195,y,{align:'right'});y+=lines.length>1?lines.length*4.5+1:6;});}
+  const allFSin=allF.filter(f=>f.c===0);
+  const allFCon=allF.filter(f=>f.c>0);
+  const totalDeducc=allFCon.reduce((s,f)=>s+f.c,0);
+  if(!allF.length){doc.setFont('helvetica','italic');doc.setTextColor(150);doc.text('Sin hallazgos registrados.',14,y);y+=6;}
+  else{
+    doc.setFontSize(8);
+    if(allFSin.length){
+      doc.setFont('helvetica','bold');doc.setTextColor(100,100,95);
+      doc.text('Sin deducción — solo registro',14,y);y+=5;
+      allFSin.forEach(f=>{
+        if(y>270){doc.addPage();y=20;}
+        doc.setFillColor(247,246,243);doc.rect(12,y-3.5,186,6.5,'F');
+        doc.setDrawColor(180,178,169);doc.rect(12,y-3.5,2,6.5,'F');
+        doc.setFont('helvetica','bold');doc.setTextColor(136,135,128);doc.text('[REGISTRO]',14,y);
+        doc.setFont('helvetica','normal');doc.setTextColor(0);
+        const lines=doc.splitTextToSize(f.l,138);doc.text(lines,44,y);
+        y+=lines.length>1?lines.length*4.5+1:6;
+      });
+      y+=3;
+    }
+    if(allFCon.length){
+      doc.setFont('helvetica','bold');doc.setTextColor(192,57,43);
+      doc.text('Con deducción — afectan precio',14,y);y+=5;
+      allFCon.forEach(f=>{
+        if(y>270){doc.addPage();y=20;}
+        doc.setFillColor(253,236,235);doc.rect(12,y-3.5,186,6.5,'F');
+        doc.setDrawColor(192,57,43);doc.rect(12,y-3.5,2,6.5,'F');
+        doc.setFont('helvetica','bold');doc.setTextColor(192,57,43);doc.text('[DEDUCCIÓN]',14,y);
+        doc.setFont('helvetica','normal');doc.setTextColor(0);
+        const lines=doc.splitTextToSize(f.l,132);doc.text(lines,46,y);
+        doc.setFont('helvetica','bold');doc.text(fQ(f.c),195,y,{align:'right'});
+        y+=lines.length>1?lines.length*4.5+1:6;
+      });
+      if(totalDeducc>0){
+        y+=2;
+        doc.setFillColor(253,236,235);doc.rect(12,y-3,186,8,'F');
+        doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(192,57,43);
+        doc.text('Total deducciones:',14,y+1);
+        doc.text(fQ(totalDeducc),195,y+1,{align:'right'});
+        y+=10;
+      }
+    }
+  }
   const obs=document.getElementById('obs').value;if(obs){y+=4;if(y>260){doc.addPage();y=20;}y=sec('OBSERVACIONES',y);doc.setFontSize(8);doc.setFont('helvetica','normal');doc.setTextColor(0);const lines=doc.splitTextToSize(obs,182);doc.text(lines,14,y);y+=lines.length*4+4;}
 
   // ── FOTOGRAFÍAS DE HALLAZGOS AGRUPADAS POR SECCIÓN ──
