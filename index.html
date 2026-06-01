@@ -1154,13 +1154,94 @@ function buildQList(contId,questions,stateKey){
     const div=document.createElement('div');div.className='sc-grp';div.id='qg_'+q.id;
     const btns=q.invertida?`<div class="srow"><button class="sbtn" onclick="setQ(this,'${q.id}','${stateKey}','Si','s-mal')">Sí / Presenta</button><button class="sbtn" onclick="setQ(this,'${q.id}','${stateKey}','No','s-bien')">No / Sin problema</button><button class="sbtn" onclick="setQ(this,'${q.id}','${stateKey}','NA','s-na')">N/A</button></div>`:
       `<div class="srow"><button class="sbtn" onclick="setQ(this,'${q.id}','${stateKey}','Bien','s-bien')">✓ Bien</button><button class="sbtn" onclick="setQ(this,'${q.id}','${stateKey}','Regular','s-reg')">⚠ Regular</button><button class="sbtn" onclick="setQ(this,'${q.id}','${stateKey}','Mal','s-mal')">✗ Mal</button><button class="sbtn" onclick="setQ(this,'${q.id}','${stateKey}','NA','s-na')">— N/A</button></div>`;
-    const llf=q.hasLlanta?`<div id="llf-${q.id}" class="hidden" style="margin-top:8px"><div class="rl">Medida de la llanta</div><div style="display:flex;gap:6px;align-items:center"><input type="text" id="llm-${q.id}" placeholder="Ej. 265/65R17" oninput="bLL('${q.id}')" style="flex:1"><button class="foto-btn" onclick="document.getElementById('llc-${q.id}').click()" style="margin-top:0;flex-shrink:0">📸 Leer medida</button><input type="file" id="llc-${q.id}" class="cam-input" accept="image/*" onchange="ocrLlanta(this,'${q.id}')"></div><div class="llanta-result" id="llr-${q.id}"></div></div>`:'';
+    const llf=q.hasLlanta?`<div id="llf-${q.id}" class="hidden" style="margin-top:8px">
+  <div class="rl">Medida de la llanta</div>
+  <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px">
+    <input type="text" id="llm-${q.id}" placeholder="Ej. 265/65R17" oninput="bLL('${q.id}')" style="flex:1">
+    <button class="foto-btn" onclick="document.getElementById('llc-${q.id}').click()" style="margin-top:0;flex-shrink:0">📸 Leer medida</button>
+    <input type="file" id="llc-${q.id}" class="cam-input" accept="image/*" onchange="ocrLlanta(this,'${q.id}')">
+  </div>
+  <div class="llanta-result" id="llr-${q.id}"></div>
+  <div id="lls-${q.id}" class="hidden" style="margin-top:10px">
+    <div class="rl" style="margin-bottom:6px">¿Cuántas llantas necesitan cambio?</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px" id="llg-${q.id}">
+      ${[1,2,3,4].map(n=>`<button onclick="selLlantaCant('${q.id}',${n},this)" style="padding:10px 6px;font-size:13px;font-weight:500;border:1px solid var(--b2);border-radius:var(--rsm);background:var(--sf2);color:var(--t2);cursor:pointer;text-align:center;font-family:'DM Sans',sans-serif"><div style='font-size:18px;font-weight:600'>${n}</div><div style='font-size:10px;color:var(--t3)'>${n===1?'llanta':'llantas'}</div></button>`).join('')}
+    </div>
+    <div id="llr2-${q.id}" style="display:none;background:var(--blue-bg);border:1px solid var(--blue-b);border-radius:var(--rsm);padding:10px 14px;display:flex;justify-content:space-between;align-items:center">
+      <span id="llr2-desc-${q.id}" style="font-size:13px;color:var(--blue-t)"></span>
+      <span id="llr2-total-${q.id}" style="font-size:15px;font-weight:600;color:var(--blue-t);font-family:'DM Mono',monospace"></span>
+    </div>
+  </div>
+</div>`:'';
     div.innerHTML=`<div class="sc-name">${q.l}</div>${btns}<div id="qchip_${q.id}"></div><div class="alert-taller" id="qtaller_${q.id}">🔧 Requiere revisión técnica en taller — agendar cita.</div><div id="qfoto_${q.id}" class="hidden"><button class="foto-btn" onclick="showPhotoMenu('qcam_${q.id}','qcam_${q.id}_gal')">📸 Fotografiar hallazgo</button><input type="file" id="qcam_${q.id}" class="cam-input" accept="image/*" capture="environment" onchange="handleFotoHallazgo(this,'qfo_${q.id}','hallazgo_${stateKey}_${q.id}')"><input type="file" id="qcam_${q.id}_gal" class="cam-input" accept="image/*" onchange="handleFotoHallazgo(this,'qfo_${q.id}','hallazgo_${stateKey}_${q.id}')"><div class="foto-ok" id="qfo_${q.id}">✓ Foto registrada</div></div>${llf}`;
     cont.appendChild(div);
   });
 }
 
-function bLL(qId){const inp=document.getElementById('llm-'+qId);const res=document.getElementById('llr-'+qId);const m=inp.value.trim();if(m.length<5){res.className='llanta-result';return;}const p=buscarLlanta(m);if(p){const x4=p*4;ST.llantas={medida:m,precio_unit:p,precio_x4:x4};res.className='llanta-result show';res.style.background='';res.style.borderColor='';res.style.color='';res.innerHTML=`✓ <strong>${m}</strong> — Promedio: Q ${p.toLocaleString()} c/u &nbsp;·&nbsp; <strong>Q ${x4.toLocaleString()} x4</strong>`;const item=ST.elecExt[qId];if(item){item.costo=x4;}calcCosts();}else{res.className='llanta-result show';res.style.background='var(--amber-bg)';res.style.borderColor='var(--amber-b)';res.style.color='var(--amber-t)';res.innerHTML=`⚠ Medida <strong>${m}</strong> no encontrada — cotizar con proveedor`;}}
+function bLL(qId){
+  const inp=document.getElementById('llm-'+qId);
+  const res=document.getElementById('llr-'+qId);
+  const sel=document.getElementById('lls-'+qId);
+  const m=inp.value.trim();
+  if(m.length<5){res.className='llanta-result';if(sel)sel.classList.add('hidden');return;}
+  const p=buscarLlanta(m);
+  if(p){
+    ST.llantas={medida:m,precio_unit:p,precio_x4:p*4,cantidad:ST.llantas?.cantidad||4};
+    res.className='llanta-result show';
+    res.style.background='';res.style.borderColor='';res.style.color='';
+    res.innerHTML='✓ <strong>'+m+'</strong> — Q '+p.toLocaleString()+' c/u';
+    // Mostrar selector de cantidad
+    if(sel){
+      sel.classList.remove('hidden');
+      // Restaurar selección previa si existe
+      const cant=ST.llantas.cantidad||4;
+      const btns=document.querySelectorAll('#llg-'+qId+' button');
+      btns.forEach(function(b,i){
+        if(i+1===cant) selLlantaCant(qId,cant,b);
+      });
+    }
+  }else{
+    res.className='llanta-result show';
+    res.style.background='var(--amber-bg)';res.style.borderColor='var(--amber-b)';res.style.color='var(--amber-t)';
+    res.innerHTML='⚠ Medida <strong>'+m+'</strong> no encontrada — cotizar con proveedor';
+    if(sel)sel.classList.add('hidden');
+  }
+}
+
+function selLlantaCant(qId,n,btn){
+  const p=ST.llantas?.precio_unit||0;
+  const total=p*n;
+  // Update ST
+  ST.llantas.cantidad=n;
+  ST.llantas.precio_x4=total;
+  // Update button styles
+  const grid=document.getElementById('llg-'+qId);
+  if(grid){
+    grid.querySelectorAll('button').forEach(function(b){
+      b.style.border='1px solid var(--b2)';
+      b.style.background='var(--sf2)';
+      b.style.color='var(--t2)';
+      b.querySelector('div:last-child').style.color='var(--t3)';
+    });
+  }
+  if(btn){
+    btn.style.border='1px solid var(--blue)';
+    btn.style.background='var(--blue-bg)';
+    btn.style.color='var(--blue-t)';
+    btn.querySelector('div:last-child').style.color='var(--blue-t)';
+  }
+  // Update resumen
+  const desc=document.getElementById('llr2-desc-'+qId);
+  const tot=document.getElementById('llr2-total-'+qId);
+  const box=document.getElementById('llr2-'+qId);
+  if(desc) desc.textContent=n+' llanta'+(n>1?'s':'')+' x Q '+p.toLocaleString();
+  if(tot) tot.textContent='Q '+total.toLocaleString('es-GT',{minimumFractionDigits:2});
+  if(box) box.style.display='flex';
+  // Update item cost
+  const item=ST.elecExt[qId];
+  if(item) item.costo=total;
+  calcCosts();
+}
 
 function setQ(btn,id,sk,val,cls){
   const g=document.getElementById('qg_'+id);g.querySelectorAll('.srow .sbtn').forEach(b=>b.className='sbtn');btn.className='sbtn '+cls;
