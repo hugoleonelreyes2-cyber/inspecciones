@@ -327,6 +327,7 @@ textarea{resize:vertical;line-height:1.5}
   <div class="sec-title">Datos del vehículo</div>
   <div class="sec-desc">Complete los datos y el historial de servicios antes de salir a la inspección.</div>
   <div class="field"><label class="lbl">Inspector <span class="req">*</span></label><input type="text" id="inspector" placeholder="Nombre completo"></div>
+  <div class="field"><label class="lbl">Vendedor que ingresa <span class="req">*</span></label><input type="text" id="vendedor" placeholder="Nombre completo del vendedor"></div>
   <div class="field">
     <label class="lbl">Leer tarjeta de circulación</label>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
@@ -1199,7 +1200,7 @@ function buildSummary(){
   const allQ={...ST.capoApagado,...ST.capoEncendido,...ST.elecExt,...ST.elecInt,...ST.dyn,...ST.comp};
   const qH=Object.values(allQ).filter(d=>d.val&&d.val!=='NA'&&d.val!=='Bien'&&((d.invertida&&d.val==='Si')||(!d.invertida&&(d.val==='Regular'||d.val==='Mal'))));
   const fRows=[...extH.map(d=>({l:`Exterior: ${d.pieza} (${d.tipo}${d.nivel})`,c:d.costo,cat:d.costo>0?'u':'reg'})),...intH.map(d=>({l:`Interior: ${d.pieza} (${d.tipo}${d.nivel})`,c:d.costo,cat:d.costo>0?'u':'reg'})),...qH.map(d=>({l:d.l,c:d.costo,cat:d.taller&&(d.val==='Mal'||(d.invertida&&d.val==='Si'))?'t':d.costo>0?'r':'reg'})),...(ST.svc.costo>0?[{l:`Servicio ${ST.svc.tipo}${ST.svc.combustible}`,c:ST.svc.costo,cat:'r'}]:[]),...(ST.llantas.precio_x4>0?[{l:`Llantas ${ST.llantas.medida} (x4)`,c:ST.llantas.precio_x4,cat:'r'}]:[])];
-  const fHtml=fRows.length?fRows.map(f=>{const bc=f.cat==='u'?'b-u':f.cat==='t'?'b-t':f.cat==='r'?'b-r':'b-reg';const lb=f.cat==='u'?'COSTO':f.cat==='t'?'TALLER':f.cat==='r'?'RECOM.':'REGISTRO';const cStr=f.c>0?`<span class="${f.cat==='u'?'fc-u':'fc-r'}">Q ${f.c.toLocaleString()}</span>`:'';return`<div class="f-item"><span><span class="badge ${bc}">${lb}</span>${f.l}</span>${cStr}</div>`;}).join(''):'<div style="font-size:12px;color:var(--t3)">Sin hallazgos.</div>';
+  const fHtml=fRows.length?fRows.map(f=>{const bc=f.c>0?'b-u':'b-reg';const lb=f.c>0?'DEDUCCIÓN':'REGISTRO';const cStr=f.c>0?`<span class="${f.cat==='u'?'fc-u':'fc-r'}">Q ${f.c.toLocaleString()}</span>`:'';return`<div class="f-item"><span><span class="badge ${bc}">${lb}</span>${f.l}</span>${cStr}</div>`;}).join(''):'<div style="font-size:12px;color:var(--t3)">Sin hallazgos.</div>';
   const tallerHtml=ST.tallerItems.length?`<div class="taller-summary show"><strong>🔧 Puntos para revisión en taller (${ST.tallerItems.length})</strong><br>${ST.tallerItems.map(t=>`<div style="font-size:12px;margin-top:4px">• ${t}</div>`).join('')}<div style="font-size:11px;margin-top:8px;color:#856404">Agendar cita en taller.</div></div>`:'';
   const identIssue=Object.values(ST.ident).some(v=>v.val==='No'||v.val==='NV');
   // Fotos de hallazgos
@@ -1230,6 +1231,7 @@ function jumpTo(n){document.querySelectorAll('.sec').forEach(s=>s.classList.remo
 function validate(n){
   if(n===0){
     if(!document.getElementById('inspector').value.trim()){showToast('⚠ Ingrese el nombre del inspector');return false;}
+    if(!document.getElementById('vendedor')?.value.trim()){showToast('⚠ Ingrese el nombre del vendedor');return false;}
     if(!document.getElementById('placa').value.trim()){showToast('⚠ Ingrese la placa del vehículo');return false;}
     const modelo=document.getElementById('modelo');
     if(modelo&&!modelo.value.trim()){showToast('⚠ Ingrese el modelo del vehículo');return false;}
@@ -1300,7 +1302,7 @@ async function saveRec(existingId){
   const placa=document.getElementById('placa').value||'SIN_PLACA';
   const _ahora=new Date();
   const _hoy=_ahora.toLocaleDateString('es-GT',{day:'2-digit',month:'2-digit',year:'numeric'})+' '+_ahora.toLocaleTimeString('es-GT',{hour:'2-digit',minute:'2-digit',hour12:false});
-  const rec={id,fecha:old.fecha||_hoy,fechaMod:_hoy,inspector:document.getElementById('inspector').value,placa,modelo:document.getElementById('modelo').value,color:document.getElementById('color').value,km:document.getElementById('km').value,chasis:document.getElementById('chasis').value,nmotor:document.getElementById('nmotor').value,vtype:ST.vtype,ranking:ST.ranking,totalCost:ST.totalCost,urgCost:ST.urgCost,recCost:ST.recCost,tallerItems:ST.tallerItems,obs:document.getElementById('obs').value,svc:ST.svc,llantas:ST.llantas,imgs:{...IMGS},state:{ident:ST.ident,extD:ST.extD,intD:ST.intD,capoApagado:ST.capoApagado,capoEncendido:ST.capoEncendido,elecExt:ST.elecExt,elecInt:ST.elecInt,dyn:ST.dyn,comp:ST.comp,photos:Array.from(ST.photos),svc:ST.svc,llantas:ST.llantas}};
+  const rec={id,fecha:old.fecha||_hoy,fechaMod:_hoy,inspector:document.getElementById('inspector').value,vendedor:document.getElementById('vendedor')?.value||'',placa,modelo:document.getElementById('modelo').value,color:document.getElementById('color').value,km:document.getElementById('km').value,chasis:document.getElementById('chasis').value,nmotor:document.getElementById('nmotor').value,vtype:ST.vtype,ranking:ST.ranking,totalCost:ST.totalCost,urgCost:ST.urgCost,recCost:ST.recCost,tallerItems:ST.tallerItems,obs:document.getElementById('obs').value,svc:ST.svc,llantas:ST.llantas,imgs:{...IMGS},state:{ident:ST.ident,extD:ST.extD,intD:ST.intD,capoApagado:ST.capoApagado,capoEncendido:ST.capoEncendido,elecExt:ST.elecExt,elecInt:ST.elecInt,dyn:ST.dyn,comp:ST.comp,photos:Array.from(ST.photos),svc:ST.svc,llantas:ST.llantas}};
 
   // Guardar local básico como respaldo inmediato (sin fotos)
   try{localStorage.setItem('insp_'+id,JSON.stringify({...rec,imgs:{}}));}catch(e){}
@@ -1901,6 +1903,7 @@ function viewRec(id){
     <div class="sum-global"><div class="sum-score" style="color:${rc(rec.ranking?.global||3)}">${rec.ranking?.global||'—'}<span style="font-size:22px;color:var(--t3);font-weight:400">/5</span></div><div class="sum-score-lbl">${rl(rec.ranking?.global||3)}</div></div>
     <div style="font-size:11px;color:var(--t3);font-family:'DM Mono',monospace;margin-bottom:10px;line-height:1.6">${rec.modelo||'—'} · ${rec.placa} · ${rec.color||'—'} · ${rec.km} km<br>${rec.inspector} · ${REG_formatFecha(rec.fecha)}</div>
     <div class="card"><div class="card-title">Ranking</div>${['exterior','interior','mecanica','electrico','dinamica'].map(k=>`<div class="rrow"><span class="rlbl">${k.charAt(0).toUpperCase()+k.slice(1)}</span><div class="rbar"><div class="rbar-f" style="width:${(rec.ranking?.[k]||0)*20}%;background:${rc(rec.ranking?.[k]||0)}"></div></div><span class="rsco">${rec.ranking?.[k]||'—'}/5</span></div>`).join('')}</div>
+    <div class="card" id="dona-card-${id}"><div class="card-title">Condición general</div><div style="position:relative;width:160px;height:160px;margin:12px auto"><canvas id="dona-chart-${id}" role="img" aria-label="Gráfica condición vehículo"></canvas></div><div id="dona-legend-${id}" style="text-align:center;margin-top:4px;font-size:12px;color:var(--t2)"></div></div>
     <div class="card"><div class="card-title">Estimación de inversión</div><div class="total-cost">${fQ(rec.totalCost||0)}</div></div>
     ${rec.tallerItems?.length?`<div class="taller-summary show"><strong>🔧 Puntos taller (${rec.tallerItems.length})</strong><br>${rec.tallerItems.map(t=>`<div style="font-size:12px;margin-top:4px">• ${t}</div>`).join('')}</div>`:''}
     <div class="card" id="hallazgos-card-${id}"><div class="card-title">Hallazgos</div><div style="font-size:12px;color:var(--t3)">🔄 Cargando hallazgos...</div></div>
@@ -1911,6 +1914,63 @@ function viewRec(id){
       <button onclick="pdfRecSinCorreo('${id}')" style="flex:1;padding:11px;border:none;border-radius:10px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600;background:#4B2D9F;color:#fff">📄 PDF</button>
       ${(rec.folderLink&&rec.folderLink!=='—')?`<button onclick="window.open('${rec.folderLink}','_blank')" style="flex:1;padding:11px;border:none;border-radius:10px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600;background:var(--green);color:#fff">📁 Drive</button>`:rec.folderVehId?`<button onclick="window.open('https://drive.google.com/drive/folders/${rec.folderVehId}','_blank')" style="flex:1;padding:11px;border:none;border-radius:10px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600;background:var(--green);color:#fff">📁 Drive</button>`:''}
     </div>`;
+
+  // Renderizar gráfica dona
+  (function(){
+    const rankVals = {
+      exterior: rec.ranking?.exterior||0,
+      interior: rec.ranking?.interior||0,
+      mecanica: rec.ranking?.mecanica||0,
+      electrico: rec.ranking?.electrico||0,
+      dinamica: rec.ranking?.dinamica||0
+    };
+    const totalPts = 5*5; // 5 secciones x 5 máximo
+    const okPts = Object.values(rankVals).reduce((s,v)=>s+v,0);
+    const pct = Math.round(okPts/totalPts*100);
+    const color = pct>=80?'#3B6D11':pct>=60?'#BA7517':'#A32D2D';
+    const bgColor = pct>=80?'#EAF3DE':pct>=60?'#FAEEDA':'#FCEBEB';
+
+    function renderDona(){
+      const canvas = document.getElementById('dona-chart-'+id);
+      const legend = document.getElementById('dona-legend-'+id);
+      if(!canvas||typeof Chart==='undefined') return;
+      new Chart(canvas, {
+        type:'doughnut',
+        data:{
+          labels:['OK','Con problema'],
+          datasets:[{data:[okPts,totalPts-okPts],backgroundColor:[color,'#E8E5DF'],borderWidth:0,borderRadius:4}]
+        },
+        options:{
+          responsive:true,maintainAspectRatio:false,cutout:'72%',
+          plugins:{legend:{display:false},tooltip:{enabled:false}}
+        },
+        plugins:[{
+          id:'centerText',
+          afterDraw(chart){
+            const {ctx,chartArea:{left,top,right,bottom}}=chart;
+            const cx=(left+right)/2,cy=(top+bottom)/2;
+            ctx.save();
+            ctx.textAlign='center';ctx.textBaseline='middle';
+            ctx.fillStyle=color;ctx.font='bold 30px DM Sans,sans-serif';
+            ctx.fillText(pct+'%',cx,cy-8);
+            ctx.fillStyle='#9B9890';ctx.font='11px DM Sans,sans-serif';
+            ctx.fillText(okPts+'/'+totalPts+' pts OK',cx,cy+12);
+            ctx.restore();
+          }
+        }]
+      });
+      if(legend) legend.textContent = pct>=80?'Buena condición':pct>=60?'Condición regular':'Requiere atención';
+    }
+
+    if(typeof Chart!=='undefined'){
+      renderDona();
+    } else {
+      const s=document.createElement('script');
+      s.src='https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js';
+      s.onload=renderDona;
+      document.head.appendChild(s);
+    }
+  })();
 
   // Cargar hallazgos desde Sheets
   gPost({action:'getHallazgos',id:String(id)}).then(resp=>{
