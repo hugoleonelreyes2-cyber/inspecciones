@@ -1696,6 +1696,30 @@ function showPhotoMenu(camId, galId){
 
 // Almacén temporal de registros cargados desde Sheets
 const SHEETS_RECS={};
+function REG_formatFecha(f){
+  if(!f)return '—';
+  const s=String(f).trim();
+  if(!s||s==='—')return '—';
+  // Ya viene en formato dd/mm/yyyy — devolver tal cual sin tocar
+  if(/^\d{2}\/\d{2}\/\d{4}/.test(s)) return s;
+  // Formato ISO con T y Z: 2026-05-29T06:00:00.000Z — viene de Sheets como Date object serializado
+  if(s.includes('T')||s.includes('Z')){
+    // Sheets serializa fechas en UTC — Guatemala es UTC-6, compensar
+    const d=new Date(s);
+    if(!isNaN(d)){
+      // Usar toLocaleDateString con timeZone explícita para Guatemala
+      const opts={timeZone:'America/Guatemala',day:'2-digit',month:'2-digit',year:'numeric'};
+      return d.toLocaleDateString('es-GT',opts);
+    }
+  }
+  // Formato yyyy-mm-dd sin hora
+  if(/^\d{4}-\d{2}-\d{2}$/.test(s)){
+    const parts=s.split('-');
+    return parts[2]+'/'+parts[1]+'/'+parts[0];
+  }
+  return s;
+}
+
 function openRecords(){
   const list=document.getElementById('records-list');
   list.innerHTML='<div style="text-align:center;padding:20px;color:var(--t3);font-size:13px">🔄 Cargando registros desde Google Sheets...</div>';
@@ -1711,8 +1735,8 @@ function openRecords(){
         try{local=JSON.parse(localStorage.getItem('insp_'+obj['ID']));}catch(e){}
         return{
           id:obj['ID'],
-          fecha:obj['Fecha'],
-          fechaMod:obj['Fecha Mod.']||'',
+          fecha:REG_formatFecha(obj['Fecha']),
+          fechaMod:REG_formatFecha(obj['Fecha Mod.']||''),
           inspector:obj['Inspector'],
           placa:obj['Placa'],
           modelo:obj['Modelo'],
@@ -1808,7 +1832,7 @@ function renderInspRecs(recs, listEl, total){
     div.innerHTML=`
       <div class="rec-modelo">${rec.modelo||'Sin modelo'}${localBadge}</div>
       <div class="rec-meta">${rec.placa} · ${rec.color||''} · ${rec.km} km · ${rec.inspector}</div>
-      <div class="rec-meta">${rec.fecha}${mod}</div>
+      <div class="rec-meta">${REG_formatFecha(rec.fecha)}${mod}</div>
       <div class="rec-footer">
         <span class="rec-cost">${fQ(rec.totalCost||0)}</span>
         <span style="font-size:12px;font-weight:500;color:${rc(rec.ranking?.global||3)}">${rec.ranking?.global||'—'}/5 ${tb}</span>
@@ -1876,7 +1900,7 @@ function viewRec(id){
   panel.querySelector('.panel-body').innerHTML=`
     <button onclick="openRecords()" style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--blue);background:none;border:none;cursor:pointer;padding:0 0 12px;font-family:'DM Sans',sans-serif">← Volver</button>
     <div class="sum-global"><div class="sum-score" style="color:${rc(rec.ranking?.global||3)}">${rec.ranking?.global||'—'}<span style="font-size:22px;color:var(--t3);font-weight:400">/5</span></div><div class="sum-score-lbl">${rl(rec.ranking?.global||3)}</div></div>
-    <div style="font-size:11px;color:var(--t3);font-family:'DM Mono',monospace;margin-bottom:10px;line-height:1.6">${rec.modelo||'—'} · ${rec.placa} · ${rec.color||'—'} · ${rec.km} km<br>${rec.inspector} · ${rec.fecha}</div>
+    <div style="font-size:11px;color:var(--t3);font-family:'DM Mono',monospace;margin-bottom:10px;line-height:1.6">${rec.modelo||'—'} · ${rec.placa} · ${rec.color||'—'} · ${rec.km} km<br>${rec.inspector} · ${REG_formatFecha(rec.fecha)}</div>
     <div class="card"><div class="card-title">Ranking</div>${['exterior','interior','mecanica','electrico','dinamica'].map(k=>`<div class="rrow"><span class="rlbl">${k.charAt(0).toUpperCase()+k.slice(1)}</span><div class="rbar"><div class="rbar-f" style="width:${(rec.ranking?.[k]||0)*20}%;background:${rc(rec.ranking?.[k]||0)}"></div></div><span class="rsco">${rec.ranking?.[k]||'—'}/5</span></div>`).join('')}</div>
     <div class="card"><div class="card-title">Estimación de inversión</div><div class="total-cost">${fQ(rec.totalCost||0)}</div></div>
     ${rec.tallerItems?.length?`<div class="taller-summary show"><strong>🔧 Puntos taller (${rec.tallerItems.length})</strong><br>${rec.tallerItems.map(t=>`<div style="font-size:12px;margin-top:4px">• ${t}</div>`).join('')}</div>`:''}
@@ -3509,15 +3533,7 @@ function showMenu(){
 // MÓDULO REGISTROS — Lista integrada + Cotización + Auth
 // ══════════════════════════════════════════════════════
 
-function REG_formatFecha(f){
-  if(!f)return '—';
-  const s=String(f);
-  if(s.includes('T')||s.includes('Z')){
-    const d=new Date(s);
-    if(!isNaN(d))return d.toLocaleDateString('es-GT',{day:'2-digit',month:'2-digit',year:'numeric'});
-  }
-  return s;
-}
+
 
 const ESTADOS = {
   sin_inversion:    {label:'Sin inversiones',    color:'var(--t3)',   bg:'var(--sf2)',       border:'var(--b)'},
