@@ -1523,16 +1523,27 @@ async function generarPDFBlob(){
     const {jsPDF}=window.jspdf;
     const doc=new jsPDF({orientation:'p',unit:'mm',format:'a4'});
     const modelo=document.getElementById('modelo').value||'Sin modelo',placa=document.getElementById('placa').value||'Sin placa',color=document.getElementById('color').value||'—',inspector=document.getElementById('inspector').value||'—',km=document.getElementById('km').value||'—',chasis=document.getElementById('chasis').value||'—',nmotor=document.getElementById('nmotor').value||'—',fecha=new Date().toLocaleDateString('es-GT',{day:'2-digit',month:'2-digit',year:'numeric'}),r=ST.ranking;
+  const rec_vendedor=window._pdf_vendedor||'—';
     let y=0;
     doc.setFillColor(27,111,216);doc.rect(0,0,210,32,'F');doc.setTextColor(255,255,255);doc.setFontSize(17);doc.setFont('helvetica','bold');doc.text('INFORME TÉCNICO DE INSPECCIÓN',105,13,{align:'center'});doc.setFontSize(9);doc.setFont('helvetica','normal');doc.text('División de Vehículos Usados · Inspección Rápida · '+fecha,105,22,{align:'center'});y=40;
     const sec=(title,yy)=>{doc.setFillColor(240,238,233);doc.rect(12,yy-4,186,7,'F');doc.setFontSize(10);doc.setFont('helvetica','bold');doc.setTextColor(27,111,216);doc.text(title,14,yy);return yy+7;};
     y=sec('DATOS DEL VEHÍCULO',y);doc.setTextColor(0);doc.setFontSize(9);
-    [[' Vehículo',modelo],[' Placa',placa],[' Color',color],[' Km',km+' km'],[' Chasis',chasis],[' Motor',nmotor],[' Inspector',inspector],[' Vendedor',document.getElementById('vendedor')?.value||'—'],[' Categoría',VTYPES.find(v=>v.k===ST.vtype)?.l||'—']].forEach(([k,v])=>{doc.setFont('helvetica','bold');doc.text(k+':',14,y);doc.setFont('helvetica','normal');doc.text(String(v),58,y);y+=5;});
-    if(ST.svc.historial){y+=2;doc.setFont('helvetica','bold');doc.text(' Historial:',14,y);doc.setFont('helvetica','normal');const sl={vigente_cofiño:'Vigente — Cofiño',vigente_externa:'Vigente — Agencia externa',vencido:'Vencido',sin_historial:'Sin historial'};doc.text(sl[ST.svc.historial]||'—',58,y);y+=5;}
+    const vendedor=document.getElementById('vendedor')?.value||rec_vendedor||'—';
+  const categoria=VTYPES.find(v=>v.k===ST.vtype)?.l||'—';
+  const datosCol1=[[' Vehículo:',modelo],[' Placa:',placa],[' Color:',color],[' Km:',km+' km'],[' Chasis:',chasis]];
+  const datosCol2=[[' Motor:',nmotor],[' Inspector:',inspector],[' Vendedor:',vendedor],[' Categoría:',categoria]];
+  const maxRows=Math.max(datosCol1.length,datosCol2.length);
+  const col1x=14,col2x=108,labelW=22,valW=70;
+  for(let i=0;i<maxRows;i++){
+    if(datosCol1[i]){doc.setFont('helvetica','bold');doc.setTextColor(100);doc.text(datosCol1[i][0],col1x,y);doc.setFont('helvetica','normal');doc.setTextColor(0);doc.text(String(datosCol1[i][1]||'—').substring(0,28),col1x+labelW,y);}
+    if(datosCol2[i]){doc.setFont('helvetica','bold');doc.setTextColor(100);doc.text(datosCol2[i][0],col2x,y);doc.setFont('helvetica','normal');doc.setTextColor(0);doc.text(String(datosCol2[i][1]||'—').substring(0,28),col2x+labelW,y);}
+    y+=5;
+  }
+    if(ST.svc.historial){y+=2;doc.setFont('helvetica','bold');doc.text(' Historial:',14,y);doc.setFont('helvetica','normal');const sl={vigente_cofiño:'Vigente - Cofiño',vigente_externa:'Vigente - Agencia externa',vencido:'Vencido',sin_historial:'Sin historial'};doc.text(sl[ST.svc.historial]||'—',58,y);y+=5;}
     if(ST.svc.costo>0){doc.setFont('helvetica','bold');doc.text(' Servicio:',14,y);doc.setFont('helvetica','normal');doc.text(`${ST.svc.tipo}${ST.svc.combustible==='D'?'D':'G'} — Q ${ST.svc.costo.toLocaleString()}`,58,y);y+=5;}
     if(ST.llantas.precio_x4>0){doc.setFont('helvetica','bold');doc.text(' Llantas:',14,y);doc.setFont('helvetica','normal');doc.text(`${ST.llantas.medida} × 4 = Q ${ST.llantas.precio_x4.toLocaleString()}`,58,y);y+=5;}
     const identIssue=Object.values(ST.ident).some(v=>v.val==='No'||v.val==='NV');
-    if(identIssue){y+=2;doc.setFillColor(253,236,235);doc.rect(12,y-3,186,10,'F');doc.setFont('helvetica','bold');doc.setTextColor(192,57,43);doc.text('⚠ ALERTA: Discrepancia en identidad — validar urgente en taller',14,y+3);y+=14;doc.setTextColor(0);}
+    if(identIssue){y+=2;doc.setFillColor(253,236,235);doc.rect(12,y-3,186,10,'F');doc.setFont('helvetica','bold');doc.setTextColor(192,57,43);doc.text('! ALERTA: Discrepancia en identidad - validar urgente en taller',14,y+3);y+=14;doc.setTextColor(0);}
     y+=3;y=sec('CONDICIÓN GENERAL DEL VEHÍCULO',y);
   // Dona izquierda + grid derecha
   dibujarDonaEnPDF(doc,r,14,y,28);
@@ -1551,12 +1562,12 @@ async function generarPDFBlob(){
     else{
       doc.setFontSize(8);
       if(allFSin2.length){
-        doc.setFont('helvetica','bold');doc.setTextColor(100,100,95);doc.text('Sin deducción — solo registro',14,y);y+=5;
+        doc.setFont('helvetica','bold');doc.setTextColor(100,100,95);doc.text('Sin deduccion - solo registro',14,y);y+=5;
         allFSin2.forEach(f=>{if(y>270){doc.addPage();y=20;}doc.setFillColor(247,246,243);doc.rect(12,y-3.5,186,6.5,'F');doc.setFillColor(180,178,169);doc.rect(12,y-3.5,2,6.5,'F');doc.setFont('helvetica','bold');doc.setTextColor(136,135,128);doc.text('[REGISTRO]',14,y);doc.setFont('helvetica','normal');doc.setTextColor(0);const lines=doc.splitTextToSize(f.l,138);doc.text(lines,44,y);y+=lines.length>1?lines.length*4.5+1:6;});y+=3;
       }
       if(allFCon2.length){
-        doc.setFont('helvetica','bold');doc.setTextColor(192,57,43);doc.text('Con deducción — afectan precio',14,y);y+=5;
-        allFCon2.forEach(f=>{if(y>270){doc.addPage();y=20;}doc.setFillColor(253,236,235);doc.rect(12,y-3.5,186,6.5,'F');doc.setFillColor(192,57,43);doc.rect(12,y-3.5,2,6.5,'F');doc.setFont('helvetica','bold');doc.setTextColor(192,57,43);doc.text('[DEDUCCIÓN]',14,y);doc.setFont('helvetica','normal');doc.setTextColor(0);const lines=doc.splitTextToSize(f.l,132);doc.text(lines,46,y);doc.setFont('helvetica','bold');doc.text(fQ(f.c),195,y,{align:'right'});y+=lines.length>1?lines.length*4.5+1:6;});
+        doc.setFont('helvetica','bold');doc.setTextColor(192,57,43);doc.text('Con deduccion - afectan precio',14,y);y+=5;
+        allFCon2.forEach(f=>{if(y>270){doc.addPage();y=20;}doc.setFillColor(253,236,235);doc.rect(12,y-3.5,186,6.5,'F');doc.setFillColor(192,57,43);doc.rect(12,y-3.5,2,6.5,'F');doc.setFont('helvetica','bold');doc.setTextColor(192,57,43);doc.text('[DEDUCCION]',14,y);doc.setFont('helvetica','normal');doc.setTextColor(0);const lines=doc.splitTextToSize(f.l,132);doc.text(lines,46,y);doc.setFont('helvetica','bold');doc.text(fQ(f.c),195,y,{align:'right'});y+=lines.length>1?lines.length*4.5+1:6;});
         if(totalDeducc2>0){y+=2;doc.setFillColor(253,236,235);doc.rect(12,y-3,186,8,'F');doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(192,57,43);doc.text('Total deducciones:',14,y+1);doc.text(fQ(totalDeducc2),195,y+1,{align:'right'});y+=10;}
       }
     }
@@ -1646,12 +1657,22 @@ function genPDF(){
   doc.setFillColor(27,111,216);doc.rect(0,0,210,32,'F');doc.setTextColor(255,255,255);doc.setFontSize(17);doc.setFont('helvetica','bold');doc.text('INFORME TÉCNICO DE INSPECCIÓN',105,13,{align:'center'});doc.setFontSize(9);doc.setFont('helvetica','normal');doc.text('División de Vehículos Usados · Inspección Rápida · '+fecha,105,22,{align:'center'});y=40;
   const sec=(title,yy)=>{doc.setFillColor(240,238,233);doc.rect(12,yy-4,186,7,'F');doc.setFontSize(10);doc.setFont('helvetica','bold');doc.setTextColor(27,111,216);doc.text(title,14,yy);return yy+7;};
   y=sec('DATOS DEL VEHÍCULO',y);doc.setTextColor(0);doc.setFontSize(9);
-  [[' Vehículo',modelo],[' Placa',placa],[' Color',color],[' Km',km+' km'],[' Chasis',chasis],[' Motor',nmotor],[' Inspector',inspector],[' Vendedor',document.getElementById('vendedor')?.value||'—'],[' Categoría',VTYPES.find(v=>v.k===ST.vtype)?.l||'—']].forEach(([k,v])=>{doc.setFont('helvetica','bold');doc.text(k+':',14,y);doc.setFont('helvetica','normal');doc.text(String(v),58,y);y+=5;});
-  if(ST.svc.historial){y+=2;doc.setFont('helvetica','bold');doc.text(' Historial:',14,y);doc.setFont('helvetica','normal');const sl={vigente_cofiño:'Vigente — Cofiño',vigente_externa:'Vigente — Agencia externa',vencido:'Vencido',sin_historial:'Sin historial'};doc.text(sl[ST.svc.historial]||'—',58,y);y+=5;}
+  const vendedor=document.getElementById('vendedor')?.value||rec_vendedor||'—';
+  const categoria=VTYPES.find(v=>v.k===ST.vtype)?.l||'—';
+  const datosCol1=[[' Vehículo:',modelo],[' Placa:',placa],[' Color:',color],[' Km:',km+' km'],[' Chasis:',chasis]];
+  const datosCol2=[[' Motor:',nmotor],[' Inspector:',inspector],[' Vendedor:',vendedor],[' Categoría:',categoria]];
+  const maxRows=Math.max(datosCol1.length,datosCol2.length);
+  const col1x=14,col2x=108,labelW=22,valW=70;
+  for(let i=0;i<maxRows;i++){
+    if(datosCol1[i]){doc.setFont('helvetica','bold');doc.setTextColor(100);doc.text(datosCol1[i][0],col1x,y);doc.setFont('helvetica','normal');doc.setTextColor(0);doc.text(String(datosCol1[i][1]||'—').substring(0,28),col1x+labelW,y);}
+    if(datosCol2[i]){doc.setFont('helvetica','bold');doc.setTextColor(100);doc.text(datosCol2[i][0],col2x,y);doc.setFont('helvetica','normal');doc.setTextColor(0);doc.text(String(datosCol2[i][1]||'—').substring(0,28),col2x+labelW,y);}
+    y+=5;
+  }
+  if(ST.svc.historial){y+=2;doc.setFont('helvetica','bold');doc.text(' Historial:',14,y);doc.setFont('helvetica','normal');const sl={vigente_cofiño:'Vigente - Cofiño',vigente_externa:'Vigente - Agencia externa',vencido:'Vencido',sin_historial:'Sin historial'};doc.text(sl[ST.svc.historial]||'—',58,y);y+=5;}
   if(ST.svc.costo>0){doc.setFont('helvetica','bold');doc.text(' Servicio:',14,y);doc.setFont('helvetica','normal');doc.text(`${ST.svc.tipo}${ST.svc.combustible==='D'?'D':'G'} — Q ${ST.svc.costo.toLocaleString()}`,58,y);y+=5;}
   if(ST.llantas.precio_x4>0){doc.setFont('helvetica','bold');doc.text(' Llantas:',14,y);doc.setFont('helvetica','normal');doc.text(`${ST.llantas.medida} × 4 = Q ${ST.llantas.precio_x4.toLocaleString()}`,58,y);y+=5;}
   const identIssue=Object.values(ST.ident).some(v=>v.val==='No'||v.val==='NV');
-  if(identIssue){y+=2;doc.setFillColor(253,236,235);doc.rect(12,y-3,186,10,'F');doc.setFont('helvetica','bold');doc.setTextColor(192,57,43);doc.text('⚠ ALERTA: Discrepancia en identidad — validar urgente en taller',14,y+3);y+=14;doc.setTextColor(0);}
+  if(identIssue){y+=2;doc.setFillColor(253,236,235);doc.rect(12,y-3,186,10,'F');doc.setFont('helvetica','bold');doc.setTextColor(192,57,43);doc.text('! ALERTA: Discrepancia en identidad - validar urgente en taller',14,y+3);y+=14;doc.setTextColor(0);}
   y+=3;y=sec('CONDICIÓN GENERAL DEL VEHÍCULO',y);
   // Dona izquierda + grid derecha
   dibujarDonaEnPDF(doc,r,14,y,28);
@@ -1678,7 +1699,7 @@ function genPDF(){
     doc.setFontSize(8);
     if(allFSin.length){
       doc.setFont('helvetica','bold');doc.setTextColor(100,100,95);
-      doc.text('Sin deducción — solo registro',14,y);y+=5;
+      doc.text('Sin deduccion - solo registro',14,y);y+=5;
       allFSin.forEach(f=>{
         if(y>270){doc.addPage();y=20;}
         doc.setFillColor(247,246,243);doc.rect(12,y-3.5,186,6.5,'F');
@@ -1692,12 +1713,12 @@ function genPDF(){
     }
     if(allFCon.length){
       doc.setFont('helvetica','bold');doc.setTextColor(192,57,43);
-      doc.text('Con deducción — afectan precio',14,y);y+=5;
+      doc.text('Con deduccion - afectan precio',14,y);y+=5;
       allFCon.forEach(f=>{
         if(y>270){doc.addPage();y=20;}
         doc.setFillColor(253,236,235);doc.rect(12,y-3.5,186,6.5,'F');
         doc.setDrawColor(192,57,43);doc.rect(12,y-3.5,2,6.5,'F');
-        doc.setFont('helvetica','bold');doc.setTextColor(192,57,43);doc.text('[DEDUCCIÓN]',14,y);
+        doc.setFont('helvetica','bold');doc.setTextColor(192,57,43);doc.text('[DEDUCCION]',14,y);
         doc.setFont('helvetica','normal');doc.setTextColor(0);
         const lines=doc.splitTextToSize(f.l,132);doc.text(lines,46,y);
         doc.setFont('helvetica','bold');doc.text(fQ(f.c),195,y,{align:'right'});
@@ -2207,7 +2228,7 @@ function loadRec(id){
 
 function _doLoadRec(rec){
   const id=rec.id;
-  document.getElementById('inspector').value=rec.inspector||'';document.getElementById('placa').value=rec.placa||'';document.getElementById('modelo').value=rec.modelo||'';document.getElementById('color').value=rec.color||'';document.getElementById('km').value=rec.km||'';document.getElementById('chasis').value=rec.chasis||'';document.getElementById('nmotor').value=rec.nmotor||'';document.getElementById('obs').value=rec.obs||'';
+  document.getElementById('inspector').value=rec.inspector||'';if(document.getElementById('vendedor'))document.getElementById('vendedor').value=rec.vendedor||'';document.getElementById('placa').value=rec.placa||'';document.getElementById('modelo').value=rec.modelo||'';document.getElementById('color').value=rec.color||'';document.getElementById('km').value=rec.km||'';document.getElementById('chasis').value=rec.chasis||'';document.getElementById('nmotor').value=rec.nmotor||'';document.getElementById('obs').value=rec.obs||'';
   ST.vtype=rec.vtype;document.querySelectorAll('.vtype-btn').forEach(b=>b.classList.toggle('sel',b.dataset.k===rec.vtype));
   const s=rec.state;Object.assign(ST,{extD:{...s.extD},intD:{...s.intD},capoApagado:{...s.capoApagado},capoEncendido:{...s.capoEncendido},elecExt:{...s.elecExt},elecInt:{...s.elecInt},dyn:{...s.dyn},comp:{...s.comp},ident:{...s.ident},photos:new Set(s.photos||[]),svc:{...(s.svc||{})},llantas:{...(s.llantas||{medida:'',precio_unit:0,precio_x4:0})},_editingId:id});
   // Restaurar historial
@@ -2255,9 +2276,9 @@ async function pdfRec(id, enviarCorreo=true){
   const nLinks=rec.photoLinks?Object.keys(rec.photoLinks).length:0;
   showProgress('Preparando PDF con fotos...','Paso 1 de 4 — Cargando datos');
   await new Promise(r=>setTimeout(r,200));
-  const bak={inspector:document.getElementById('inspector').value,placa:document.getElementById('placa').value,modelo:document.getElementById('modelo').value,color:document.getElementById('color').value,km:document.getElementById('km').value,chasis:document.getElementById('chasis').value,nmotor:document.getElementById('nmotor').value,obs:document.getElementById('obs').value};
+  const bak={inspector:document.getElementById('inspector').value,vendedor:document.getElementById('vendedor')?.value||'',placa:document.getElementById('placa').value,modelo:document.getElementById('modelo').value,color:document.getElementById('color').value,km:document.getElementById('km').value,chasis:document.getElementById('chasis').value,nmotor:document.getElementById('nmotor').value,obs:document.getElementById('obs').value};
   const stBak=JSON.stringify({extD:ST.extD,intD:ST.intD,capoApagado:ST.capoApagado,capoEncendido:ST.capoEncendido,elecExt:ST.elecExt,elecInt:ST.elecInt,dyn:ST.dyn,comp:ST.comp,ident:ST.ident,vtype:ST.vtype,ranking:ST.ranking,totalCost:ST.totalCost,urgCost:ST.urgCost,recCost:ST.recCost,tallerItems:ST.tallerItems,svc:ST.svc,llantas:ST.llantas});
-  document.getElementById('inspector').value=rec.inspector||'';document.getElementById('placa').value=rec.placa||'';document.getElementById('modelo').value=rec.modelo||'';document.getElementById('color').value=rec.color||'';document.getElementById('km').value=rec.km||'';document.getElementById('chasis').value=rec.chasis||'';document.getElementById('nmotor').value=rec.nmotor||'';document.getElementById('obs').value=rec.obs||'';
+  document.getElementById('inspector').value=rec.inspector||'';if(document.getElementById('vendedor'))document.getElementById('vendedor').value=rec.vendedor||'';document.getElementById('placa').value=rec.placa||'';document.getElementById('modelo').value=rec.modelo||'';document.getElementById('color').value=rec.color||'';document.getElementById('km').value=rec.km||'';document.getElementById('chasis').value=rec.chasis||'';document.getElementById('nmotor').value=rec.nmotor||'';document.getElementById('obs').value=rec.obs||'';
   const s=rec.state;Object.assign(ST,{extD:{...s.extD},intD:{...s.intD},capoApagado:{...s.capoApagado},capoEncendido:{...s.capoEncendido},elecExt:{...s.elecExt},elecInt:{...s.elecInt},dyn:{...s.dyn},comp:{...s.comp},ident:{...s.ident},vtype:rec.vtype,ranking:rec.ranking,totalCost:rec.totalCost||0,urgCost:rec.urgCost||0,recCost:rec.recCost||0,tallerItems:rec.tallerItems||[],svc:{...(rec.svc||{})},llantas:{...(rec.llantas||{medida:'',precio_unit:0,precio_x4:0})}});
 
   // Descargar fotos desde Drive — si hay locales usarlas primero
@@ -2299,7 +2320,9 @@ async function pdfRec(id, enviarCorreo=true){
 
   updateProgress('Generando PDF...','Paso 3 de 4 — Construyendo documento');
   await new Promise(r=>setTimeout(r,200));
+  window._pdf_vendedor=rec.vendedor||'—';
   genPDF();
+  window._pdf_vendedor=undefined;
   updateProgress('Finalizando...','Paso 4 de 4 — Descargando archivo');
   await new Promise(r=>setTimeout(r,400));
   hideProgress();
@@ -2317,7 +2340,7 @@ async function pdfRec(id, enviarCorreo=true){
   // Restaurar estado original
   Object.keys(IMGS).forEach(k=>delete IMGS[k]);
   Object.assign(IMGS,imgsOrig);
-  document.getElementById('inspector').value=bak.inspector;document.getElementById('placa').value=bak.placa;document.getElementById('modelo').value=bak.modelo;document.getElementById('color').value=bak.color;document.getElementById('km').value=bak.km;document.getElementById('chasis').value=bak.chasis;document.getElementById('nmotor').value=bak.nmotor;document.getElementById('obs').value=bak.obs;
+  document.getElementById('inspector').value=bak.inspector;if(document.getElementById('vendedor'))document.getElementById('vendedor').value=bak.vendedor||'';document.getElementById('placa').value=bak.placa;document.getElementById('modelo').value=bak.modelo;document.getElementById('color').value=bak.color;document.getElementById('km').value=bak.km;document.getElementById('chasis').value=bak.chasis;document.getElementById('nmotor').value=bak.nmotor;document.getElementById('obs').value=bak.obs;
   try{const o=JSON.parse(stBak);Object.assign(ST,o);}catch(e){}
 }
 
