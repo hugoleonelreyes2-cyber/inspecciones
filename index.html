@@ -379,8 +379,9 @@ textarea{resize:vertical;line-height:1.5}
       <div class="field">
         <label class="lbl">¿El cliente omitió algún cambio recomendado en el servicio anterior?</label>
         <div class="srow" id="svc-omitio-row">
-          <button class="sbtn" onclick="setSvcOmitio(this,'si')">Sí, hubo omisión</button>
-          <button class="sbtn" onclick="setSvcOmitio(this,'no')">No, todo al día</button>
+          <button class="sbtn" onclick="setSvcOmitio(this,'si')">Sí, alguna recomendación no se realizó</button>
+          <button class="sbtn" onclick="setSvcOmitio(this,'no')">No, todas las recomendaciones se realizaron</button>
+          <button class="sbtn" onclick="setSvcOmitio(this,'nc')">No se puede comprobar</button>
         </div>
       </div>
       <div id="svc-comp-wrap" class="hidden">
@@ -899,7 +900,7 @@ function setHistorial(btn,val){
 }
 function setSvcTipo(btn,val){document.querySelectorAll('#svc-tipo-row .sbtn').forEach(b=>b.className='sbtn');btn.className='sbtn s-sel';ST.svc.tipo=val;updateSvcCosto();}
 function updateSvcCosto(){if(!ST.svc.tipo||!ST.svc.combustible||ST.svc.historial!=='vencido')return;const c=getSvcCost(ST.svc.tipo,ST.svc.combustible);ST.svc.costo=c;document.getElementById('svc-costo-chip').innerHTML=c>0?`<span class="cost-chip chip-rec">Q ${c.toLocaleString()} — Servicio ${ST.svc.tipo}${ST.svc.combustible}</span>`:'';calcCosts();}
-function setSvcOmitio(btn,val){document.querySelectorAll('#svc-omitio-row .sbtn').forEach(b=>b.className='sbtn');btn.className='sbtn '+(val==='si'?'s-mal':'s-bien');ST.svc.omitio=val;document.getElementById('svc-comp-wrap').classList.toggle('hidden',val!=='si');}
+function setSvcOmitio(btn,val){document.querySelectorAll('#svc-omitio-row .sbtn').forEach(b=>b.className='sbtn');btn.className='sbtn '+(val==='si'?'s-mal':val==='nc'?'s-reg':'s-bien');ST.svc.omitio=val;document.getElementById('svc-comp-wrap').classList.toggle('hidden',val!=='si');}
 document.addEventListener('input',e=>{if(e.target.id==='svc-componente')ST.svc.componente=e.target.value;});
 
 // ── SVG EXTERIOR ──
