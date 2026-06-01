@@ -1684,7 +1684,7 @@ function dibujarDonaEnPDF(doc, r, x, y, size){
   cv.width=px;cv.height=px;
   const ctx=cv.getContext('2d');
   ctx.clearRect(0,0,px,px);
-  const cx2=px/2,cy2=px/2,outer=px/2-8,inner=outer*0.58;
+  const cx2=px/2,cy2=px/2,outer=px/2-8,inner=outer*0.76;
   // Fondo blanco del canvas
   ctx.fillStyle='#FFFFFF';
   ctx.fillRect(0,0,px,px);
@@ -1713,19 +1713,12 @@ function dibujarDonaEnPDF(doc, r, x, y, size){
   ctx.textAlign='center';
   ctx.textBaseline='middle';
   ctx.fillStyle=hexCol;
-  ctx.font='bold 80px Arial';
-  ctx.fillText(pct+'%',cx2,cy2-30);
+  ctx.font='bold 72px Arial';
+  ctx.fillText(pct+'%',cx2,cy2-22);
   // Texto pts OK
   ctx.fillStyle='#6B6860';
-  ctx.font='bold 36px Arial';
-  ctx.fillText(okPts+'/'+totalPts+' pts OK',cx2,cy2+28);
-  // Linea separadora
-  ctx.strokeStyle='#E0DDD6';
-  ctx.lineWidth=1;
-  ctx.beginPath();
-  ctx.moveTo(cx2-60,cy2+10);
-  ctx.lineTo(cx2+60,cy2+10);
-  ctx.stroke();
+  ctx.font='bold 32px Arial';
+  ctx.fillText(okPts+'/'+totalPts+' pts OK',cx2,cy2+22);
   const imgData=cv.toDataURL('image/png');
   doc.addImage(imgData,'PNG',x,y,size,size);
 }
@@ -2292,15 +2285,25 @@ function viewRec(id){
     if(!card)return;
     if(resp.status==='OK'&&resp.data&&resp.data.length){
       const rows=resp.data;
+      // Ordenar: sin inversión primero, con inversión después
+      const rowsSorted=[
+        ...rows.filter(r=>!(parseFloat(r[6])||0)),
+        ...rows.filter(r=>(parseFloat(r[6])||0)>0)
+      ];
       card.innerHTML=`<div class="card-title">Hallazgos (${rows.length})</div>`+
-        rows.map(r=>{
-          const seccion=r[2]||'';const pieza=r[3]||'';const tipo=r[4]||'';const nivel=r[5]||'';
-          const costoRaw=r[6]||'';const urgente=r[7]==='Sí';
-          // Extraer número del costo y formatearlo
-          const costoNum=parseFloat(r[6])||0;
-          const costoStr=costoNum>0?`<span class="fc-u">${fQ(costoNum)}</span>`:'';
-          return`<div class="f-item"><span><span class="badge ${urgente?'b-u':'b-r'}">${urgente?'COSTO':'RECOM.'}</span>${seccion}: ${pieza}${tipo?' ('+tipo+(nivel?'/'+nivel:'')+')'||'':''}</span>${costoStr}</div>`;
-        }).join('');
+        (rowsSorted.filter(r=>!(parseFloat(r[6])||0)).length?
+          `<div style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.4px;padding:4px 0 2px">Sin deducción — solo registro</div>`+
+          rowsSorted.filter(r=>!(parseFloat(r[6])||0)).map(r=>{
+            const seccion=r[2]||'',pieza=r[3]||'',tipo=r[4]||'',nivel=r[5]||'';
+            return`<div class="f-item" style="border-left:2px solid var(--b2);padding-left:6px"><span><span class="badge b-reg">REGISTRO</span>${seccion}: ${pieza}${tipo?' ('+tipo+(nivel?'/'+nivel:'')+')'||'':''}</span><span style="color:var(--t3)">—</span></div>`;
+          }).join(''):'') +
+        (rowsSorted.filter(r=>(parseFloat(r[6])||0)>0).length?
+          `<div style="font-size:10px;font-weight:600;color:var(--red-t);text-transform:uppercase;letter-spacing:.4px;padding:6px 0 2px">Con deducción — afectan precio</div>`+
+          rowsSorted.filter(r=>(parseFloat(r[6])||0)>0).map(r=>{
+            const seccion=r[2]||'',pieza=r[3]||'',tipo=r[4]||'',nivel=r[5]||'';
+            const costoNum=parseFloat(r[6])||0;
+            return`<div class="f-item" style="border-left:2px solid var(--red);padding-left:6px"><span><span class="badge b-u">DEDUCCIÓN</span>${seccion}: ${pieza}${tipo?' ('+tipo+(nivel?'/'+nivel:'')+')'||'':''}</span><span class="fc-u">${fQ(costoNum)}</span></div>`;
+          }).join(''):'');
     }else{
       card.innerHTML=`<div class="card-title">Hallazgos</div><div style="font-size:12px;color:var(--t3)">Sin hallazgos registrados.</div>`;
     }
