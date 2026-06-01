@@ -1786,16 +1786,24 @@ function genPDF(){
   const extH=Object.values(ST.extD).filter(d=>d.tipo&&d.tipo!=='OK'),intH=Object.values(ST.intD).filter(d=>d.tipo&&d.tipo!=='OK');
   const allQ={...ST.capoApagado,...ST.capoEncendido,...ST.elecExt,...ST.elecInt,...ST.dyn,...ST.comp};
   const qH=Object.values(allQ).filter(d=>d.val&&d.val!=='NA'&&d.val!=='Bien'&&((d.invertida&&d.val==='Si')||(!d.invertida&&(d.val==='Regular'||d.val==='Mal'))));
+  // ALL findings: REGISTRO (c=0) + DEDUCCION (c>0)
   const allF=[
-    ...extH.filter(d=>d.costo>0).map(d=>({l:`Exterior: ${d.pieza} (${d.tipo}${d.nivel})`,c:d.costo})),
-    ...intH.filter(d=>d.costo>0).map(d=>({l:`Interior: ${d.pieza} (${d.tipo}${d.nivel})`,c:d.costo})),
-    ...qH.filter(d=>d.costo>0).map(d=>({l:d.l,c:d.costo})),
-    ...(ST.svc.costo>0?[{l:`Servicio ${ST.svc.tipo}${ST.svc.combustible}`,c:ST.svc.costo}]:[]),
-    ...(ST.llantas.precio_x4>0?[{l:`Llantas ${ST.llantas.medida} (x4)`,c:ST.llantas.precio_x4}]:[]),
+    ...extH.map(d=>({l:'Exterior: '+d.pieza+' ('+d.tipo+d.nivel+')',c:d.costo||0})),
+    ...intH.map(d=>({l:'Interior: '+d.pieza+' ('+d.tipo+d.nivel+')',c:d.costo||0})),
+    ...qH.map(function(d){return{l:d.l||'Hallazgo tecnico',c:d.costo||0};}),
+    ...(ST.svc.costo>0?[{l:'Servicio '+ST.svc.tipo+(ST.svc.combustible||''),c:ST.svc.costo}]:[]),
+    ...(ST.llantas.precio_x4>0?[{l:'Llantas '+ST.llantas.medida+' (x4)',c:ST.llantas.precio_x4}]:[])
   ];
-  const allFSin=allF.filter(f=>f.c===0);
-  const allFCon=allF.filter(f=>f.c>0);
-  const totalDeducc=allFCon.reduce((s,f)=>s+f.c,0);
+  // Merge Sheets hallazgos for older records
+  (window._pdf_hallazgos||[]).forEach(function(h){
+    var sec=h[2]||'',desc=h[3]||'',costo=parseFloat(h[6])||0;
+    var lbl=sec+': '+desc;
+    var exists=allF.some(function(f){return f.l&&f.l.indexOf(desc.substring(0,20))>=0;});
+    if(!exists) allF.push({l:lbl,c:costo});
+  });
+  const allFSin=allF.filter(function(f){return f.c===0;});
+  const allFCon=allF.filter(function(f){return f.c>0;});
+  const totalDeducc=allFCon.reduce(function(s,f){return s+f.c;},0);
   if(!allF.length){doc.setFont('helvetica','italic');doc.setTextColor(150);doc.text('Sin hallazgos registrados.',14,y);y+=6;}
   else{
     doc.setFontSize(8);
