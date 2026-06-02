@@ -3390,8 +3390,11 @@ function T_goEtapa(id){
 }
 
 function T_updateCounts(){
+  const _identMap={'p14':'color_ok','p15':'chasis_ok','p16':'motor_ok'};
+  const _identFailed=T_VEH?.identFailed||[];
   Object.keys(PUNTOS).forEach(etapa=>{
-    const n=PUNTOS[etapa].filter(p=>T_ST[p.id]?.val==='mal').length;
+    const pts=PUNTOS[etapa].filter(p=>!_identMap[p.id]||_identFailed.some(f=>f.id===_identMap[p.id]));
+    const n=pts.filter(p=>T_ST[p.id]?.val==='mal').length;
     const el=document.getElementById('cnt-'+etapa);
     if(el)el.textContent=n>0?n+'⚠':'';
   });
@@ -3439,7 +3442,17 @@ function T_renderEtapa(id){
     c.appendChild(paintCard);
   }
 
+  // Identity question map: taller id → recepcion id
+  const identMap={'p14':'color_ok','p15':'chasis_ok','p16':'motor_ok'};
+  const identFailed=T_VEH.identFailed||[];
+
   puntos.forEach(p=>{
+    // Skip identity questions that were OK in reception
+    // Only filter if we have reception data (identFailed has entries = reception was done)
+    if(identMap[p.id] && identFailed.length > 0){
+      const failedInRecep=identFailed.some(function(f){return f.id===identMap[p.id];});
+      if(!failedInRecep) return; // Hide — was validated OK in reception
+    }
     const v=T_ST[p.id]?.val;
     const div=document.createElement('div');div.className='card'+(p.oblig?' titem oblig':'');div.style='margin-bottom:8px;overflow:hidden';
     div.innerHTML=`
