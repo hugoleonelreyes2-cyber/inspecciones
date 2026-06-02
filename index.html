@@ -1423,7 +1423,7 @@ function buildSummary(){
   const intH=Object.values(ST.intD).filter(d=>d.tipo&&d.tipo!=='OK');
   const allQ={...ST.capoApagado,...ST.capoEncendido,...ST.elecExt,...ST.elecInt,...ST.dyn,...ST.comp};
   const qH=Object.values(allQ).filter(d=>d.val&&d.val!=='NA'&&d.val!=='Bien'&&((d.invertida&&d.val==='Si')||(!d.invertida&&(d.val==='Regular'||d.val==='Mal'))));
-  const fRowsAll=[...extH.map(d=>({l:`Exterior: ${d.pieza} (${d.tipo}${d.nivel})`,c:d.costo,cat:d.costo>0?'u':'reg'})),...intH.map(d=>({l:`Interior: ${d.pieza} (${d.tipo}${d.nivel})`,c:d.costo,cat:d.costo>0?'u':'reg'})),...qH.map(d=>({l:d.l,c:d.costo,cat:d.taller&&(d.val==='Mal'||(d.invertida&&d.val==='Si'))?'t':d.costo>0?'r':'reg'})),...(ST.svc.costo>0?[{l:`Servicio ${ST.svc.tipo}${ST.svc.combustible}`,c:ST.svc.costo,cat:'r'}]:[]),...(ST.llantas.precio_x4>0?[{l:`Llantas ${ST.llantas.medida} (x4)`,c:ST.llantas.precio_x4,cat:'r'}]:[]),...(ST.gastos||[]).filter(g=>g.desc||g.costo>0).map(g=>({l:'Gasto adicional: '+(g.desc||'Sin descripcion'),c:g.costo||0,cat:g.costo>0?'u':'reg'}))];
+  const fRowsAll=[...extH.map(d=>({l:`Exterior: ${d.pieza} (${d.tipo}${d.nivel})`,c:d.costo,cat:d.costo>0?'u':'reg'})),...intH.map(d=>({l:`Interior: ${d.pieza} (${d.tipo}${d.nivel})`,c:d.costo,cat:d.costo>0?'u':'reg'})),...qH.map(d=>({l:d.l,c:d.costo,cat:d.taller&&(d.val==='Mal'||(d.invertida&&d.val==='Si'))?'t':d.costo>0?'r':'reg'})),...(ST.svc.costo>0?[{l:`Servicio ${ST.svc.tipo}${ST.svc.combustible}`,c:ST.svc.costo,cat:'r'}]:[]),...(ST.llantas.precio_x4>0?[{l:`Llantas ${ST.llantas.medida} (x4)`,c:ST.llantas.precio_x4,cat:'r'}]:[])];
   const fRows=[...fRowsAll.filter(f=>f.c===0),...fRowsAll.filter(f=>f.c>0)];
   const fSinCosto=fRows.filter(f=>f.c===0);
   const fConCosto=fRows.filter(f=>f.c>0);
@@ -1471,6 +1471,20 @@ function buildSummary(){
     ${tallerHtml}
     <div class="card"><div class="card-title">Todos los hallazgos</div>${fHtml}</div>
     ${fotoHallazgosHtml()}
+    ${(ST.gastos||[]).filter(g=>g.desc||g.costo>0).length?`
+    <div class="card">
+      <div class="card-title">Gastos complementarios</div>
+      ${(ST.gastos||[]).filter(g=>g.desc||g.costo>0).map(g=>`
+        <div class="f-item" style="border-left:2px solid ${g.costo>0?'var(--red)':'var(--b2)'};padding-left:6px">
+          <span><span class="badge ${g.costo>0?'b-u':'b-reg'}">${g.costo>0?'DEDUCCIÓN':'REGISTRO'}</span>${g.desc||'Sin descripción'}</span>
+          ${g.costo>0?`<span class="fc-u">${fQ(g.costo)}</span>`:'<span style="color:var(--t3)">—</span>'}
+        </div>`).join('')}
+      ${(ST.gastos||[]).filter(g=>g.costo>0).length?`
+        <div style="background:var(--red-bg);border:1px solid var(--red-b);border-radius:var(--rsm);padding:6px 10px;display:flex;justify-content:space-between;margin-top:6px">
+          <span style="font-size:12px;font-weight:600;color:var(--red-t)">Total gastos:</span>
+          <span style="font-size:13px;font-weight:700;color:var(--red);font-family:'DM Mono',monospace">${fQ((ST.gastos||[]).reduce((s,g)=>s+(g.costo||0),0))}</span>
+        </div>`:''}
+    </div>`:''}
     ${document.getElementById('obs').value?`<div class="card"><div class="card-title">Observaciones</div><div style="font-size:13px;line-height:1.6">${document.getElementById('obs').value}</div></div>`:''}
 
     <div style="display:flex;gap:7px;margin-top:4px">
@@ -1834,7 +1848,45 @@ async function generarPDFBlob(){
         }
       }
     }
-    const obs=document.getElementById('obs').value;if(obs){y+=4;if(y>260){doc.addPage();y=20;}y=sec('OBSERVACIONES',y);doc.setFontSize(8);doc.setFont('helvetica','normal');doc.setTextColor(0);const lines=doc.splitTextToSize(obs,182);doc.text(lines,14,y);y+=lines.length*4+4;}
+    // ── GASTOS COMPLEMENTARIOS ──
+  const gastosItems=(ST.gastos||[]).filter(function(g){return g.desc||g.costo>0;});
+  if(gastosItems.length){
+    if(y>250){doc.addPage();y=20;}
+    y=sec('GASTOS COMPLEMENTARIOS',y);
+    doc.setFontSize(8);
+    var gastosTot=0;
+    gastosItems.forEach(function(g){
+      if(y>270){doc.addPage();y=20;}
+      var rowH=7;
+      var costoG=g.costo||0;
+      gastosTot+=costoG;
+      var bgC=costoG>0?[253,236,235]:[247,246,243];
+      var brdC=costoG>0?[192,57,43]:[178,176,166];
+      doc.setFillColor(bgC[0],bgC[1],bgC[2]);doc.rect(14,y-3.5,182,rowH,'F');
+      doc.setFillColor(brdC[0],brdC[1],brdC[2]);doc.rect(14,y-3.5,2,rowH,'F');
+      doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(30,30,28);
+      var gDesc=g.desc||'Sin descripcion';
+      var lines=doc.splitTextToSize(gDesc,150);
+      doc.text(lines,18,y);
+      if(costoG>0){
+        doc.setFont('helvetica','bold');doc.setTextColor(192,57,43);
+        doc.text(fQ(costoG),195,y,{align:'right'});
+      }
+      y+=rowH+1;
+    });
+    if(gastosTot>0){
+      y+=2;
+      doc.setFillColor(253,236,235);doc.rect(14,y-3,182,8,'F');
+      doc.setDrawColor(192,57,43);doc.setLineWidth(0.3);doc.rect(14,y-3,182,8,'S');
+      doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(192,57,43);
+      doc.text('Total gastos complementarios:',16,y+1);
+      doc.text(fQ(gastosTot),195,y+1,{align:'right'});
+      doc.setLineWidth(0.3);
+      y+=12;
+    }
+  }
+
+  const obs=document.getElementById('obs').value;if(obs){y+=4;if(y>260){doc.addPage();y=20;}y=sec('OBSERVACIONES',y);doc.setFontSize(8);doc.setFont('helvetica','normal');doc.setTextColor(0);const lines=doc.splitTextToSize(obs,182);doc.text(lines,14,y);y+=lines.length*4+4;}
     // Fotos
     const tarjetaImg=IMGS['photo_tarjeta']?[['photo_tarjeta',IMGS['photo_tarjeta']]]:[]; const hallazgoImgs=[...tarjetaImg,...Object.entries(IMGS).filter(([k])=>!k.startsWith('photo_')&&k!=='photo_tarjeta')];
     if(hallazgoImgs.length){
@@ -1943,7 +1995,9 @@ function genPDF(){
   const vendedor=document.getElementById('vendedor')?.value||window._pdf_vendedor||'—';
   const categoria=VTYPES.find(v=>v.k===ST.vtype)?.l||'—';
   const datosCol1=[[' Vehículo:',modelo],[' Placa:',placa],[' Color:',color],[' Km:',km+' km'],[' Chasis:',chasis]];
-  const datosCol2=[[' Motor:',nmotor],[' Inspector:',inspector],[' Vendedor:',vendedor],[' Categoría:',categoria]];
+  const transmisionPDF2=ST.transmision?(ST.transmision==='automatica'?'Automatica':'Mecanica'):(window._pdf_transmision||'—');
+  const traccionPDF2=ST.traccion||window._pdf_traccion||'—';
+  const datosCol2=[[' Motor:',nmotor],[' Transmision:',transmisionPDF2],[' Traccion:',traccionPDF2],[' Inspector:',inspector],[' Vendedor:',vendedor],[' Categoria:',categoria]];
   const maxRows=Math.max(datosCol1.length,datosCol2.length);
   const col1x=14,col2x=108,labelW=22,valW=70;
   for(let i=0;i<maxRows;i++){
@@ -1973,7 +2027,7 @@ function genPDF(){
     ...intH.map(d=>({l:'Interior: '+d.pieza+' ('+d.tipo+d.nivel+')',c:d.costo||0})),
     ...qH.map(function(d){return{l:d.l||'Hallazgo tecnico',c:d.costo||0};}),
     ...(ST.svc.costo>0?[{l:'Servicio '+ST.svc.tipo+(ST.svc.combustible||''),c:ST.svc.costo}]:[]),
-    ...(ST.llantas.precio_x4>0?[{l:'Llantas '+ST.llantas.medida+' (x4)',c:ST.llantas.precio_x4}]:[]),...(ST.gastos||[]).filter(function(g){return g.desc||g.costo>0;}).map(function(g){return{l:'Gasto adicional: '+(g.desc||'Sin descripcion'),c:g.costo||0};})
+    ...(ST.llantas.precio_x4>0?[{l:'Llantas '+ST.llantas.medida+' (x4)',c:ST.llantas.precio_x4}]:[])
   ];
   // Merge Sheets hallazgos for older records
   (window._pdf_hallazgos||[]).forEach(function(h){
