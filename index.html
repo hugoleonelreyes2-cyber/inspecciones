@@ -2030,13 +2030,13 @@ function genPDF(){
     var exists=allF.some(function(f){return f.l&&f.l.indexOf(desc.substring(0,20))>=0;});
     if(!exists) allF.push({l:lbl,c:costo});
   });
-  // Merge gastos from Sheets if not in state
-  if(!(window._pdf_gastos||[]).length){
-    (window._pdf_hallazgos||[]).filter(function(h){return (h[2]||'')==='Gasto adicional';}).forEach(function(h){
-      var desc=h[3]||'',costo=parseFloat(h[6])||0;
-      if(desc||costo>0)(window._pdf_gastos=window._pdf_gastos||[]).push({desc:desc,costo:costo});
-    });
-  }
+  // Merge gastos from Sheets (always, to catch any not in state)
+  (window._pdf_hallazgos||[]).filter(function(h){return (h[2]||'')==='Gasto adicional';}).forEach(function(h){
+    var desc=h[3]||'',costo=parseFloat(h[6])||0;
+    if(!desc&&!costo) return;
+    var already=(window._pdf_gastos||[]).some(function(g){return g.desc===desc&&g.costo===costo;});
+    if(!already)(window._pdf_gastos=window._pdf_gastos||[]).push({desc:desc,costo:costo});
+  });
   const allFSin=allF.filter(function(f){return f.c===0;});
   const allFCon=allF.filter(function(f){return f.c>0;});
   const totalDeducc=allFCon.reduce(function(s,f){return s+f.c;},0);
