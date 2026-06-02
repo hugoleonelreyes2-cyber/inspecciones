@@ -786,7 +786,23 @@ const CAPO_ENCENDIDO=[{id:'arranque',l:'¿El motor arranca sin dificultad ni rui
 const ELEC_EXT=[{id:'luces_del',l:'¿Las luces delanteras altas y bajas funcionan?',costKey:'faros',taller:false},{id:'luces_tra',l:'¿Las luces traseras y de freno funcionan?',costKey:'faros',taller:false},{id:'direccionales',l:'¿Las direccionales delanteras y traseras funcionan?',costKey:'faros',taller:false},{id:'luz_reversa',l:'¿La luz de reversa enciende al meter reversa?',costKey:'faros',taller:false},{id:'claxon',l:'¿El claxon funciona?',costKey:'claxon',taller:false},{id:'limpiavisas',l:'¿Los limpiavisas y aspersores funcionan?',costKey:'limpiavisas',taller:false},{id:'llantas_estado',l:'¿El labrado de las llantas supera los 2mm en los 4 aros? (Por debajo requiere cambio)',costKey:'ballestas',taller:false,hasLlanta:true,soloMal:true},{id:'freno_mano',l:'¿El freno de mano se siente firme al jalar?',costKey:'freno_estac',taller:true}];
 const ELEC_INT=[{id:'tablero_alertas',l:'¿El tablero no muestra luces de alerta activas?',costKey:null,taller:true},{id:'ac_est',l:'¿El aire acondicionado enfría correctamente estacionado?',costKey:'ac',taller:false},{id:'vidrios_el',l:'¿Los vidrios eléctricos suben y bajan sin atascarse?',costKey:'vidrios_elec',taller:false},{id:'cierre_central',l:'¿El cierre central de puertas funciona desde el control?',costKey:'cerradura',taller:false},{id:'espejos_el',l:'¿Los espejos eléctricos se ajustan correctamente?',costKey:'retrovisores',taller:false},{id:'radio_pantalla',l:'¿La radio o pantalla multimedia enciende y funciona?',costKey:'radio',taller:false},{id:'camara_retro',l:'¿La cámara de retroceso muestra imagen clara?',costKey:'radio',taller:false},{id:'cinturones',l:'¿Los cinturones se extienden y retraen correctamente?',costKey:'cinturones',taller:true}];
 const DYN=[{id:'acel',l:'¿El vehículo acelera de forma suave y progresiva?',costKey:'prob_acelerar',taller:true},{id:'cambios_dyn',l:'¿Los cambios de velocidad se sienten suaves?',costKey:'calidad_cambios_AT',taller:true},{id:'frenado_recto',l:'¿El vehículo frena recto sin jalar hacia un lado?',costKey:'defic_frenado',taller:true},{id:'pedal_freno',l:'¿El pedal de freno se siente firme, no hundido ni esponjoso?',costKey:'defic_frenado',taller:true},{id:'baches',l:'¿Al pasar por baches no se escuchan golpes en la suspensión?',costKey:'ruido_susp',taller:false},{id:'vibraciones',l:'¿No presenta vibraciones anormales en el volante o piso?',costKey:'ruido_cojinetes',taller:true},{id:'ruidos_marcha',l:'¿No se escuchan ruidos extraños durante la conducción?',costKey:'ruido_anormal',taller:true},{id:'direccion_dyn',l:'¿El volante va centrado y no jala hacia ningún lado?',costKey:'dir_resistencia',taller:false},{id:'ac_dyn',l:'¿El A/C sigue enfriando durante la conducción?',costKey:'ac',taller:false},{id:'temperatura',l:'¿El indicador de temperatura se mantiene en rango normal?',costKey:null,taller:true},{id:'potencia',l:'¿No presenta pérdida de potencia en pendientes?',costKey:'prob_acelerar',taller:true}];
-const COMP=[{id:'llave_copia',l:'¿El vehículo tiene copia de llave funcional?',costKey:'llave',taller:false},{id:'kit_herram',l:'¿Tiene kit de herramientas y gato completo?',costKey:'tricket',taller:false},{id:'llanta_rep',l:'¿Tiene llanta de repuesto en buen estado?',costKey:'llanta_repuesto',taller:false}];
+const COMP=[
+  {id:'llave_copia',l:'¿El vehículo cuenta con llave de repuesto?',costKey:'llave',taller:false,
+   opciones:[
+     {val:'Bien',cls:'s-bien',lbl:'✓ Sí, funciona correctamente'},
+     {val:'Regular',cls:'s-reg',lbl:'⚠ Tiene llave pero no funciona / requiere programación'},
+     {val:'Mal',cls:'s-mal',lbl:'✗ No tiene llave de repuesto'},
+     {val:'NA',cls:'s-na',lbl:'— N/A'}
+   ]},
+  {id:'kit_herram',l:'¿Tiene kit de herramientas y gato?',costKey:'tricket',taller:false,
+   opciones:[
+     {val:'Bien',cls:'s-bien',lbl:'✓ Completo y en buen estado'},
+     {val:'Regular',cls:'s-reg',lbl:'⚠ Incompleto o deteriorado'},
+     {val:'Mal',cls:'s-mal',lbl:'✗ No tiene kit'},
+     {val:'NA',cls:'s-na',lbl:'— N/A'}
+   ]},
+  {id:'llanta_rep',l:'¿Tiene llanta de repuesto en buen estado?',costKey:'llanta_repuesto',taller:false}
+];
 
 let ST={vtype:null,extD:{},intD:{},ident:{},capoApagado:{},capoEncendido:{},elecExt:{},elecInt:{},dyn:{},comp:{},svc:{historial:null,combustible:null,tipo:null,costo:0,omitio:null,componente:''},llave:null,herram:null,photos:new Set(),totalCost:0,urgCost:0,recCost:0,tallerItems:[],ranking:{},_editingId:null,llantas:{medida:'',precio_unit:0,precio_x4:0}};
 let extActivePiece=null,intActivePiece=null;
@@ -1152,7 +1168,8 @@ function buildQList(contId,questions,stateKey){
   questions.forEach(q=>{
     ST[stateKey][q.id]={l:q.l,val:null,costKey:q.costKey,taller:q.taller||false,invertida:q.invertida||false,costo:0,hasLlanta:q.hasLlanta||false};
     const div=document.createElement('div');div.className='sc-grp';div.id='qg_'+q.id;
-    const btns=q.soloMal?`<div class="srow"><button class="sbtn" onclick="setQ(this,'${q.id}','${stateKey}','Bien','s-bien')">✓ Labrado OK — mayor a 2mm</button><button class="sbtn" onclick="setQ(this,'${q.id}','${stateKey}','Mal','s-mal')">✗ Requiere cambio — menor a 2mm</button><button class="sbtn" onclick="setQ(this,'${q.id}','${stateKey}','NA','s-na')">— N/A</button></div>`:
+    const btns=q.opciones?`<div class="srow" style="flex-direction:column;gap:5px">${q.opciones.map(o=>`<button class="sbtn" onclick="setQ(this,'${q.id}','${stateKey}','${o.val}','${o.cls}')" style="text-align:left;padding:9px 12px">${o.lbl}</button>`).join('')}</div>`:
+      q.soloMal?`<div class="srow"><button class="sbtn" onclick="setQ(this,'${q.id}','${stateKey}','Bien','s-bien')">✓ Labrado OK — mayor a 2mm</button><button class="sbtn" onclick="setQ(this,'${q.id}','${stateKey}','Mal','s-mal')">✗ Requiere cambio — menor a 2mm</button><button class="sbtn" onclick="setQ(this,'${q.id}','${stateKey}','NA','s-na')">— N/A</button></div>`:
       q.invertida?`<div class="srow"><button class="sbtn" onclick="setQ(this,'${q.id}','${stateKey}','Si','s-mal')">Sí / Presenta</button><button class="sbtn" onclick="setQ(this,'${q.id}','${stateKey}','No','s-bien')">No / Sin problema</button><button class="sbtn" onclick="setQ(this,'${q.id}','${stateKey}','NA','s-na')">N/A</button></div>`:
       `<div class="srow"><button class="sbtn" onclick="setQ(this,'${q.id}','${stateKey}','Bien','s-bien')">✓ Bien</button><button class="sbtn" onclick="setQ(this,'${q.id}','${stateKey}','Regular','s-reg')">⚠ Regular</button><button class="sbtn" onclick="setQ(this,'${q.id}','${stateKey}','Mal','s-mal')">✗ Mal</button><button class="sbtn" onclick="setQ(this,'${q.id}','${stateKey}','NA','s-na')">— N/A</button></div>`;
     const llf=q.hasLlanta?`<div id="llf-${q.id}" class="hidden" style="margin-top:8px">
