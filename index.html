@@ -1612,6 +1612,7 @@ async function saveRec(existingId){
       ...qH.map(d=>[String(id),placa,d.taller?'Mecánica/Eléctrico':'Prueba',d.l,d.val,'—',d.costo||0,d.taller&&d.val==='Mal'?'Sí':'No','—']),
       ...(ST.svc.costo>0?[[String(id),placa,'Servicio',`Servicio ${ST.svc.tipo}${ST.svc.combustible==='D'?'D':'G'}`,ST.svc.historial,'—',ST.svc.costo,'No','—']]:[]),
       ...(ST.llantas.precio_x4>0?[[String(id),placa,'Llantas',`Llantas ${ST.llantas.medida} (x4)`,'Mal','—',ST.llantas.precio_x4,'No','—']]:[]),
+      ...(ST.gastos||[]).filter(g=>g.desc||g.costo>0).map(g=>[String(id),placa,'Gasto adicional',g.desc||'Sin descripcion','—','—',g.costo||0,'No','—']),
     ];
 
     // 5. Guardar en Sheets
@@ -2029,13 +2030,21 @@ function genPDF(){
     ...(ST.svc.costo>0?[{l:'Servicio '+ST.svc.tipo+(ST.svc.combustible||''),c:ST.svc.costo}]:[]),
     ...(ST.llantas.precio_x4>0?[{l:'Llantas '+ST.llantas.medida+' (x4)',c:ST.llantas.precio_x4}]:[])
   ];
-  // Merge Sheets hallazgos for older records
+  // Merge Sheets hallazgos (excluding gastos which go to separate section)
   (window._pdf_hallazgos||[]).forEach(function(h){
     var sec=h[2]||'',desc=h[3]||'',costo=parseFloat(h[6])||0;
+    if(sec==='Gasto adicional') return; // gastos shown separately
     var lbl=sec+': '+desc;
     var exists=allF.some(function(f){return f.l&&f.l.indexOf(desc.substring(0,20))>=0;});
     if(!exists) allF.push({l:lbl,c:costo});
   });
+  // Merge gastos from Sheets if not in state
+  if(!(window._pdf_gastos||[]).length){
+    (window._pdf_hallazgos||[]).filter(function(h){return (h[2]||'')==='Gasto adicional';}).forEach(function(h){
+      var desc=h[3]||'',costo=parseFloat(h[6])||0;
+      if(desc||costo>0)(window._pdf_gastos=window._pdf_gastos||[]).push({desc:desc,costo:costo});
+    });
+  }
   const allFSin=allF.filter(function(f){return f.c===0;});
   const allFCon=allF.filter(function(f){return f.c>0;});
   const totalDeducc=allFCon.reduce(function(s,f){return s+f.c;},0);
@@ -2704,13 +2713,14 @@ async function pdfRec(id, enviarCorreo=true){
     }
   }
 
+  // Tarjeta img — now IMGS is fully populated from download
+  window._pdf_tarjeta_img=IMGS['photo_tarjeta']||(rec.imgs?.photo_tarjeta)||null;
   updateProgress('Generando PDF...','Paso 3 de 4 — Construyendo documento');
   await new Promise(r=>setTimeout(r,200));
   window._pdf_vendedor=rec.vendedor||'—';
   window._pdf_transmision=rec.transmision||'';
   window._pdf_traccion=rec.traccion||'';
   // Tarjeta img — may already be in IMGS from local, or downloaded from Drive
-  window._pdf_tarjeta_img=IMGS['photo_tarjeta']||null;
   window._pdf_gastos=rec.state?.gastos||ST.gastos||[];
   // Load hallazgos from Sheets for older records
   try{
