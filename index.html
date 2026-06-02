@@ -619,6 +619,7 @@ async function REG_editarRevision(){
       mecanico:REG_detalle.mecanico||'—',
       fecha:REG_detalle.fecha||'',
       hallazgos:[],hallazgosPintura:[],totalPintura:0,
+      identFailed:REG_detalle.identFailed||[],
       folderVehId,
       folderLink,
       numRevisionActual:REG_detalle.numRevision,
@@ -1569,7 +1570,7 @@ async function saveRec(existingId){
   const placa=document.getElementById('placa').value||'SIN_PLACA';
   const _ahora=new Date();
   const _hoy=_ahora.toLocaleDateString('es-GT',{day:'2-digit',month:'2-digit',year:'numeric'})+' '+_ahora.toLocaleTimeString('es-GT',{hour:'2-digit',minute:'2-digit',hour12:false});
-  const rec={id,fecha:old.fecha||_hoy,fechaMod:_hoy,inspector:document.getElementById('inspector').value,vendedor:document.getElementById('vendedor')?.value||'',transmision:ST.transmision||'',traccion:ST.traccion||'',placa,modelo:document.getElementById('modelo').value,color:document.getElementById('color').value,km:document.getElementById('km').value,chasis:document.getElementById('chasis').value,nmotor:document.getElementById('nmotor').value,vtype:ST.vtype,ranking:ST.ranking,totalCost:ST.totalCost,urgCost:ST.urgCost,recCost:ST.recCost,tallerItems:ST.tallerItems,obs:document.getElementById('obs').value,svc:ST.svc,llantas:ST.llantas,imgs:{...IMGS},state:{ident:ST.ident,extD:ST.extD,intD:ST.intD,capoApagado:ST.capoApagado,capoEncendido:ST.capoEncendido,elecExt:ST.elecExt,elecInt:ST.elecInt,dyn:ST.dyn,comp:ST.comp,photos:Array.from(ST.photos),svc:ST.svc,llantas:ST.llantas,gastos:ST.gastos||[]}};
+  const rec={id,fecha:old.fecha||_hoy,fechaMod:_hoy,inspector:document.getElementById('inspector').value,vendedor:document.getElementById('vendedor')?.value||'',transmision:ST.transmision||'',traccion:ST.traccion||'',placa,modelo:document.getElementById('modelo').value,color:document.getElementById('color').value,km:document.getElementById('km').value,chasis:document.getElementById('chasis').value,nmotor:document.getElementById('nmotor').value,vtype:ST.vtype,ranking:ST.ranking,totalCost:ST.totalCost,urgCost:ST.urgCost,recCost:ST.recCost,tallerItems:ST.tallerItems,obs:document.getElementById('obs').value,svc:ST.svc,llantas:ST.llantas,imgs:{...IMGS},identFailed:Object.entries(ST.ident).filter(([k,v])=>v.val==='No'||v.val==='NV').map(([k,v])=>({id:k,l:v.l||k})),state:{ident:ST.ident,extD:ST.extD,intD:ST.intD,capoApagado:ST.capoApagado,capoEncendido:ST.capoEncendido,elecExt:ST.elecExt,elecInt:ST.elecInt,dyn:ST.dyn,comp:ST.comp,photos:Array.from(ST.photos),svc:ST.svc,llantas:ST.llantas,gastos:ST.gastos||[]}};
 
   // Guardar local básico como respaldo inmediato (sin fotos)
   try{localStorage.setItem('insp_'+id,JSON.stringify({...rec,imgs:{}}));}catch(e){}
@@ -1849,7 +1850,7 @@ async function generarPDFBlob(){
         }
       }
     }
-    // ── GASTOS COMPLEMENTARIOS ──
+    // Gastos complementarios section
   const gastosItems=(window._pdf_gastos||ST.gastos||[]).filter(function(g){return g.desc||g.costo>0;});
   if(gastosItems.length){
     if(y>250){doc.addPage();y=20;}
@@ -1858,35 +1859,26 @@ async function generarPDFBlob(){
     var gastosTot=0;
     gastosItems.forEach(function(g){
       if(y>270){doc.addPage();y=20;}
-      var rowH=7;
-      var costoG=g.costo||0;
+      var rowH=7,costoG=g.costo||0;
       gastosTot+=costoG;
       var bgC=costoG>0?[253,236,235]:[247,246,243];
       var brdC=costoG>0?[192,57,43]:[178,176,166];
       doc.setFillColor(bgC[0],bgC[1],bgC[2]);doc.rect(14,y-3.5,182,rowH,'F');
       doc.setFillColor(brdC[0],brdC[1],brdC[2]);doc.rect(14,y-3.5,2,rowH,'F');
       doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(30,30,28);
-      var gDesc=g.desc||'Sin descripcion';
-      var lines=doc.splitTextToSize(gDesc,150);
+      var lines=doc.splitTextToSize(g.desc||'Sin descripcion',150);
       doc.text(lines,18,y);
-      if(costoG>0){
-        doc.setFont('helvetica','bold');doc.setTextColor(192,57,43);
-        doc.text(fQ(costoG),195,y,{align:'right'});
-      }
+      if(costoG>0){doc.setFont('helvetica','bold');doc.setTextColor(192,57,43);doc.text(fQ(costoG),195,y,{align:'right'});}
       y+=rowH+1;
     });
     if(gastosTot>0){
-      y+=2;
-      doc.setFillColor(253,236,235);doc.rect(14,y-3,182,8,'F');
+      y+=2;doc.setFillColor(253,236,235);doc.rect(14,y-3,182,8,'F');
       doc.setDrawColor(192,57,43);doc.setLineWidth(0.3);doc.rect(14,y-3,182,8,'S');
       doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(192,57,43);
-      doc.text('Total gastos complementarios:',16,y+1);
-      doc.text(fQ(gastosTot),195,y+1,{align:'right'});
-      doc.setLineWidth(0.3);
-      y+=12;
+      doc.text('Total gastos complementarios:',16,y+1);doc.text(fQ(gastosTot),195,y+1,{align:'right'});
+      doc.setLineWidth(0.3);y+=12;
     }
   }
-
   const obs=document.getElementById('obs').value;if(obs){y+=4;if(y>260){doc.addPage();y=20;}y=sec('OBSERVACIONES',y);doc.setFontSize(8);doc.setFont('helvetica','normal');doc.setTextColor(0);const lines=doc.splitTextToSize(obs,182);doc.text(lines,14,y);y+=lines.length*4+4;}
     // Fotos
     const tarjetaImg=IMGS['photo_tarjeta']?[['photo_tarjeta',IMGS['photo_tarjeta']]]:[]; const hallazgoImgs=[...tarjetaImg,...Object.entries(IMGS).filter(([k])=>!k.startsWith('photo_')&&k!=='photo_tarjeta')];
@@ -2715,11 +2707,13 @@ async function pdfRec(id, enviarCorreo=true){
 
   // Tarjeta img — now IMGS is fully populated from download
   window._pdf_tarjeta_img=IMGS['photo_tarjeta']||(rec.imgs?.photo_tarjeta)||null;
+  window._pdf_tarjeta_img=IMGS['photo_tarjeta']||(rec.imgs?.photo_tarjeta)||null;
   updateProgress('Generando PDF...','Paso 3 de 4 — Construyendo documento');
   await new Promise(r=>setTimeout(r,200));
   window._pdf_vendedor=rec.vendedor||'—';
   window._pdf_transmision=rec.transmision||'';
   window._pdf_traccion=rec.traccion||'';
+  window._pdf_gastos=rec.state?.gastos||ST.gastos||[];
   // Tarjeta img — may already be in IMGS from local, or downloaded from Drive
   window._pdf_gastos=rec.state?.gastos||ST.gastos||[];
   // Load hallazgos from Sheets for older records
@@ -2732,6 +2726,8 @@ async function pdfRec(id, enviarCorreo=true){
   window._pdf_hallazgos=undefined;
   window._pdf_transmision=undefined;
   window._pdf_traccion=undefined;
+  window._pdf_tarjeta_img=undefined;
+  window._pdf_gastos=undefined;
   window._pdf_tarjeta_img=undefined;
   window._pdf_gastos=undefined;
   updateProgress('Finalizando...','Paso 4 de 4 — Descargando archivo');
@@ -3359,8 +3355,8 @@ function T_renderEtapa(id){
     const v=T_ST[p.id]?.val;
     const div=document.createElement('div');div.className='card'+(p.oblig?' titem oblig':'');div.style='margin-bottom:8px;overflow:hidden';
     div.innerHTML=`
-      ${p.oblig?'<div style=\"padding:6px 12px 0\"><span class=\"oblig-badge\">🔴 OBLIGATORIO — Identidad del vehículo</span></div>':''}
-      <div class="q-group" id="tqg_${p.id}">
+      ${(function(){var iM={'p14':'color_ok','p15':'chasis_ok','p16':'motor_ok'};var iL={'p14':'COLOR','p15':'CHASIS','p16':'MOTOR'};var fl=T_VEH.identFailed||[];var fH=iM[p.id]&&fl.some(function(f){return f.id===iM[p.id];});if(fH)return '<div style=\\"background:#FEE2E2;border-left:3px solid #DC2626;padding:6px 10px;margin-bottom:4px;border-radius:0 4px 4px 0\\"><span class=\\"oblig-badge\\" style=\\"background:#DC2626\\">🔴 ALERTA RECEPCION — Discrepancia en '+iL[p.id]+'</span><div style=\\"font-size:11px;color:#991B1B;margin-top:2px\\">Inspector reporto discrepancia. Verificar con tarjeta de circulacion.</div></div>';return p.oblig?'<div style=\\"padding:6px 12px 0\\"><span class=\\"oblig-badge\\">🔴 OBLIGATORIO — Identidad del vehiculo</span></div>':'';})()}
+      <div class="q-group"<div class="q-group" id="tqg_${p.id}">
         <div class="sc-name">${p.q}</div>
         <div class="srow">
           <button class="sbtn${v==='ok'?' s-bien':''}" onclick="T_setV('${p.id}','ok',this)">✓ Bien</button>
