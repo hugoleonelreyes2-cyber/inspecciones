@@ -328,6 +328,10 @@ textarea{resize:vertical;line-height:1.5}
   <div class="sec-desc">Complete los datos y el historial de servicios antes de salir a la inspección.</div>
   <div class="field"><label class="lbl">Inspector <span class="req">*</span></label><input type="text" id="inspector" placeholder="Nombre completo"></div>
   <div class="field"><label class="lbl">Vendedor que ingresa <span class="req">*</span></label><input type="text" id="vendedor" placeholder="Nombre completo del vendedor"></div>
+  <div id="alerta-modelo-box" style="display:none;margin-top:10px;background:#FFF3CD;border:1.5px solid #FFCC00;border-radius:10px;padding:12px 14px">
+    <div style="font-size:12px;font-weight:700;color:#856404;margin-bottom:6px">⚠ ALERTA DE MODELO — Revisar con atención</div>
+    <div id="alerta-modelo-texto" style="font-size:12px;color:#664d03;line-height:1.6"></div>
+  </div>
   <div class="field">
     <label class="lbl">Leer tarjeta de circulación</label>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
@@ -339,7 +343,7 @@ textarea{resize:vertical;line-height:1.5}
     <div class="ocr-st" id="ocr-st"></div>
   </div>
   <div class="field"><label class="lbl">Placa <span class="req">*</span></label><input type="text" id="placa" placeholder="Ej. P123ABC"></div>
-  <div class="field"><label class="lbl">Marca / Modelo / Año</label><input type="text" id="modelo" placeholder="Ej. Toyota Hilux 2022" oninput="autoSeleccionarTipo(this.value)" onblur="autoSeleccionarTipo(this.value)"></div>
+  <div class="field"><label class="lbl">Marca / Modelo / Año</label><input type="text" id="modelo" placeholder="Ej. Toyota Hilux 2022" oninput="autoSeleccionarTipo(this.value);verificarAlertaModelo()" onblur="autoSeleccionarTipo(this.value);verificarAlertaModelo()"></div>
   <div class="field"><label class="lbl">Kilometraje</label><input type="number" id="km" placeholder="0"></div>
   <div class="field"><label class="lbl">Color</label><input type="text" id="color" placeholder="Ej. Blanco Perla"></div>
   <div class="field"><label class="lbl">Número de chasis</label><input type="text" id="chasis" placeholder="Según documento"></div>
@@ -509,6 +513,13 @@ textarea{resize:vertical;line-height:1.5}
   <div id="dyn-list"></div>
   <div class="sub-section" style="margin-top:14px"><div class="sub-title">Información complementaria</div><div id="comp-list"></div></div>
   <div class="field" style="margin-top:11px"><label class="lbl">Observaciones finales</label><textarea id="obs" rows="4" placeholder="Notas adicionales..."></textarea></div>
+
+  <div class="field" style="margin-top:14px;background:var(--sf2);border:1px solid var(--b2);border-radius:12px;padding:14px">
+    <div class="sub-title" style="margin-bottom:10px">💰 Gastos complementarios</div>
+    <div style="font-size:12px;color:var(--t3);margin-bottom:10px">Use esta sección para registrar costos adicionales que no están en las categorías anteriores.</div>
+    <div id="gastos-list"></div>
+    <button onclick="addGasto()" style="margin-top:8px;font-size:12px;padding:7px 12px;border:1px dashed var(--b2);border-radius:8px;background:transparent;color:var(--t2);cursor:pointer;width:100%">+ Agregar gasto</button>
+  </div>
 </div>
 
 <!-- S7: RESUMEN -->
@@ -804,7 +815,7 @@ const COMP=[
   {id:'llanta_rep',l:'¿Tiene llanta de repuesto en buen estado?',costKey:'llanta_repuesto',taller:false}
 ];
 
-let ST={vtype:null,extD:{},intD:{},ident:{},capoApagado:{},capoEncendido:{},elecExt:{},elecInt:{},dyn:{},comp:{},svc:{historial:null,combustible:null,tipo:null,costo:0,omitio:null,componente:''},llave:null,herram:null,photos:new Set(),totalCost:0,urgCost:0,recCost:0,tallerItems:[],ranking:{},_editingId:null,llantas:{medida:'',precio_unit:0,precio_x4:0}};
+let ST={vtype:null,gastos:[],extD:{},intD:{},ident:{},capoApagado:{},capoEncendido:{},elecExt:{},elecInt:{},dyn:{},comp:{},svc:{historial:null,combustible:null,tipo:null,costo:0,omitio:null,componente:''},llave:null,herram:null,photos:new Set(),totalCost:0,urgCost:0,recCost:0,tallerItems:[],ranking:{},_editingId:null,llantas:{medida:'',precio_unit:0,precio_x4:0}};
 let extActivePiece=null,intActivePiece=null;
 
 
@@ -1288,7 +1299,41 @@ function setBar(id,p){const el=document.getElementById(id);if(el)el.style.width=
 function setLbl(id,t){const el=document.getElementById(id);if(el)el.textContent=t;}
 
 // ── COSTOS Y RANKING ──
-function calcCosts(){let t=0,u=0,r=0;Object.values(ST.extD).forEach(d=>{if(d.costo>0){t+=d.costo;d.urgente?u+=d.costo:r+=d.costo;}});Object.values(ST.intD).forEach(d=>{if(d.costo>0){t+=d.costo;r+=d.costo;}});const allQ={...ST.capoApagado,...ST.capoEncendido,...ST.elecExt,...ST.elecInt,...ST.dyn,...ST.comp};Object.values(allQ).forEach(d=>{if(d.costo>0){t+=d.costo;r+=d.costo;}});if(ST.svc.costo>0){t+=ST.svc.costo;r+=ST.svc.costo;}if(ST.llantas.precio_x4>0)t+=ST.llantas.precio_x4;ST.totalCost=t;ST.urgCost=u;ST.recCost=r;ST.tallerItems=[];Object.values(allQ).forEach(d=>{if(d.taller&&d.val&&((d.invertida&&d.val==='Si')||(!d.invertida&&d.val==='Mal')))ST.tallerItems.push(d.l);});if(Object.values(ST.ident).some(v=>v.val==='No'||v.val==='NV'))ST.tallerItems.push('Verificación de identidad del vehículo');if(ST.svc.omitio==='si'&&ST.svc.componente)ST.tallerItems.push('Servicio anterior — componente pendiente: '+ST.svc.componente);}
+function addGasto(){
+  const id='g'+Date.now();
+  ST.gastos.push({id,desc:'',costo:0});
+  renderGastos();
+}
+
+function removeGasto(id){
+  ST.gastos=ST.gastos.filter(g=>g.id!==id);
+  renderGastos();
+  calcCosts();
+}
+
+function updateGasto(id,field,val){
+  const g=ST.gastos.find(g=>g.id===id);
+  if(!g)return;
+  g[field]=field==='costo'?parseFloat(val)||0:val;
+  calcCosts();
+}
+
+function renderGastos(){
+  const list=document.getElementById('gastos-list');
+  if(!list)return;
+  list.innerHTML=ST.gastos.map(g=>`
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+      <input type="text" placeholder="Descripción del gasto" value="${g.desc||''}"
+        oninput="updateGasto('${g.id}','desc',this.value)"
+        style="flex:2;font-size:13px;padding:7px 10px">
+      <input type="number" placeholder="Q 0" value="${g.costo||''}"
+        oninput="updateGasto('${g.id}','costo',this.value)"
+        style="flex:1;font-size:13px;padding:7px 10px">
+      <button onclick="removeGasto('${g.id}')" style="padding:7px 10px;border:1px solid var(--red-b);border-radius:8px;background:var(--red-bg);color:var(--red-t);cursor:pointer;font-size:13px">✕</button>
+    </div>`).join('');
+}
+
+function calcCosts(){let t=0,u=0,r=0;Object.values(ST.extD).forEach(d=>{if(d.costo>0){t+=d.costo;d.urgente?u+=d.costo:r+=d.costo;}});Object.values(ST.intD).forEach(d=>{if(d.costo>0){t+=d.costo;r+=d.costo;}});const allQ={...ST.capoApagado,...ST.capoEncendido,...ST.elecExt,...ST.elecInt,...ST.dyn,...ST.comp};Object.values(allQ).forEach(d=>{if(d.costo>0){t+=d.costo;r+=d.costo;}});if(ST.svc.costo>0){t+=ST.svc.costo;r+=ST.svc.costo;}if(ST.llantas.precio_x4>0)t+=ST.llantas.precio_x4;const _gastoTotal=(ST.gastos||[]).reduce((s,g)=>s+(g.costo||0),0);ST.totalCost=t+_gastoTotal;ST.urgCost=u;ST.recCost=r;ST.tallerItems=[];Object.values(allQ).forEach(d=>{if(d.taller&&d.val&&((d.invertida&&d.val==='Si')||(!d.invertida&&d.val==='Mal')))ST.tallerItems.push(d.l);});if(Object.values(ST.ident).some(v=>v.val==='No'||v.val==='NV'))ST.tallerItems.push('Verificación de identidad del vehículo');if(ST.svc.omitio==='si'&&ST.svc.componente)ST.tallerItems.push('Servicio anterior — componente pendiente: '+ST.svc.componente);}
 function calcRanking(){function ds(items){const v=Object.values(items);if(!v.length)return 5;let p=0,m=0;v.forEach(i=>{m+=3;if(!i.tipo||i.tipo==='OK')p+=3;else if(i.nivel===1)p+=2;else if(i.nivel===2)p+=1;});return m>0?Math.max(1,Math.round((p/m)*5)):5;}function qs(items){const v=Object.values(items).filter(i=>i.val&&i.val!=='NA');if(!v.length)return 5;let s=0;v.forEach(i=>{if(i.invertida){s+=i.val==='Si'?0:5;}else{if(i.val==='Bien')s+=5;else if(i.val==='Regular')s+=2;else s+=0;}});return Math.max(1,Math.round(s/v.length));}const r={exterior:ds(ST.extD),interior:ds(ST.intD),mecanica:qs({...ST.capoApagado,...ST.capoEncendido,...ST.elecExt}),electrico:qs(ST.elecInt),dinamica:qs({...ST.dyn,...ST.comp})};r.global=Math.round(Object.values(r).reduce((a,b)=>a+b,0)/5);ST.ranking=r;}
 const rc=s=>s>=4?'#2A7A3B':s>=3?'#B45309':'#C0392B';
 const rl=s=>s===5?'Excelente':s===4?'Bueno':s===3?'Regular':'Necesita atención';
@@ -1339,7 +1384,7 @@ function buildSummary(){
   const intH=Object.values(ST.intD).filter(d=>d.tipo&&d.tipo!=='OK');
   const allQ={...ST.capoApagado,...ST.capoEncendido,...ST.elecExt,...ST.elecInt,...ST.dyn,...ST.comp};
   const qH=Object.values(allQ).filter(d=>d.val&&d.val!=='NA'&&d.val!=='Bien'&&((d.invertida&&d.val==='Si')||(!d.invertida&&(d.val==='Regular'||d.val==='Mal'))));
-  const fRowsAll=[...extH.map(d=>({l:`Exterior: ${d.pieza} (${d.tipo}${d.nivel})`,c:d.costo,cat:d.costo>0?'u':'reg'})),...intH.map(d=>({l:`Interior: ${d.pieza} (${d.tipo}${d.nivel})`,c:d.costo,cat:d.costo>0?'u':'reg'})),...qH.map(d=>({l:d.l,c:d.costo,cat:d.taller&&(d.val==='Mal'||(d.invertida&&d.val==='Si'))?'t':d.costo>0?'r':'reg'})),...(ST.svc.costo>0?[{l:`Servicio ${ST.svc.tipo}${ST.svc.combustible}`,c:ST.svc.costo,cat:'r'}]:[]),...(ST.llantas.precio_x4>0?[{l:`Llantas ${ST.llantas.medida} (x4)`,c:ST.llantas.precio_x4,cat:'r'}]:[])];
+  const fRowsAll=[...extH.map(d=>({l:`Exterior: ${d.pieza} (${d.tipo}${d.nivel})`,c:d.costo,cat:d.costo>0?'u':'reg'})),...intH.map(d=>({l:`Interior: ${d.pieza} (${d.tipo}${d.nivel})`,c:d.costo,cat:d.costo>0?'u':'reg'})),...qH.map(d=>({l:d.l,c:d.costo,cat:d.taller&&(d.val==='Mal'||(d.invertida&&d.val==='Si'))?'t':d.costo>0?'r':'reg'})),...(ST.svc.costo>0?[{l:`Servicio ${ST.svc.tipo}${ST.svc.combustible}`,c:ST.svc.costo,cat:'r'}]:[]),...(ST.llantas.precio_x4>0?[{l:`Llantas ${ST.llantas.medida} (x4)`,c:ST.llantas.precio_x4,cat:'r'}]:[]),...(ST.gastos||[]).filter(g=>g.desc||g.costo>0).map(g=>({l:'Gasto adicional: '+(g.desc||'Sin descripcion'),c:g.costo||0,cat:g.costo>0?'u':'reg'}))];
   const fRows=[...fRowsAll.filter(f=>f.c===0),...fRowsAll.filter(f=>f.c>0)];
   const fSinCosto=fRows.filter(f=>f.c===0);
   const fConCosto=fRows.filter(f=>f.c>0);
@@ -1887,7 +1932,7 @@ function genPDF(){
     ...intH.map(d=>({l:'Interior: '+d.pieza+' ('+d.tipo+d.nivel+')',c:d.costo||0})),
     ...qH.map(function(d){return{l:d.l||'Hallazgo tecnico',c:d.costo||0};}),
     ...(ST.svc.costo>0?[{l:'Servicio '+ST.svc.tipo+(ST.svc.combustible||''),c:ST.svc.costo}]:[]),
-    ...(ST.llantas.precio_x4>0?[{l:'Llantas '+ST.llantas.medida+' (x4)',c:ST.llantas.precio_x4}]:[])
+    ...(ST.llantas.precio_x4>0?[{l:'Llantas '+ST.llantas.medida+' (x4)',c:ST.llantas.precio_x4}]:[]),...(ST.gastos||[]).filter(function(g){return g.desc||g.costo>0;}).map(function(g){return{l:'Gasto adicional: '+(g.desc||'Sin descripcion'),c:g.costo||0};})
   ];
   // Merge Sheets hallazgos for older records
   (window._pdf_hallazgos||[]).forEach(function(h){
@@ -2128,6 +2173,42 @@ function REG_formatFecha(f){
   }
   // Ya viene en formato dd/mm/yyyy con o sin hora — devolver tal cual
   return s;
+}
+
+// ── SISTEMA DE ALERTAS POR MODELO ──
+let ALERTAS_MODELOS=[];
+
+async function cargarAlertasModelos(){
+  try{
+    const resp=await gPost({action:'getAlertasModelos'});
+    if(resp.status==='OK'&&resp.data) ALERTAS_MODELOS=resp.data;
+  }catch(e){ALERTAS_MODELOS=[];}
+}
+
+function verificarAlertaModelo(){
+  const modelo=(document.getElementById('modelo')?.value||'').toUpperCase().trim();
+  const anioStr=document.getElementById('anio')?.value||
+    (document.getElementById('modelo')?.value||'').match(/(20\d{2})/)?.[1]||'';
+  const anio=parseInt(anioStr)||0;
+  const box=document.getElementById('alerta-modelo-box');
+  const txt=document.getElementById('alerta-modelo-texto');
+  if(!box||!txt) return;
+  const alertas=ALERTAS_MODELOS.filter(function(a){
+    const modelos=(a.modelos||'').toUpperCase().split(',').map(m=>m.trim());
+    const coincideModelo=modelos.some(function(m){return modelo.includes(m)&&m.length>2;});
+    const anioDesde=parseInt(a.anio_desde)||0;
+    const anioHasta=parseInt(a.anio_hasta)||9999;
+    const coincideAnio=anio===0||(anio>=anioDesde&&anio<=anioHasta);
+    return coincideModelo&&coincideAnio;
+  });
+  if(alertas.length){
+    txt.innerHTML=alertas.map(function(a){
+      return '<div style="margin-bottom:6px">• <strong>'+a.titulo+':</strong> '+a.descripcion+'</div>';
+    }).join('');
+    box.style.display='block';
+  } else {
+    box.style.display='none';
+  }
 }
 
 function openRecords(){
