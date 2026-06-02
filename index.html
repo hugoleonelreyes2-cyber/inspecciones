@@ -2666,7 +2666,7 @@ async function pdfRec(id, enviarCorreo=true){
   const bak={inspector:document.getElementById('inspector').value,vendedor:document.getElementById('vendedor')?.value||'',placa:document.getElementById('placa').value,modelo:document.getElementById('modelo').value,color:document.getElementById('color').value,km:document.getElementById('km').value,chasis:document.getElementById('chasis').value,nmotor:document.getElementById('nmotor').value,obs:document.getElementById('obs').value};
   const stBak=JSON.stringify({extD:ST.extD,intD:ST.intD,capoApagado:ST.capoApagado,capoEncendido:ST.capoEncendido,elecExt:ST.elecExt,elecInt:ST.elecInt,dyn:ST.dyn,comp:ST.comp,ident:ST.ident,vtype:ST.vtype,ranking:ST.ranking,totalCost:ST.totalCost,urgCost:ST.urgCost,recCost:ST.recCost,tallerItems:ST.tallerItems,svc:ST.svc,llantas:ST.llantas});
   document.getElementById('inspector').value=rec.inspector||'';if(document.getElementById('vendedor'))document.getElementById('vendedor').value=rec.vendedor||'';document.getElementById('placa').value=rec.placa||'';document.getElementById('modelo').value=rec.modelo||'';document.getElementById('color').value=rec.color||'';document.getElementById('km').value=rec.km||'';document.getElementById('chasis').value=rec.chasis||'';document.getElementById('nmotor').value=rec.nmotor||'';document.getElementById('obs').value=rec.obs||'';
-  const s=rec.state;Object.assign(ST,{extD:{...s.extD},intD:{...s.intD},capoApagado:{...s.capoApagado},capoEncendido:{...s.capoEncendido},elecExt:{...s.elecExt},elecInt:{...s.elecInt},dyn:{...s.dyn},comp:{...s.comp},ident:{...s.ident},vtype:rec.vtype,ranking:rec.ranking,totalCost:rec.totalCost||0,urgCost:rec.urgCost||0,recCost:rec.recCost||0,tallerItems:rec.tallerItems||[],svc:{...(rec.svc||{})},llantas:{...(rec.llantas||{medida:'',precio_unit:0,precio_x4:0})}});
+  const s=rec.state;Object.assign(ST,{extD:{...s.extD},intD:{...s.intD},capoApagado:{...s.capoApagado},capoEncendido:{...s.capoEncendido},elecExt:{...s.elecExt},elecInt:{...s.elecInt},dyn:{...s.dyn},comp:{...s.comp},ident:{...s.ident},vtype:rec.vtype,ranking:rec.ranking,totalCost:rec.totalCost||0,urgCost:rec.urgCost||0,recCost:rec.recCost||0,tallerItems:rec.tallerItems||[],svc:{...(rec.svc||{})},llantas:{...(rec.llantas||{medida:'',precio_unit:0,precio_x4:0})},gastos:[...(s.gastos||rec.state?.gastos||[])]});
 
   // Descargar fotos desde Drive — si hay locales usarlas primero
   const imgsOrig={...IMGS};
@@ -2713,7 +2713,7 @@ async function pdfRec(id, enviarCorreo=true){
   window._pdf_vendedor=rec.vendedor||'—';
   window._pdf_transmision=rec.transmision||'';
   window._pdf_traccion=rec.traccion||'';
-  window._pdf_gastos=rec.state?.gastos||ST.gastos||[];
+  window._pdf_gastos=(rec.state?.gastos&&rec.state.gastos.length>0)?rec.state.gastos:(ST.gastos&&ST.gastos.length>0?ST.gastos:[]);
   // Tarjeta img — may already be in IMGS from local, or downloaded from Drive
   window._pdf_gastos=rec.state?.gastos||ST.gastos||[];
   // Load hallazgos from Sheets for older records
