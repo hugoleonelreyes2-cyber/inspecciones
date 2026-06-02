@@ -931,6 +931,9 @@ function updateSvcCosto(){if(!ST.svc.tipo||!ST.svc.combustible||ST.svc.historial
 function setSvcOmitio(btn,val){document.querySelectorAll('#svc-omitio-row .sbtn').forEach(b=>b.className='sbtn');btn.className='sbtn '+(val==='si'?'s-mal':val==='nc'?'s-reg':'s-bien');ST.svc.omitio=val;document.getElementById('svc-comp-wrap').classList.toggle('hidden',val!=='si');}
 document.addEventListener('input',e=>{if(e.target.id==='svc-componente')ST.svc.componente=e.target.value;});
 
+// Cargar alertas al iniciar
+setTimeout(function(){cargarAlertasModelos();},1500);
+
 // ── SVG EXTERIOR ──
 function buildExtSVG(t){
   const W=380;
@@ -2187,15 +2190,15 @@ async function cargarAlertasModelos(){
 
 function verificarAlertaModelo(){
   const modelo=(document.getElementById('modelo')?.value||'').toUpperCase().trim();
-  const anioStr=document.getElementById('anio')?.value||
-    (document.getElementById('modelo')?.value||'').match(/(20\d{2})/)?.[1]||'';
-  const anio=parseInt(anioStr)||0;
+  const anioMatch=modelo.match(/(20[0-9]{2})/);
+  const anio=anioMatch?parseInt(anioMatch[1]):0;
   const box=document.getElementById('alerta-modelo-box');
   const txt=document.getElementById('alerta-modelo-texto');
   if(!box||!txt) return;
+  if(!ALERTAS_MODELOS.length){box.style.display='none';return;}
   const alertas=ALERTAS_MODELOS.filter(function(a){
-    const modelos=(a.modelos||'').toUpperCase().split(',').map(m=>m.trim());
-    const coincideModelo=modelos.some(function(m){return modelo.includes(m)&&m.length>2;});
+    const modelos=(a.modelos||'').toUpperCase().split(',').map(function(m){return m.trim();});
+    const coincideModelo=modelos.some(function(m){return m.length>2&&modelo.indexOf(m)>=0;});
     const anioDesde=parseInt(a.anio_desde)||0;
     const anioHasta=parseInt(a.anio_hasta)||9999;
     const coincideAnio=anio===0||(anio>=anioDesde&&anio<=anioHasta);
