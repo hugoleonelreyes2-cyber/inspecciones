@@ -1569,7 +1569,7 @@ async function saveRec(existingId){
   const placa=document.getElementById('placa').value||'SIN_PLACA';
   const _ahora=new Date();
   const _hoy=_ahora.toLocaleDateString('es-GT',{day:'2-digit',month:'2-digit',year:'numeric'})+' '+_ahora.toLocaleTimeString('es-GT',{hour:'2-digit',minute:'2-digit',hour12:false});
-  const rec={id,fecha:old.fecha||_hoy,fechaMod:_hoy,inspector:document.getElementById('inspector').value,vendedor:document.getElementById('vendedor')?.value||'',transmision:ST.transmision||'',traccion:ST.traccion||'',placa,modelo:document.getElementById('modelo').value,color:document.getElementById('color').value,km:document.getElementById('km').value,chasis:document.getElementById('chasis').value,nmotor:document.getElementById('nmotor').value,vtype:ST.vtype,ranking:ST.ranking,totalCost:ST.totalCost,urgCost:ST.urgCost,recCost:ST.recCost,tallerItems:ST.tallerItems,obs:document.getElementById('obs').value,svc:ST.svc,llantas:ST.llantas,imgs:{...IMGS},state:{ident:ST.ident,extD:ST.extD,intD:ST.intD,capoApagado:ST.capoApagado,capoEncendido:ST.capoEncendido,elecExt:ST.elecExt,elecInt:ST.elecInt,dyn:ST.dyn,comp:ST.comp,photos:Array.from(ST.photos),svc:ST.svc,llantas:ST.llantas}};
+  const rec={id,fecha:old.fecha||_hoy,fechaMod:_hoy,inspector:document.getElementById('inspector').value,vendedor:document.getElementById('vendedor')?.value||'',transmision:ST.transmision||'',traccion:ST.traccion||'',placa,modelo:document.getElementById('modelo').value,color:document.getElementById('color').value,km:document.getElementById('km').value,chasis:document.getElementById('chasis').value,nmotor:document.getElementById('nmotor').value,vtype:ST.vtype,ranking:ST.ranking,totalCost:ST.totalCost,urgCost:ST.urgCost,recCost:ST.recCost,tallerItems:ST.tallerItems,obs:document.getElementById('obs').value,svc:ST.svc,llantas:ST.llantas,imgs:{...IMGS},state:{ident:ST.ident,extD:ST.extD,intD:ST.intD,capoApagado:ST.capoApagado,capoEncendido:ST.capoEncendido,elecExt:ST.elecExt,elecInt:ST.elecInt,dyn:ST.dyn,comp:ST.comp,photos:Array.from(ST.photos),svc:ST.svc,llantas:ST.llantas,gastos:ST.gastos||[]}};
 
   // Guardar local básico como respaldo inmediato (sin fotos)
   try{localStorage.setItem('insp_'+id,JSON.stringify({...rec,imgs:{}}));}catch(e){}
@@ -1849,7 +1849,7 @@ async function generarPDFBlob(){
       }
     }
     // ── GASTOS COMPLEMENTARIOS ──
-  const gastosItems=(ST.gastos||[]).filter(function(g){return g.desc||g.costo>0;});
+  const gastosItems=(window._pdf_gastos||ST.gastos||[]).filter(function(g){return g.desc||g.costo>0;});
   if(gastosItems.length){
     if(y>250){doc.addPage();y=20;}
     y=sec('GASTOS COMPLEMENTARIOS',y);
@@ -2082,46 +2082,27 @@ function genPDF(){
   const obs=document.getElementById('obs').value;if(obs){y+=4;if(y>260){doc.addPage();y=20;}y=sec('OBSERVACIONES',y);doc.setFontSize(8);doc.setFont('helvetica','normal');doc.setTextColor(0);const lines=doc.splitTextToSize(obs,182);doc.text(lines,14,y);y+=lines.length*4+4;}
 
   // ── FOTOGRAFÍAS DE HALLAZGOS AGRUPADAS POR SECCIÓN ──
-  // Tarjeta de circulación primero, luego hallazgos
-  const tarjetaImg=IMGS['photo_tarjeta']?[['photo_tarjeta',IMGS['photo_tarjeta']]]:[]; const hallazgoImgs=[...tarjetaImg,...Object.entries(IMGS).filter(([k])=>!k.startsWith('photo_')&&k!=='photo_tarjeta')];
+  // Fotos — tarjeta primero, luego hallazgos
+  const tarjetaImg=IMGS['photo_tarjeta']?[['photo_tarjeta',IMGS['photo_tarjeta']]]:(window._pdf_tarjeta_img?[['photo_tarjeta',window._pdf_tarjeta_img]]:[]);
+  const hallazgoImgs=[...tarjetaImg,...Object.entries(IMGS).filter(([k])=>!k.startsWith('photo_')&&k!=='photo_tarjeta')];
   if(hallazgoImgs.length){
     if(y>230){doc.addPage();y=20;}
-    y=sec('FOTOGRAFÍAS DE HALLAZGOS',y);
-    const grupos={};
-    hallazgoImgs.forEach(([k,v])=>{
-      let seccion='Otros';
-      if(k.includes('ext_')||k.includes('guardaf')||k.includes('bumper')||k.includes('lamp')||k.includes('puerta')||k.includes('capot')||k.includes('techo')||k.includes('vid')||k.includes('llanta'))seccion='Exterior';
-      else if(k.includes('int_')||k.includes('asiento')||k.includes('tablero')||k.includes('consola')||k.includes('alfombra')||k.includes('tap')||k.includes('timon')||k.includes('baul'))seccion='Interior';
-      else if(k.includes('capoApagado')||k.includes('capoEncendido')||k.includes('capo'))seccion='Mecánica';
-      else if(k.includes('elecExt')||k.includes('elecInt')||k.includes('elec'))seccion='Eléctrico';
-      else if(k.includes('dyn')||k.includes('comp'))seccion='Prueba dinámica';
-      else if(k.includes('hallazgo_ext'))seccion='Exterior';
-      else if(k.includes('hallazgo_int'))seccion='Interior';
-      if(!grupos[seccion])grupos[seccion]=[];
-      grupos[seccion].push([k,v]);
-    });
+    y=sec('FOTOGRAFIAS DE HALLAZGOS',y);
     const colW=88,rowH=72,margin=12,gap=5;
-    Object.entries(grupos).forEach(([secNom,imgs])=>{
-      if(y>250){doc.addPage();y=20;}
-      doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(27,111,216);
-      doc.text(secNom,14,y);y+=7;
-      let col=0;
-      imgs.forEach(([k,v])=>{
-        if(y+rowH>280){doc.addPage();y=20;col=0;}
-        const x=margin+col*(colW+gap);
-        try{
-          doc.addImage(v,'JPEG',x,y,colW,rowH-10);
-          doc.setFontSize(7);doc.setTextColor(80);doc.setFont('helvetica','normal');
-          const lbl=k==='photo_tarjeta'?'Tarjeta de circulación':k.replace(/hallazgo_ext_|hallazgo_int_|hallazgo_|qfo_/g,'').replace(/_/g,' ');
-          doc.text(lbl.substring(0,32),x+colW/2,y+rowH-3,{align:'center'});
-        }catch(e){}
-        col++;if(col>=2){col=0;y+=rowH+2;}
-      });
-      if(col>0)y+=rowH+2;
-      y+=4;
+    let col=0;
+    hallazgoImgs.forEach(([k,v])=>{
+      if(y+rowH>280){doc.addPage();y=20;col=0;}
+      const x=margin+col*(colW+gap);
+      try{
+        doc.addImage(v,'JPEG',x,y,colW,rowH-10);
+        const lbl=k==='photo_tarjeta'?'Tarjeta de circulacion':k.replace(/hallazgo_ext_|hallazgo_int_|hallazgo_|qfo_/g,'').replace(/_/g,' ');
+        doc.setFontSize(7);doc.setTextColor(80);
+        doc.text(lbl.substring(0,32),x+colW/2,y+rowH-3,{align:'center'});
+      }catch(e){}
+      col++;if(col>=2){col=0;y+=rowH+2;}
     });
+    if(col>0)y+=rowH+2;
   }
-
   const pages=doc.internal.getNumberOfPages();for(let p=1;p<=pages;p++){doc.setPage(p);doc.setFontSize(7);doc.setTextColor(160);doc.text(`Pág. ${p} de ${pages}  ·  Sistema Inspección Vehículos Usados  ·  ${fecha}`,105,290,{align:'center'});}
   doc.save('Inspeccion_'+placa.replace(/\s/g,'_')+'_'+fecha.replace(/\//g,'-')+'.pdf');
   showToast('✅ PDF descargado',false);
@@ -2490,6 +2471,20 @@ function viewRec(id){
     <div class="card"><div class="card-title">Ranking</div>${['exterior','interior','mecanica','electrico','dinamica'].map(k=>`<div class="rrow"><span class="rlbl">${k.charAt(0).toUpperCase()+k.slice(1)}</span><div class="rbar"><div class="rbar-f" style="width:${(rec.ranking?.[k]||0)*20}%;background:${rc(rec.ranking?.[k]||0)}"></div></div><span class="rsco">${rec.ranking?.[k]||'—'}/5</span></div>`).join('')}</div>
     <div class="card" id="dona-card-${id}"><div class="card-title">Condición general</div><div style="position:relative;width:160px;height:160px;margin:12px auto"><canvas id="dona-chart-${id}" role="img" aria-label="Gráfica condición vehículo"></canvas></div><div id="dona-legend-${id}" style="text-align:center;margin-top:4px;font-size:12px;color:var(--t2)"></div></div>
     <div class="card"><div class="card-title">Estimación de inversión</div><div class="total-cost">${fQ(rec.totalCost||0)}</div></div>
+    ${(rec.state?.gastos||[]).filter(g=>g.desc||g.costo>0).length?`
+    <div class="card">
+      <div class="card-title">Gastos complementarios</div>
+      ${(rec.state?.gastos||[]).filter(g=>g.desc||g.costo>0).map(g=>`
+        <div class="f-item" style="border-left:2px solid ${g.costo>0?'var(--red)':'var(--b2)'};padding-left:6px">
+          <span><span class="badge ${g.costo>0?'b-u':'b-reg'}">${g.costo>0?'DEDUCCIÓN':'REGISTRO'}</span>${g.desc||'Sin descripción'}</span>
+          ${g.costo>0?`<span class="fc-u">${fQ(g.costo)}</span>`:'<span style="color:var(--t3)">—</span>'}
+        </div>`).join('')}
+      ${(rec.state?.gastos||[]).filter(g=>g.costo>0).length?`
+        <div style="background:var(--red-bg);border:1px solid var(--red-b);border-radius:var(--rsm);padding:6px 10px;display:flex;justify-content:space-between;margin-top:6px">
+          <span style="font-size:12px;font-weight:600;color:var(--red-t)">Total gastos:</span>
+          <span style="font-size:13px;font-weight:700;color:var(--red);font-family:'DM Mono',monospace">${fQ((rec.state?.gastos||[]).reduce((s,g)=>s+(g.costo||0),0))}</span>
+        </div>`:''}
+    </div>`:''}
     ${rec.tallerItems?.length?`<div class="taller-summary show"><strong>🔧 Puntos taller (${rec.tallerItems.length})</strong><br>${rec.tallerItems.map(t=>`<div style="font-size:12px;margin-top:4px">• ${t}</div>`).join('')}</div>`:''}
     <div class="card" id="hallazgos-card-${id}"><div class="card-title">Hallazgos</div><div style="font-size:12px;color:var(--t3)">🔄 Cargando hallazgos...</div></div>
     ${rec.obs&&rec.obs!=='—'?`<div class="card"><div class="card-title">Observaciones</div><div style="font-size:13px;line-height:1.6">${rec.obs}</div></div>`:''}
@@ -2621,7 +2616,7 @@ function _doLoadRec(rec){
   const id=rec.id;
   document.getElementById('inspector').value=rec.inspector||'';if(document.getElementById('vendedor'))document.getElementById('vendedor').value=rec.vendedor||'';if(rec.transmision)setTransmision(rec.transmision,null);if(rec.traccion)setTraccion(rec.traccion,null);document.getElementById('placa').value=rec.placa||'';document.getElementById('modelo').value=rec.modelo||'';document.getElementById('color').value=rec.color||'';document.getElementById('km').value=rec.km||'';document.getElementById('chasis').value=rec.chasis||'';document.getElementById('nmotor').value=rec.nmotor||'';document.getElementById('obs').value=rec.obs||'';
   ST.vtype=rec.vtype;document.querySelectorAll('.vtype-btn').forEach(b=>b.classList.toggle('sel',b.dataset.k===rec.vtype));
-  const s=rec.state;Object.assign(ST,{extD:{...s.extD},intD:{...s.intD},capoApagado:{...s.capoApagado},capoEncendido:{...s.capoEncendido},elecExt:{...s.elecExt},elecInt:{...s.elecInt},dyn:{...s.dyn},comp:{...s.comp},ident:{...s.ident},photos:new Set(s.photos||[]),svc:{...(s.svc||{})},llantas:{...(s.llantas||{medida:'',precio_unit:0,precio_x4:0})},_editingId:id});
+  const s=rec.state;Object.assign(ST,{extD:{...s.extD},intD:{...s.intD},capoApagado:{...s.capoApagado},capoEncendido:{...s.capoEncendido},elecExt:{...s.elecExt},elecInt:{...s.elecInt},dyn:{...s.dyn},comp:{...s.comp},ident:{...s.ident},photos:new Set(s.photos||[]),svc:{...(s.svc||{})},llantas:{...(s.llantas||{medida:'',precio_unit:0,precio_x4:0})},gastos:[...(s.gastos||[])],_editingId:id});
   // Restaurar historial
   if(ST.svc.historial){document.querySelectorAll('#historial-row .sbtn').forEach(b=>{if((ST.svc.historial==='vigente_cofiño'&&b.textContent.includes('Cofiño'))||(ST.svc.historial==='vigente_externa'&&b.textContent.includes('externa'))||(ST.svc.historial==='vencido'&&b.textContent.includes('Vencido'))||(ST.svc.historial==='sin_historial'&&b.textContent.includes('Sin')))b.className='sbtn '+(ST.svc.historial.startsWith('vigente')?'s-bien':ST.svc.historial==='vencido'?'s-reg':'s-mal');});document.getElementById('svc-tipo-wrap').className='svc-sub'+(ST.svc.historial==='vencido'?' show':'');document.getElementById('svc-pendiente-wrap').className='svc-sub'+(ST.svc.historial!=='sin_historial'?' show':'');if(ST.svc.costo>0){if(ST.svc.historial==='sin_historial')document.getElementById('svc-auto-chip').innerHTML=`<span class="cost-chip chip-urg">Servicio ${ST.svc.combustible==='D'?'4KD':'4KG'} — Q ${ST.svc.costo.toLocaleString()}</span>`;else if(ST.svc.historial.startsWith('vigente'))document.getElementById('svc-auto-chip').innerHTML='<span class="cost-chip chip-ok">✓ Servicio vigente — sin costo</span>';}}
   if(ST.svc.combustible){document.querySelectorAll('#combustible-row .sbtn').forEach(b=>{if((ST.svc.combustible==='G'&&b.textContent.includes('Gasolina'))||(ST.svc.combustible==='D'&&b.textContent.includes('Diésel')))b.className='sbtn s-sel';});}
@@ -2714,6 +2709,9 @@ async function pdfRec(id, enviarCorreo=true){
   window._pdf_vendedor=rec.vendedor||'—';
   window._pdf_transmision=rec.transmision||'';
   window._pdf_traccion=rec.traccion||'';
+  // Tarjeta img — may already be in IMGS from local, or downloaded from Drive
+  window._pdf_tarjeta_img=IMGS['photo_tarjeta']||null;
+  window._pdf_gastos=rec.state?.gastos||ST.gastos||[];
   // Load hallazgos from Sheets for older records
   try{
     const hResp=await gPost({action:'getHallazgos',id:String(id)});
@@ -2724,6 +2722,8 @@ async function pdfRec(id, enviarCorreo=true){
   window._pdf_hallazgos=undefined;
   window._pdf_transmision=undefined;
   window._pdf_traccion=undefined;
+  window._pdf_tarjeta_img=undefined;
+  window._pdf_gastos=undefined;
   updateProgress('Finalizando...','Paso 4 de 4 — Descargando archivo');
   await new Promise(r=>setTimeout(r,400));
   hideProgress();
