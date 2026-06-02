@@ -1671,7 +1671,7 @@ async function saveRec(existingId){
       chasis:rec.chasis,motor:rec.nmotor,
       tipoVehiculo:VTYPES.find(v=>v.k===ST.vtype)?.l||'—',
       combustible:ST.svc.combustible==='D'?'Diésel':'Gasolina',
-      historial:{vigente_cofiño:'Vigente Cofiño',vigente_externa:'Vigente Externa',vencido:'Vencido',sin_historial:'Sin historial'}[ST.svc.historial]||'—',
+      historial:{vigente_cofiño:'Vigente Cofiño',vigente_externa:'Vigente Externa',vencido:'VENCIDO',sin_historial:'SIN HISTORIAL'}[ST.svc.historial]||'—',
       tipoServicio:ST.svc.tipo||'—',
       costoServicio:ST.svc.costo>0?ST.svc.costo:0,
       componentePendiente:ST.svc.componente||'—',
@@ -1778,18 +1778,33 @@ async function generarPDFBlob(){
   const transmisionPDF=ST.transmision?(ST.transmision==='automatica'?'Automatica':'Mecanica'):(window._pdf_transmision||'—');
   const traccionPDF=ST.traccion||window._pdf_traccion||'—';
   const datosCol1=[[' Vehículo:',modelo],[' Placa:',placa],[' Color:',color],[' Km:',km+' km'],[' Chasis:',chasis]];
-  const combustiblePDF=ST.combustible?(ST.combustible==='gasolina'?'Gasolina':ST.combustible==='diesel'?'Diesel':'Hybrid'):(window._pdf_combustible||'—');
-  const techoPDF=ST.techo?(ST.techo==='rigido'?'Rigido':ST.techo==='panoramico'?'Panoramico':'Sunroof'):(window._pdf_techo||'—');
-  const llpPDF=ST.llavePresencia?(ST.llavePresencia==='si'?'Si':'No'):(window._pdf_llp||'—');
+  const combustiblePDF=ST.combustible?(ST.combustible==='gasolina'?'GASOLINA':ST.combustible==='diesel'?'DIESEL':'HYBRID'):(window._pdf_combustible?window._pdf_combustible.toUpperCase():'—');
+  const techoPDF=ST.techo?(ST.techo==='rigido'?'RIGIDO':ST.techo==='panoramico'?'PANORAMICO':'SUNROOF'):(window._pdf_techo?window._pdf_techo.toUpperCase():'—');
+  const llpPDF=ST.llavePresencia?(ST.llavePresencia==='si'?'SI':'NO'):(window._pdf_llp?window._pdf_llp.toUpperCase():'—');
   const datosCol2=[[' Motor:',nmotor],[' Transmision:',transmisionPDF],[' Traccion:',traccionPDF],[' Combustible:',combustiblePDF],[' Techo:',techoPDF],[' Llave pres:',llpPDF],[' Inspector:',inspector],[' Vendedor:',vendedor],[' Categoria:',categoria]];
-  const maxRows=Math.max(datosCol1.length,datosCol2.length);
-  const col1x=14,col2x=108,labelW=22,valW=70;
+  // Balance columns: split all data evenly
+  const allDatos=[...datosCol1,...datosCol2];
+  const half=Math.ceil(allDatos.length/2);
+  const col1=allDatos.slice(0,half);
+  const col2=allDatos.slice(half);
+  const maxRows=Math.max(col1.length,col2.length);
+  const col1x=14,col2x=108,labelW=24;
   for(let i=0;i<maxRows;i++){
-    if(datosCol1[i]){doc.setFont('helvetica','bold');doc.setTextColor(100);doc.text(datosCol1[i][0],col1x,y);doc.setFont('helvetica','normal');doc.setTextColor(0);doc.text(String(datosCol1[i][1]||'—').substring(0,28),col1x+labelW,y);}
-    if(datosCol2[i]){doc.setFont('helvetica','bold');doc.setTextColor(100);doc.text(datosCol2[i][0],col2x,y);doc.setFont('helvetica','normal');doc.setTextColor(0);doc.text(String(datosCol2[i][1]||'—').substring(0,28),col2x+labelW,y);}
+    if(col1[i]){
+      doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(80,78,72);
+      doc.text(col1[i][0],col1x,y);
+      doc.setFont('helvetica','normal');doc.setTextColor(20,20,18);
+      doc.text(String(col1[i][1]||'—').toUpperCase().substring(0,26),col1x+labelW,y);
+    }
+    if(col2[i]){
+      doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(80,78,72);
+      doc.text(col2[i][0],col2x,y);
+      doc.setFont('helvetica','normal');doc.setTextColor(20,20,18);
+      doc.text(String(col2[i][1]||'—').toUpperCase().substring(0,26),col2x+labelW,y);
+    }
     y+=5;
   }
-    if(ST.svc.historial){y+=2;doc.setFont('helvetica','bold');doc.text(' Historial:',14,y);doc.setFont('helvetica','normal');const sl={vigente_cofiño:'Vigente - Cofiño',vigente_externa:'Vigente - Agencia externa',vencido:'Vencido',sin_historial:'Sin historial'};doc.text(sl[ST.svc.historial]||'—',58,y);y+=5;}
+    if(ST.svc.historial){y+=2;doc.setFont('helvetica','bold');doc.text(' Historial:',14,y);doc.setFont('helvetica','normal');const sl={vigente_cofiño:'VIGENTE - COFIÑO',vigente_externa:'VIGENTE - AGENCIA EXTERNA',vencido:'VENCIDO',sin_historial:'SIN HISTORIAL'};doc.text((sl[ST.svc.historial]||'—').toUpperCase(),58,y);y+=5;}
     if(ST.svc.costo>0){doc.setFont('helvetica','bold');doc.text(' Servicio:',14,y);doc.setFont('helvetica','normal');doc.text(`${ST.svc.tipo}${ST.svc.combustible==='D'?'D':'G'} — Q ${ST.svc.costo.toLocaleString()}`,58,y);y+=5;}
     if(ST.llantas.precio_x4>0){doc.setFont('helvetica','bold');doc.text(' Llantas:',14,y);doc.setFont('helvetica','normal');doc.text(`${ST.llantas.medida} × 4 = Q ${ST.llantas.precio_x4.toLocaleString()}`,58,y);y+=5;}
     const identIssue=Object.values(ST.ident).some(v=>v.val==='No'||v.val==='NV');
@@ -2007,18 +2022,33 @@ function genPDF(){
   const datosCol1=[[' Vehículo:',modelo],[' Placa:',placa],[' Color:',color],[' Km:',km+' km'],[' Chasis:',chasis]];
   const transmisionPDF2=ST.transmision?(ST.transmision==='automatica'?'Automatica':'Mecanica'):(window._pdf_transmision||'—');
   const traccionPDF2=ST.traccion||window._pdf_traccion||'—';
-  const combustiblePDF2=ST.combustible?(ST.combustible==='gasolina'?'Gasolina':ST.combustible==='diesel'?'Diesel':'Hybrid'):(window._pdf_combustible||'—');
-  const techoPDF2=ST.techo?(ST.techo==='rigido'?'Rigido':ST.techo==='panoramico'?'Panoramico':'Sunroof'):(window._pdf_techo||'—');
-  const llpPDF2=ST.llavePresencia?(ST.llavePresencia==='si'?'Si':'No'):(window._pdf_llp||'—');
+  const combustiblePDF2=ST.combustible?(ST.combustible==='gasolina'?'GASOLINA':ST.combustible==='diesel'?'DIESEL':'HYBRID'):(window._pdf_combustible?window._pdf_combustible.toUpperCase():'—');
+  const techoPDF2=ST.techo?(ST.techo==='rigido'?'RIGIDO':ST.techo==='panoramico'?'PANORAMICO':'SUNROOF'):(window._pdf_techo?window._pdf_techo.toUpperCase():'—');
+  const llpPDF2=ST.llavePresencia?(ST.llavePresencia==='si'?'SI':'NO'):(window._pdf_llp?window._pdf_llp.toUpperCase():'—');
   const datosCol2=[[' Motor:',nmotor],[' Transmision:',transmisionPDF2],[' Traccion:',traccionPDF2],[' Combustible:',combustiblePDF2],[' Techo:',techoPDF2],[' Llave pres:',llpPDF2],[' Inspector:',inspector],[' Vendedor:',vendedor],[' Categoria:',categoria]];
-  const maxRows=Math.max(datosCol1.length,datosCol2.length);
-  const col1x=14,col2x=108,labelW=22,valW=70;
+  // Balance columns: split all data evenly
+  const allDatos=[...datosCol1,...datosCol2];
+  const half=Math.ceil(allDatos.length/2);
+  const col1=allDatos.slice(0,half);
+  const col2=allDatos.slice(half);
+  const maxRows=Math.max(col1.length,col2.length);
+  const col1x=14,col2x=108,labelW=24;
   for(let i=0;i<maxRows;i++){
-    if(datosCol1[i]){doc.setFont('helvetica','bold');doc.setTextColor(100);doc.text(datosCol1[i][0],col1x,y);doc.setFont('helvetica','normal');doc.setTextColor(0);doc.text(String(datosCol1[i][1]||'—').substring(0,28),col1x+labelW,y);}
-    if(datosCol2[i]){doc.setFont('helvetica','bold');doc.setTextColor(100);doc.text(datosCol2[i][0],col2x,y);doc.setFont('helvetica','normal');doc.setTextColor(0);doc.text(String(datosCol2[i][1]||'—').substring(0,28),col2x+labelW,y);}
+    if(col1[i]){
+      doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(80,78,72);
+      doc.text(col1[i][0],col1x,y);
+      doc.setFont('helvetica','normal');doc.setTextColor(20,20,18);
+      doc.text(String(col1[i][1]||'—').toUpperCase().substring(0,26),col1x+labelW,y);
+    }
+    if(col2[i]){
+      doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(80,78,72);
+      doc.text(col2[i][0],col2x,y);
+      doc.setFont('helvetica','normal');doc.setTextColor(20,20,18);
+      doc.text(String(col2[i][1]||'—').toUpperCase().substring(0,26),col2x+labelW,y);
+    }
     y+=5;
   }
-  if(ST.svc.historial){y+=2;doc.setFont('helvetica','bold');doc.text(' Historial:',14,y);doc.setFont('helvetica','normal');const sl={vigente_cofiño:'Vigente - Cofiño',vigente_externa:'Vigente - Agencia externa',vencido:'Vencido',sin_historial:'Sin historial'};doc.text(sl[ST.svc.historial]||'—',58,y);y+=5;}
+  if(ST.svc.historial){y+=2;doc.setFont('helvetica','bold');doc.text(' Historial:',14,y);doc.setFont('helvetica','normal');const sl={vigente_cofiño:'VIGENTE - COFIÑO',vigente_externa:'VIGENTE - AGENCIA EXTERNA',vencido:'VENCIDO',sin_historial:'SIN HISTORIAL'};doc.text((sl[ST.svc.historial]||'—').toUpperCase(),58,y);y+=5;}
   if(ST.svc.costo>0){doc.setFont('helvetica','bold');doc.text(' Servicio:',14,y);doc.setFont('helvetica','normal');doc.text(`${ST.svc.tipo}${ST.svc.combustible==='D'?'D':'G'} — Q ${ST.svc.costo.toLocaleString()}`,58,y);y+=5;}
   if(ST.llantas.precio_x4>0){doc.setFont('helvetica','bold');doc.text(' Llantas:',14,y);doc.setFont('helvetica','normal');doc.text(`${ST.llantas.medida} × 4 = Q ${ST.llantas.precio_x4.toLocaleString()}`,58,y);y+=5;}
   const identIssue=Object.values(ST.ident).some(v=>v.val==='No'||v.val==='NV');
