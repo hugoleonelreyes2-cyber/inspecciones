@@ -1850,36 +1850,7 @@ async function generarPDFBlob(){
         }
       }
     }
-    // Gastos complementarios section
-  const gastosItems=(window._pdf_gastos||ST.gastos||[]).filter(function(g){return g.desc||g.costo>0;});
-  if(gastosItems.length){
-    if(y>250){doc.addPage();y=20;}
-    y=sec('GASTOS COMPLEMENTARIOS',y);
-    doc.setFontSize(8);
-    var gastosTot=0;
-    gastosItems.forEach(function(g){
-      if(y>270){doc.addPage();y=20;}
-      var rowH=7,costoG=g.costo||0;
-      gastosTot+=costoG;
-      var bgC=costoG>0?[253,236,235]:[247,246,243];
-      var brdC=costoG>0?[192,57,43]:[178,176,166];
-      doc.setFillColor(bgC[0],bgC[1],bgC[2]);doc.rect(14,y-3.5,182,rowH,'F');
-      doc.setFillColor(brdC[0],brdC[1],brdC[2]);doc.rect(14,y-3.5,2,rowH,'F');
-      doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(30,30,28);
-      var lines=doc.splitTextToSize(g.desc||'Sin descripcion',150);
-      doc.text(lines,18,y);
-      if(costoG>0){doc.setFont('helvetica','bold');doc.setTextColor(192,57,43);doc.text(fQ(costoG),195,y,{align:'right'});}
-      y+=rowH+1;
-    });
-    if(gastosTot>0){
-      y+=2;doc.setFillColor(253,236,235);doc.rect(14,y-3,182,8,'F');
-      doc.setDrawColor(192,57,43);doc.setLineWidth(0.3);doc.rect(14,y-3,182,8,'S');
-      doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(192,57,43);
-      doc.text('Total gastos complementarios:',16,y+1);doc.text(fQ(gastosTot),195,y+1,{align:'right'});
-      doc.setLineWidth(0.3);y+=12;
-    }
-  }
-  const obs=document.getElementById('obs').value;if(obs){y+=4;if(y>260){doc.addPage();y=20;}y=sec('OBSERVACIONES',y);doc.setFontSize(8);doc.setFont('helvetica','normal');doc.setTextColor(0);const lines=doc.splitTextToSize(obs,182);doc.text(lines,14,y);y+=lines.length*4+4;}
+    const obs=document.getElementById('obs').value;if(obs){y+=4;if(y>260){doc.addPage();y=20;}y=sec('OBSERVACIONES',y);doc.setFontSize(8);doc.setFont('helvetica','normal');doc.setTextColor(0);const lines=doc.splitTextToSize(obs,182);doc.text(lines,14,y);y+=lines.length*4+4;}
     // Fotos
     const tarjetaImg=IMGS['photo_tarjeta']?[['photo_tarjeta',IMGS['photo_tarjeta']]]:[]; const hallazgoImgs=[...tarjetaImg,...Object.entries(IMGS).filter(([k])=>!k.startsWith('photo_')&&k!=='photo_tarjeta')];
     if(hallazgoImgs.length){
@@ -2037,6 +2008,35 @@ function genPDF(){
     var already=(window._pdf_gastos||[]).some(function(g){return g.desc===desc&&g.costo===costo;});
     if(!already)(window._pdf_gastos=window._pdf_gastos||[]).push({desc:desc,costo:costo});
   });
+  // ── GASTOS COMPLEMENTARIOS ── (after Sheets merge so all sources are available)
+  var gastosItems=(window._pdf_gastos||[]).filter(function(g){return g.desc||g.costo>0;});
+  if(gastosItems.length){
+    if(y>250){doc.addPage();y=20;}
+    y=sec('GASTOS COMPLEMENTARIOS',y);
+    doc.setFontSize(8);
+    var gastosTot=0;
+    gastosItems.forEach(function(g){
+      if(y>270){doc.addPage();y=20;}
+      var rowH=7,costoG=g.costo||0;
+      gastosTot+=costoG;
+      var bgC=costoG>0?[253,236,235]:[247,246,243];
+      var brdC=costoG>0?[192,57,43]:[178,176,166];
+      doc.setFillColor(bgC[0],bgC[1],bgC[2]);doc.rect(14,y-3.5,182,rowH,'F');
+      doc.setFillColor(brdC[0],brdC[1],brdC[2]);doc.rect(14,y-3.5,2,rowH,'F');
+      doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(30,30,28);
+      var lines=doc.splitTextToSize(g.desc||'Sin descripcion',150);
+      doc.text(lines,18,y);
+      if(costoG>0){doc.setFont('helvetica','bold');doc.setTextColor(192,57,43);doc.text(fQ(costoG),195,y,{align:'right'});}
+      y+=rowH+1;
+    });
+    if(gastosTot>0){
+      y+=2;doc.setFillColor(253,236,235);doc.rect(14,y-3,182,8,'F');
+      doc.setDrawColor(192,57,43);doc.setLineWidth(0.3);doc.rect(14,y-3,182,8,'S');
+      doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(192,57,43);
+      doc.text('Total gastos complementarios:',16,y+1);doc.text(fQ(gastosTot),195,y+1,{align:'right'});
+      doc.setLineWidth(0.3);y+=12;
+    }
+  }
   const allFSin=allF.filter(function(f){return f.c===0;});
   const allFCon=allF.filter(function(f){return f.c>0;});
   const totalDeducc=allFCon.reduce(function(s,f){return s+f.c;},0);
