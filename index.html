@@ -645,17 +645,24 @@ async function REG_editarRevision(){
       fecha:REG_detalle.fecha||'',
       hallazgos:[],hallazgosPintura:[],totalPintura:0,
       identFailed:(()=>{
-        // Build identFailed from Sheets ident columns
+        // 1. Best source: Sheets ident columns (new records)
         const failed=[];
         if(REG_detalle.identColor==='No validado') failed.push({id:'color_ok'});
         if(REG_detalle.identChasis==='No validado') failed.push({id:'chasis_ok'});
         if(REG_detalle.identMotor==='No validado') failed.push({id:'motor_ok'});
         if(failed.length>0) return failed;
-        // Fallback to local state
+        // 2. Try rec.identFailed saved in object
+        if(REG_detalle.identFailed&&REG_detalle.identFailed.length) return REG_detalle.identFailed;
+        // 3. Try localStorage state.ident
         try{
           const localRec=JSON.parse(localStorage.getItem('insp_'+REG_detalle.id)||'{}');
-          return REG_detalle.identFailed||localRec.identFailed||[];
-        }catch(e){return [];}
+          if(localRec.identFailed&&localRec.identFailed.length) return localRec.identFailed;
+          // 4. Reconstruct from state.ident directly
+          const ident=localRec.state?.ident||{};
+          const fromState=Object.entries(ident).filter(([k,v])=>v&&(v.val==='No'||v.val==='NV')).map(([k])=>({id:k}));
+          if(fromState.length) return fromState;
+        }catch(e){}
+        return [];
       })(),
       folderVehId,
       folderLink,
@@ -1678,11 +1685,17 @@ async function saveRec(existingId){
       action:'saveInspection',
       id:String(id),
       fecha:rec.fecha,fechaMod:rec.fechaMod,
-      inspector:rec.inspector,placa,
+      inspector:rec.inspector,
+      vendedor:rec.vendedor||'—',
+      placa,
       modelo:rec.modelo,color:rec.color,km:rec.km,
       chasis:rec.chasis,motor:rec.nmotor,
       tipoVehiculo:VTYPES.find(v=>v.k===ST.vtype)?.l||'—',
+      transmision:ST.transmision||rec.transmision||'—',
+      traccion:ST.traccion||rec.traccion||'—',
       combustible:ST.svc.combustible==='D'?'Diésel':'Gasolina',
+      techo:ST.techo||rec.techo||'—',
+      llavePresencia:ST.llavePresencia||rec.llavePresencia||'—',
       historial:{vigente_cofiño:'Vigente Cofiño',vigente_externa:'Vigente Externa',vencido:'VENCIDO',sin_historial:'SIN HISTORIAL'}[ST.svc.historial]||'—',
       tipoServicio:ST.svc.tipo||'—',
       costoServicio:ST.svc.costo>0?ST.svc.costo:0,
@@ -2405,6 +2418,14 @@ function openRecords(){
           modelo:obj['Modelo'],
           color:obj['Color'],
           km:obj['Km'],
+          chasis:obj['Chasis']||'',
+          nmotor:obj['Motor']||'',
+          transmision:obj['Transmision']||'',
+          traccion:obj['Traccion']||'',
+          combustible:obj['Combustible']||'',
+          techo:obj['Techo']||'',
+          llavePresencia:obj['Llave Presencia']||'',
+          vendedor:obj['Vendedor']||'',
           vtype:local?.vtype||'',
           ranking:{
             global:+obj['Ranking General']||0,
