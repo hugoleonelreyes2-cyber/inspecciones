@@ -646,10 +646,12 @@ async function REG_editarRevision(){
       hallazgos:[],hallazgosPintura:[],totalPintura:0,
       identFailed:(()=>{
         // 1. Best source: Sheets ident columns (new records)
+        console.log('[IDENT] Sheets values:',REG_detalle.identColor,REG_detalle.identChasis,REG_detalle.identMotor);
         const failed=[];
         if(REG_detalle.identColor==='No validado') failed.push({id:'color_ok'});
         if(REG_detalle.identChasis==='No validado') failed.push({id:'chasis_ok'});
         if(REG_detalle.identMotor==='No validado') failed.push({id:'motor_ok'});
+        console.log('[IDENT] failed from Sheets:',failed);
         if(failed.length>0) return failed;
         // 2. Try rec.identFailed saved in object
         if(REG_detalle.identFailed&&REG_detalle.identFailed.length) return REG_detalle.identFailed;
