@@ -1683,6 +1683,7 @@ async function saveRec(existingId){
       costoRecomendado:ST.recCost,
       puntosTaller:ST.tallerItems.join(' | ')||'Ninguno',
       alertaIdentidad:identIssue?'SÍ':'No',
+      IdentidadFailed:JSON.stringify(Object.entries(ST.ident).filter(([k,v])=>v.val==='No'||v.val==='NV').map(([k])=>k)),
       observaciones:rec.obs||'—',
       carpetaDrive:folderLink,
       folderVehId:folderVeh,
@@ -2409,6 +2410,7 @@ function openRecords(){
           state:local?.state||null,
           svc:local?.svc||null,
           llantas:local?.llantas||null,
+          identFailed:(()=>{try{const f=obj['Identidad Fallida']||obj['IdentidadFailed']||'[]';return JSON.parse(f).map(k=>({id:k}));}catch(e){return [];}})(),
         };
       }).filter(r=>r.id&&r.placa);
       if(recs.length){
