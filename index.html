@@ -645,9 +645,17 @@ async function REG_editarRevision(){
       fecha:REG_detalle.fecha||'',
       hallazgos:[],hallazgosPintura:[],totalPintura:0,
       identFailed:(()=>{
-        // Try rec.identFailed, then local state, then Sheets
-        const localRec=JSON.parse(localStorage.getItem('insp_'+REG_detalle.id)||'{}');
-        return REG_detalle.identFailed||localRec.identFailed||localRec.state?.identFailed||[];
+        // Build identFailed from Sheets ident columns
+        const failed=[];
+        if(REG_detalle.identColor==='No validado') failed.push({id:'color_ok'});
+        if(REG_detalle.identChasis==='No validado') failed.push({id:'chasis_ok'});
+        if(REG_detalle.identMotor==='No validado') failed.push({id:'motor_ok'});
+        if(failed.length>0) return failed;
+        // Fallback to local state
+        try{
+          const localRec=JSON.parse(localStorage.getItem('insp_'+REG_detalle.id)||'{}');
+          return REG_detalle.identFailed||localRec.identFailed||[];
+        }catch(e){return [];}
       })(),
       folderVehId,
       folderLink,
@@ -1687,6 +1695,9 @@ async function saveRec(existingId){
       costoRecomendado:ST.recCost,
       puntosTaller:ST.tallerItems.join(' | ')||'Ninguno',
       alertaIdentidad:identIssue?'SÍ':'No',
+      identColor:ST.ident.color_ok?.val==='No'?'No validado':ST.ident.color_ok?.val==='OK'||ST.ident.color_ok?.val==='Si'?'OK':'—',
+      identChasis:ST.ident.chasis_ok?.val==='No'?'No validado':ST.ident.chasis_ok?.val==='OK'||ST.ident.chasis_ok?.val==='Si'?'OK':'—',
+      identMotor:ST.ident.motor_ok?.val==='No'?'No validado':ST.ident.motor_ok?.val==='OK'||ST.ident.motor_ok?.val==='Si'?'OK':'—',
       observaciones:rec.obs||'—',
       carpetaDrive:folderLink,
       folderVehId:folderVeh,
@@ -2406,6 +2417,9 @@ function openRecords(){
           totalCost:parseFloat(obj['Costo Total'])||0,
           tallerItems:obj['Puntos Taller']&&obj['Puntos Taller']!=='Ninguno'?obj['Puntos Taller'].split(' | '):[],
           obs:obj['Observaciones']||'',
+          identColor:obj['Ident Color']||'—',
+          identChasis:obj['Ident Chasis']||'—',
+          identMotor:obj['Ident Motor']||'—',
           folderLink:obj['Carpeta Drive']||'',
           folderVehId:obj['Folder Veh ID']||'',
           photoLinks:local?.photoLinks||null,
