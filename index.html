@@ -3099,7 +3099,7 @@ function T_mostrarSeleccionInspeccion(matches, headers){
         <div onclick="T_seleccionarInspeccion_idx(${i})" style="background:var(--sf);border:1px solid var(--b);border-radius:var(--rsm);padding:12px;margin-bottom:8px;cursor:pointer;display:flex;justify-content:space-between;align-items:center">
           <div>
             <div style="font-size:13px;font-weight:600;color:var(--t)">${get(row,'Placa')} — ${get(row,'Modelo')||'—'}</div>
-            <div style="font-size:11px;color:var(--t3)">Fecha: ${get(row,'Fecha')||'—'} · Inspector: ${get(row,'Inspector')||'—'}</div>
+            <div style="font-size:11px;color:var(--t3)">Fecha: ${REG_formatFecha(get(row,'Fecha'))||'—'} · Inspector: ${get(row,'Inspector')||'—'}</div>
           </div>
           <span style="color:var(--t3)">›</span>
         </div>`).join('')}
