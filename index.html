@@ -3002,9 +3002,9 @@ const PUNTOS={
     {id:'p11',q:'Los platos, aros o tapones de llanta se encuentran en buenas condiciones y están completos.'},
     {id:'p12',q:'El dibujo de la banda del neumático está por arriba de 2mm de profundidad sobre el indicador de desgaste incluida la llanta de repuesto.'},
     {id:'p13',q:'Airbag(s) sin evidencia de haber sido desplegados.'},
-    {id:'p14',q:'Validar que el COLOR del vehículo coincida con el registrado en la tarjeta de circulación.',oblig:true},
-    {id:'p15',q:'Validar que el NÚMERO DE CHASIS coincida con el registrado en la tarjeta de circulación.',oblig:true},
-    {id:'p16',q:'Validar que el NÚMERO DE MOTOR coincida con el registrado en la tarjeta de circulación.',oblig:true},
+    {id:'p14',q:'Validar que el COLOR del vehículo coincida con el registrado en la tarjeta de circulación.',oblig:false,identCheck:true},
+    {id:'p15',q:'Validar que el NÚMERO DE CHASIS coincida con el registrado en la tarjeta de circulación.',oblig:false,identCheck:true},
+    {id:'p16',q:'Validar que el NÚMERO DE MOTOR coincida con el registrado en la tarjeta de circulación.',oblig:false,identCheck:true},
     {id:'p17',q:'El chasis o monocasco se encuentra en buen estado, libre de golpes y reparaciones inadecuadas durante la revisión visual.',oblig:true},
   ],
   media:[
@@ -3361,7 +3361,7 @@ function T_renderApp(){
 
   // Chips secundarios
   const vc=document.getElementById('veh-chips');
-  [T_VEH.km+' km','Inspector: '+T_VEH.inspector,T_VEH.fecha].forEach(v=>{
+  [T_VEH.km+' km','Inspector: '+T_VEH.inspector,REG_formatFecha(T_VEH.fecha)].forEach(v=>{
     const s=document.createElement('span');s.className='chip';s.textContent=v;vc.appendChild(s);
   });
 
@@ -3447,11 +3447,10 @@ function T_renderEtapa(id){
   const identFailed=T_VEH.identFailed||[];
 
   puntos.forEach(p=>{
-    // Skip identity questions that were OK in reception
-    // Only filter if we have reception data (identFailed has entries = reception was done)
-    if(identMap[p.id] && identFailed.length > 0){
+    // Identity check questions: ONLY show if reception reported a failure for this specific item
+    if(p.identCheck || identMap[p.id]){
       const failedInRecep=identFailed.some(function(f){return f.id===identMap[p.id];});
-      if(!failedInRecep) return; // Hide — was validated OK in reception
+      if(!failedInRecep) return; // Hide — not flagged by inspector
     }
     const v=T_ST[p.id]?.val;
     const div=document.createElement('div');div.className='card'+(p.oblig?' titem oblig':'');div.style='margin-bottom:8px;overflow:hidden';
