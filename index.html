@@ -2741,7 +2741,7 @@ async function pdfRec(id, enviarCorreo=true){
         }
       }catch(e){}
     }
-    if(!rec||!rec.state){showToast('⚠ No se pudo cargar el estado — verifique su conexión',true);return;}
+    if(!rec||!rec.state){hideProgress();showToast('⚠ No se pudo cargar el estado — verifique su conexión',true);return;}
   }
 
   const nLinks=rec.photoLinks?Object.keys(rec.photoLinks).length:0;
@@ -2808,7 +2808,14 @@ async function pdfRec(id, enviarCorreo=true){
     const hResp=await gPost({action:'getHallazgos',id:String(id)});
     window._pdf_hallazgos=(hResp.status==='OK'&&hResp.data)?hResp.data:[];
   }catch(e){window._pdf_hallazgos=[];}
-  genPDF();
+  try{
+    genPDF();
+  }catch(ePDF){
+    hideProgress();
+    showToast('⚠ Error generando PDF: '+ePDF.message,true);
+    console.error('genPDF error:',ePDF);
+    return;
+  }
   window._pdf_vendedor=undefined;
   window._pdf_hallazgos=undefined;
   window._pdf_transmision=undefined;
@@ -2816,8 +2823,6 @@ async function pdfRec(id, enviarCorreo=true){
   window._pdf_combustible=undefined;
   window._pdf_techo=undefined;
   window._pdf_llp=undefined;
-  window._pdf_tarjeta_img=undefined;
-  window._pdf_gastos=undefined;
   window._pdf_tarjeta_img=undefined;
   window._pdf_gastos=undefined;
   updateProgress('Finalizando...','Paso 4 de 4 — Descargando archivo');
