@@ -644,7 +644,11 @@ async function REG_editarRevision(){
       mecanico:REG_detalle.mecanico||'—',
       fecha:REG_detalle.fecha||'',
       hallazgos:[],hallazgosPintura:[],totalPintura:0,
-      identFailed:REG_detalle.identFailed||[],
+      identFailed:(()=>{
+        // Try rec.identFailed, then local state, then Sheets
+        const localRec=JSON.parse(localStorage.getItem('insp_'+REG_detalle.id)||'{}');
+        return REG_detalle.identFailed||localRec.identFailed||localRec.state?.identFailed||[];
+      })(),
       folderVehId,
       folderLink,
       numRevisionActual:REG_detalle.numRevision,
@@ -1683,7 +1687,6 @@ async function saveRec(existingId){
       costoRecomendado:ST.recCost,
       puntosTaller:ST.tallerItems.join(' | ')||'Ninguno',
       alertaIdentidad:identIssue?'SÍ':'No',
-      IdentidadFailed:JSON.stringify(Object.entries(ST.ident).filter(([k,v])=>v.val==='No'||v.val==='NV').map(([k])=>k)),
       observaciones:rec.obs||'—',
       carpetaDrive:folderLink,
       folderVehId:folderVeh,
@@ -2410,7 +2413,7 @@ function openRecords(){
           state:local?.state||null,
           svc:local?.svc||null,
           llantas:local?.llantas||null,
-          identFailed:(()=>{try{const f=obj['Identidad Fallida']||obj['IdentidadFailed']||'[]';return JSON.parse(f).map(k=>({id:k}));}catch(e){return [];}})(),
+
         };
       }).filter(r=>r.id&&r.placa);
       if(recs.length){
@@ -2741,7 +2744,16 @@ async function pdfRec(id, enviarCorreo=true){
         }
       }catch(e){}
     }
-    if(!rec||!rec.state){hideProgress();showToast('⚠ No se pudo cargar el estado — verifique su conexión',true);return;}
+    if(!rec||!rec.state){
+      // No full state available — generate basic PDF from Sheets data only
+      if(sheetsRec){
+        rec={...sheetsRec,state:null,svc:sheetsRec.svc||{},llantas:sheetsRec.llantas||{},vtype:sheetsRec.vtype||''};
+      } else {
+        hideProgress();
+        showToast('⚠ No se pudo cargar el estado — verifique su conexión',true);
+        return;
+      }
+    }
   }
 
   const nLinks=rec.photoLinks?Object.keys(rec.photoLinks).length:0;
