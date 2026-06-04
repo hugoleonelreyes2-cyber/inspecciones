@@ -1844,7 +1844,7 @@ async function generarPDFBlob(){
   dibujarDonaEnPDF(doc,r,14,y,40);
   rankingGridPDF(doc,r,58,y,138);
   y+=44;
-    y+=3;y=sec('ESTIMACIÓN DE INVERSIÓN',y);doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(0);doc.text('Total:',14,y);doc.text(fQ(ST.totalCost),195,y,{align:'right'});y+=8;
+    y+=3;y=sec('ESTIMACIÓN DE INVERSIÓN',y);doc.setFillColor(27,111,216);doc.rect(12,y-3,186,9,'F');doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(255,255,255);doc.text('Total:',16,y+2);doc.text(fQ(ST.totalCost),196,y+2,{align:'right'});y+=13;
     if(ST.tallerItems.length){y=sec('PUNTOS PARA REVISIÓN EN TALLER',y);doc.setFontSize(8);doc.setFont('helvetica','normal');ST.tallerItems.forEach(t=>{if(y>270){doc.addPage();y=20;}doc.setFillColor(255,243,205);doc.rect(12,y-3,186,5.5,'F');doc.text('• '+t,14,y);y+=6;});y+=3;}
     y=sec('HALLAZGOS DETALLADOS',y);
     const extH=Object.values(ST.extD).filter(d=>d.tipo&&d.tipo!=='OK'),intH=Object.values(ST.intD).filter(d=>d.tipo&&d.tipo!=='OK');
@@ -2078,7 +2078,7 @@ function genPDF(){
   dibujarDonaEnPDF(doc,r,14,y,40);
   rankingGridPDF(doc,r,58,y,138);
   y+=44;
-  y+=3;y=sec('ESTIMACIÓN DE INVERSIÓN',y);doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(0);doc.text('Total:',14,y);doc.text(fQ(ST.totalCost),195,y,{align:'right'});y+=8;
+  y+=3;y=sec('ESTIMACIÓN DE INVERSIÓN',y);doc.setFillColor(27,111,216);doc.rect(12,y-3,186,9,'F');doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(255,255,255);doc.text('Total:',16,y+2);doc.text(fQ(ST.totalCost),196,y+2,{align:'right'});y+=13;
   if(ST.tallerItems.length){y=sec('PUNTOS PARA REVISIÓN EN TALLER',y);doc.setFontSize(8);doc.setFont('helvetica','normal');ST.tallerItems.forEach(t=>{if(y>270){doc.addPage();y=20;}doc.setFillColor(255,243,205);doc.rect(12,y-3,186,5.5,'F');doc.text('• '+t,14,y);y+=6;});y+=3;}
   y=sec('HALLAZGOS DETALLADOS',y);
   const extH=Object.values(ST.extD).filter(d=>d.tipo&&d.tipo!=='OK'),intH=Object.values(ST.intD).filter(d=>d.tipo&&d.tipo!=='OK');
@@ -2174,13 +2174,7 @@ function genPDF(){
       }
       y+=rowH+1;
     });
-    if(gastosTot>0){
-      y+=2;doc.setFillColor(253,236,235);doc.rect(14,y-3,182,8,'F');
-      doc.setDrawColor(192,57,43);doc.setLineWidth(0.3);doc.rect(14,y-3,182,8,'S');
-      doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(192,57,43);
-      doc.text('Total gastos complementarios:',16,y+1);doc.text(fQ(gastosTot),195,y+1,{align:'right'});
-      doc.setLineWidth(0.3);y+=12;
-    }
+    if(gastosTot>0){y+=4;}
   }
   const obs=document.getElementById('obs').value;if(obs){y+=4;if(y>260){doc.addPage();y=20;}y=sec('OBSERVACIONES',y);doc.setFontSize(8);doc.setFont('helvetica','normal');doc.setTextColor(0);const lines=doc.splitTextToSize(obs,182);doc.text(lines,14,y);y+=lines.length*4+4;}
 
