@@ -3195,6 +3195,16 @@ async function T_seleccionarInspeccion(row, headers){
     })(),
     totalPintura:0,
     hallazgosPintura:[],
+    identColor:get('Ident Color')||'—',
+    identChasis:get('Ident Chasis')||'—',
+    identMotor:get('Ident Motor')||'—',
+    identFailed:(()=>{
+      const failed=[];
+      if((get('Ident Color')||'—')==='No validado') failed.push({id:'color_ok'});
+      if((get('Ident Chasis')||'—')==='No validado') failed.push({id:'chasis_ok'});
+      if((get('Ident Motor')||'—')==='No validado') failed.push({id:'motor_ok'});
+      return failed;
+    })(),
   };
 
   // Load hallazgos from reception inspection
