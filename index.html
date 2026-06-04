@@ -1804,7 +1804,7 @@ async function generarPDFBlob(){
     const sec=(title,yy)=>{doc.setFillColor(240,238,233);doc.rect(12,yy-4,186,7,'F');doc.setFontSize(10);doc.setFont('helvetica','bold');doc.setTextColor(27,111,216);doc.text(title,14,yy);return yy+7;};
     y=sec('DATOS DEL VEHÍCULO',y);doc.setTextColor(0);doc.setFontSize(9);
     const vendedor=document.getElementById('vendedor')?.value||window._pdf_vendedor||'—';
-  const categoria=VTYPES.find(v=>v.k===ST.vtype)?.l||'—';
+  const categoria=VTYPES.find(v=>v.k===ST.vtype)?.l||window._pdf_tipoVehiculo||'—';
   const transmisionPDF=ST.transmision?(ST.transmision==='automatica'?'Automatica':'Mecanica'):(window._pdf_transmision||'—');
   const traccionPDF=ST.traccion||window._pdf_traccion||'—';
   const datosCol1=[[' Vehículo:',modelo],[' Placa:',placa],[' Color:',color],[' Km:',km+' km'],[' Chasis:',chasis]];
@@ -1824,13 +1824,13 @@ async function generarPDFBlob(){
       doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(80,78,72);
       doc.text(col1[i][0],col1x,y);
       doc.setFont('helvetica','normal');doc.setTextColor(20,20,18);
-      doc.text(String(col1[i][1]||'—').toUpperCase().substring(0,30),col1x+labelW,y);
+      doc.text(String(col1[i][1]||'—').toUpperCase().substring(0,26),col1x+labelW,y);
     }
     if(col2[i]){
       doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(80,78,72);
       doc.text(col2[i][0],col2x,y);
       doc.setFont('helvetica','normal');doc.setTextColor(20,20,18);
-      doc.text(String(col2[i][1]||'—').toUpperCase().substring(0,30),col2x+labelW,y);
+      doc.text(String(col2[i][1]||'—').toUpperCase().substring(0,26),col2x+labelW,y);
     }
     y+=5;
   }
@@ -1844,7 +1844,7 @@ async function generarPDFBlob(){
   dibujarDonaEnPDF(doc,r,14,y,40);
   rankingGridPDF(doc,r,58,y,138);
   y+=44;
-    y+=3;y=sec('ESTIMACIÓN DE INVERSIÓN',y);doc.setFillColor(27,111,216);doc.rect(12,y-3,186,9,'F');doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(255,255,255);doc.text('Total:',16,y+2);doc.text(fQ(ST.totalCost),196,y+2,{align:'right'});y+=13;
+    y+=3;y=sec('ESTIMACIÓN DE INVERSIÓN',y);doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(0);doc.text('Total:',14,y);doc.text(fQ(ST.totalCost),195,y,{align:'right'});y+=8;
     if(ST.tallerItems.length){y=sec('PUNTOS PARA REVISIÓN EN TALLER',y);doc.setFontSize(8);doc.setFont('helvetica','normal');ST.tallerItems.forEach(t=>{if(y>270){doc.addPage();y=20;}doc.setFillColor(255,243,205);doc.rect(12,y-3,186,5.5,'F');doc.text('• '+t,14,y);y+=6;});y+=3;}
     y=sec('HALLAZGOS DETALLADOS',y);
     const extH=Object.values(ST.extD).filter(d=>d.tipo&&d.tipo!=='OK'),intH=Object.values(ST.intD).filter(d=>d.tipo&&d.tipo!=='OK');
@@ -1928,17 +1928,7 @@ async function generarPDFBlob(){
           doc.text(fQ(f.c),195,y,{align:'right'});
           y+=rowH+1;
         });
-        // Total deducciones
-        if(totalDeducc2>0){
-          y+=2;
-          doc.setFillColor(253,236,235);doc.rect(14,y-3,182,8,'F');
-          doc.setDrawColor(192,57,43);doc.setLineWidth(0.3);doc.rect(14,y-3,182,8,'S');
-          doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(192,57,43);
-          doc.text('Total deducciones:',16,y+1);
-          doc.text(fQ(totalDeducc2),195,y+1,{align:'right'});
-          doc.setLineWidth(0.3);
-          y+=12;
-        }
+        if(totalDeducc2>0){y+=4;}
       }
     }
     const obs=document.getElementById('obs').value;if(obs){y+=4;if(y>260){doc.addPage();y=20;}y=sec('OBSERVACIONES',y);doc.setFontSize(8);doc.setFont('helvetica','normal');doc.setTextColor(0);const lines=doc.splitTextToSize(obs,182);doc.text(lines,14,y);y+=lines.length*4+4;}
@@ -2048,7 +2038,7 @@ function genPDF(){
   const sec=(title,yy)=>{doc.setFillColor(240,238,233);doc.rect(12,yy-4,186,7,'F');doc.setFontSize(10);doc.setFont('helvetica','bold');doc.setTextColor(27,111,216);doc.text(title,14,yy);return yy+7;};
   y=sec('DATOS DEL VEHÍCULO',y);doc.setTextColor(0);doc.setFontSize(9);
   const vendedor=document.getElementById('vendedor')?.value||window._pdf_vendedor||'—';
-  const categoria=VTYPES.find(v=>v.k===ST.vtype)?.l||'—';
+  const categoria=VTYPES.find(v=>v.k===ST.vtype)?.l||window._pdf_tipoVehiculo||'—';
   const datosCol1=[[' Vehículo:',modelo],[' Placa:',placa],[' Color:',color],[' Km:',km+' km'],[' Chasis:',chasis]];
   const transmisionPDF2=ST.transmision?(ST.transmision==='automatica'?'Automatica':'Mecanica'):(window._pdf_transmision||'—');
   const traccionPDF2=ST.traccion||window._pdf_traccion||'—';
@@ -2068,13 +2058,13 @@ function genPDF(){
       doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(80,78,72);
       doc.text(col1[i][0],col1x,y);
       doc.setFont('helvetica','normal');doc.setTextColor(20,20,18);
-      doc.text(String(col1[i][1]||'—').toUpperCase().substring(0,30),col1x+labelW,y);
+      doc.text(String(col1[i][1]||'—').toUpperCase().substring(0,26),col1x+labelW,y);
     }
     if(col2[i]){
       doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(80,78,72);
       doc.text(col2[i][0],col2x,y);
       doc.setFont('helvetica','normal');doc.setTextColor(20,20,18);
-      doc.text(String(col2[i][1]||'—').toUpperCase().substring(0,30),col2x+labelW,y);
+      doc.text(String(col2[i][1]||'—').toUpperCase().substring(0,26),col2x+labelW,y);
     }
     y+=5;
   }
@@ -2088,7 +2078,7 @@ function genPDF(){
   dibujarDonaEnPDF(doc,r,14,y,40);
   rankingGridPDF(doc,r,58,y,138);
   y+=44;
-  y+=3;y=sec('ESTIMACIÓN DE INVERSIÓN',y);doc.setFillColor(27,111,216);doc.rect(12,y-3,186,9,'F');doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(255,255,255);doc.text('Total:',16,y+2);doc.text(fQ(ST.totalCost),196,y+2,{align:'right'});y+=13;
+  y+=3;y=sec('ESTIMACIÓN DE INVERSIÓN',y);doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(0);doc.text('Total:',14,y);doc.text(fQ(ST.totalCost),195,y,{align:'right'});y+=8;
   if(ST.tallerItems.length){y=sec('PUNTOS PARA REVISIÓN EN TALLER',y);doc.setFontSize(8);doc.setFont('helvetica','normal');ST.tallerItems.forEach(t=>{if(y>270){doc.addPage();y=20;}doc.setFillColor(255,243,205);doc.rect(12,y-3,186,5.5,'F');doc.text('• '+t,14,y);y+=6;});y+=3;}
   y=sec('HALLAZGOS DETALLADOS',y);
   const extH=Object.values(ST.extD).filter(d=>d.tipo&&d.tipo!=='OK'),intH=Object.values(ST.intD).filter(d=>d.tipo&&d.tipo!=='OK');
@@ -2151,14 +2141,7 @@ function genPDF(){
         doc.setFont('helvetica','bold');doc.text(fQ(f.c),195,y,{align:'right'});
         y+=lines.length>1?lines.length*4.5+1:6;
       });
-      if(totalDeducc>0){
-        y+=2;
-        doc.setFillColor(253,236,235);doc.rect(12,y-3,186,8,'F');
-        doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(192,57,43);
-        doc.text('Total deducciones:',14,y+1);
-        doc.text(fQ(totalDeducc),195,y+1,{align:'right'});
-        y+=10;
-      }
+      if(totalDeducc>0){y+=4;}
     }
   }
   // ── GASTOS COMPLEMENTARIOS ── (after Sheets merge so all sources are available)
@@ -2176,13 +2159,28 @@ function genPDF(){
       var brdC=costoG>0?[192,57,43]:[178,176,166];
       doc.setFillColor(bgC[0],bgC[1],bgC[2]);doc.rect(14,y-3.5,182,rowH,'F');
       doc.setFillColor(brdC[0],brdC[1],brdC[2]);doc.rect(14,y-3.5,2,rowH,'F');
-      doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(30,30,28);
-      var lines=doc.splitTextToSize(g.desc||'Sin descripcion',150);
-      doc.text(lines,18,y);
-      if(costoG>0){doc.setFont('helvetica','bold');doc.setTextColor(192,57,43);doc.text(fQ(costoG),195,y,{align:'right'});}
+      if(costoG>0){
+        doc.setFillColor(192,57,43);doc.roundedRect(17,y-2.5,20,4.5,1,1,'F');
+        doc.setFont('helvetica','bold');doc.setFontSize(6);doc.setTextColor(255,255,255);
+        doc.text('DEDUCCION',27,y+0.2,{align:'center'});
+        doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(30,30,28);
+        var lines=doc.splitTextToSize(g.desc||'Sin descripcion',126);
+        doc.text(lines,39,y);
+        doc.setFont('helvetica','bold');doc.setTextColor(192,57,43);doc.text(fQ(costoG),195,y,{align:'right'});
+      } else {
+        doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(30,30,28);
+        var lines=doc.splitTextToSize(g.desc||'Sin descripcion',150);
+        doc.text(lines,18,y);
+      }
       y+=rowH+1;
     });
-    if(gastosTot>0){y+=4;}
+    if(gastosTot>0){
+      y+=2;doc.setFillColor(253,236,235);doc.rect(14,y-3,182,8,'F');
+      doc.setDrawColor(192,57,43);doc.setLineWidth(0.3);doc.rect(14,y-3,182,8,'S');
+      doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(192,57,43);
+      doc.text('Total gastos complementarios:',16,y+1);doc.text(fQ(gastosTot),195,y+1,{align:'right'});
+      doc.setLineWidth(0.3);y+=12;
+    }
   }
   const obs=document.getElementById('obs').value;if(obs){y+=4;if(y>260){doc.addPage();y=20;}y=sec('OBSERVACIONES',y);doc.setFontSize(8);doc.setFont('helvetica','normal');doc.setTextColor(0);const lines=doc.splitTextToSize(obs,182);doc.text(lines,14,y);y+=lines.length*4+4;}
 
@@ -2423,6 +2421,7 @@ function openRecords(){
           llavePresencia:obj['Llave Presencia']||'',
           vendedor:obj['Vendedor']||'',
           vtype:local?.vtype||'',
+          tipoVehiculo:obj['Tipo Vehiculo']||obj['Tipo Vehículo']||'',
           ranking:{
             global:+obj['Ranking General']||0,
             exterior:+obj['Ranking Exterior']||0,
@@ -2838,6 +2837,7 @@ async function pdfRec(id, enviarCorreo=true){
   updateProgress('Generando PDF...','Paso 3 de 4 — Construyendo documento');
   await new Promise(r=>setTimeout(r,200));
   window._pdf_vendedor=rec.vendedor||'—';
+  window._pdf_tipoVehiculo=rec.tipoVehiculo||'';
   window._pdf_transmision=rec.transmision||'';
   window._pdf_traccion=rec.traccion||'';
   window._pdf_combustible=rec.combustible||'';
@@ -2860,6 +2860,7 @@ async function pdfRec(id, enviarCorreo=true){
     return;
   }
   window._pdf_vendedor=undefined;
+  window._pdf_tipoVehiculo=undefined;
   window._pdf_hallazgos=undefined;
   window._pdf_transmision=undefined;
   window._pdf_traccion=undefined;
