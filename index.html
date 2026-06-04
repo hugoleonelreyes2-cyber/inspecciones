@@ -1491,7 +1491,8 @@ function buildSummary(){
   const fRowsAll=[...extH.map(d=>({l:`Exterior: ${d.pieza} (${d.tipo}${d.nivel})`,c:d.costo,cat:d.costo>0?'u':'reg'})),...intH.map(d=>({l:`Interior: ${d.pieza} (${d.tipo}${d.nivel})`,c:d.costo,cat:d.costo>0?'u':'reg'})),...qH.map(d=>({l:d.l,c:d.costo,cat:d.taller&&(d.val==='Mal'||(d.invertida&&d.val==='Si'))?'t':d.costo>0?'r':'reg'})),...(ST.svc.costo>0?[{l:`Servicio ${ST.svc.tipo}${ST.svc.combustible}`,c:ST.svc.costo,cat:'r'}]:[]),...(ST.llantas.precio_x4>0?[{l:`Llantas ${ST.llantas.medida} (x4)`,c:ST.llantas.precio_x4,cat:'r'}]:[])];
   const fRows=[...fRowsAll.filter(f=>f.c===0),...fRowsAll.filter(f=>f.c>0)];
   const fSinCosto=fRows.filter(f=>f.c===0);
-  const fConCosto=fRows.filter(f=>f.c>0);
+  const gastosConCosto=(ST.gastos||[]).filter(g=>g.costo>0).map(g=>({l:g.desc||'Sin descripcion',c:g.costo}));
+  const fConCosto=[...fRows.filter(f=>f.c>0),...gastosConCosto];
   const totalDeducc=fConCosto.reduce((s,f)=>s+f.c,0);
   const fHtml=(fRows.length?(
     (fSinCosto.length?`<div style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.4px;padding:4px 0 2px">Sin deducción — solo registro</div>`+fSinCosto.map(f=>`<div class="f-item" style="border-left:2px solid var(--b2);padding-left:6px"><span><span class="badge b-reg">REGISTRO</span>${f.l}</span></div>`).join(''):'')
@@ -2158,7 +2159,7 @@ function genPDF(){
       var bgC=costoG>0?[253,236,235]:[247,246,243];
       var brdC=costoG>0?[192,57,43]:[178,176,166];
       doc.setFillColor(costoG>0?253:247,costoG>0?236:246,costoG>0?235:243);doc.rect(12,y-3.5,186,rowH,'F');
-      doc.setFillColor(costoG>0?192:178,costoG>0?57:176,costoG>0?43:166);doc.rect(12,y-3.5,2,rowH,'F');
+      doc.setFillColor(costoG>0?192:136,costoG>0?57:135,costoG>0?43:128);doc.rect(12,y-3.5,2,rowH,'F');
       if(costoG>0){
         doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(192,57,43);
         doc.text('[DEDUCCION]',14,y);
