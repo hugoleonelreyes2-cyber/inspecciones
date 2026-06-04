@@ -2158,15 +2158,15 @@ function genPDF(){
       var bgC=costoG>0?[253,236,235]:[247,246,243];
       var brdC=costoG>0?[192,57,43]:[178,176,166];
       doc.setFillColor(bgC[0],bgC[1],bgC[2]);doc.rect(14,y-3.5,182,rowH,'F');
+      if(costoG>0){doc.setDrawColor(192,57,43);doc.setLineWidth(0.4);doc.rect(14,y-3.5,182,rowH,'S');doc.setLineWidth(0.3);}
       doc.setFillColor(brdC[0],brdC[1],brdC[2]);doc.rect(14,y-3.5,2,rowH,'F');
       if(costoG>0){
-        doc.setFillColor(192,57,43);doc.roundedRect(17,y-2.5,20,4.5,1,1,'F');
-        doc.setFont('helvetica','bold');doc.setFontSize(6);doc.setTextColor(255,255,255);
-        doc.text('DEDUCCION',27,y+0.2,{align:'center'});
-        doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(30,30,28);
-        var lines=doc.splitTextToSize(g.desc||'Sin descripcion',126);
-        doc.text(lines,39,y);
-        doc.setFont('helvetica','bold');doc.setTextColor(192,57,43);doc.text(fQ(costoG),195,y,{align:'right'});
+        doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(192,57,43);
+        doc.text('[DEDUCCION]',16,y);
+        doc.setFont('helvetica','normal');doc.setTextColor(0);
+        var lines=doc.splitTextToSize(g.desc||'Sin descripcion',132);
+        doc.text(lines,48,y);
+        doc.setFont('helvetica','bold');doc.text(fQ(costoG),195,y,{align:'right'});
       } else {
         doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(30,30,28);
         var lines=doc.splitTextToSize(g.desc||'Sin descripcion',150);
