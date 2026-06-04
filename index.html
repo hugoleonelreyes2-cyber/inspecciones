@@ -2157,15 +2157,14 @@ function genPDF(){
       gastosTot+=costoG;
       var bgC=costoG>0?[253,236,235]:[247,246,243];
       var brdC=costoG>0?[192,57,43]:[178,176,166];
-      doc.setFillColor(bgC[0],bgC[1],bgC[2]);doc.rect(14,y-3.5,182,rowH,'F');
-      if(costoG>0){doc.setDrawColor(192,57,43);doc.setLineWidth(0.4);doc.rect(14,y-3.5,182,rowH,'S');doc.setLineWidth(0.3);}
-      doc.setFillColor(brdC[0],brdC[1],brdC[2]);doc.rect(14,y-3.5,2,rowH,'F');
+      doc.setFillColor(costoG>0?253:247,costoG>0?236:246,costoG>0?235:243);doc.rect(12,y-3.5,186,rowH,'F');
+      doc.setFillColor(costoG>0?192:178,costoG>0?57:176,costoG>0?43:166);doc.rect(12,y-3.5,2,rowH,'F');
       if(costoG>0){
         doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(192,57,43);
-        doc.text('[DEDUCCION]',16,y);
+        doc.text('[DEDUCCION]',14,y);
         doc.setFont('helvetica','normal');doc.setTextColor(0);
         var lines=doc.splitTextToSize(g.desc||'Sin descripcion',132);
-        doc.text(lines,48,y);
+        doc.text(lines,46,y);
         doc.setFont('helvetica','bold');doc.text(fQ(costoG),195,y,{align:'right'});
       } else {
         doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(30,30,28);
