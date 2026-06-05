@@ -1960,8 +1960,7 @@ async function generarPDFBlob(){
 // ── HELPER: dibujar dona en jsPDF canvas ──
 function dibujarDonaEnPDF(doc, r, x, y, size){
   const totalPts=25;
-  const vals=Object.values(r);
-  const okPts=vals[0]+vals[1]+vals[2]+vals[3]+vals[4];
+  const okPts=(r.exterior||0)+(r.interior||0)+(r.mecanica||0)+(r.electrico||0)+(r.dinamica||0);
   const pct=Math.round(okPts/totalPts*100);
   const hexCol=pct>=80?'#3B6D11':pct>=60?'#BA7517':'#A32D2D';
   // Alta resolucion para texto claro
@@ -2034,7 +2033,6 @@ function genPDF(){
   if(typeof window.jspdf==='undefined'){showToast('⚠ Cargando PDF, reintente');return;}
   const {jsPDF}=window.jspdf;const doc=new jsPDF({orientation:'p',unit:'mm',format:'a4'});
   const modelo=document.getElementById('modelo').value||'Sin modelo',placa=document.getElementById('placa').value||'Sin placa',color=document.getElementById('color').value||'—',inspector=document.getElementById('inspector').value||'—',km=document.getElementById('km').value||'—',chasis=document.getElementById('chasis').value||'—',nmotor=document.getElementById('nmotor').value||'—',fecha=new Date().toLocaleDateString('es-GT'),r=ST.ranking;
-  console.log('[genPDF2-r]',JSON.stringify(r));
   let y=0;
   doc.setFillColor(27,111,216);doc.rect(0,0,210,32,'F');doc.setTextColor(255,255,255);doc.setFontSize(17);doc.setFont('helvetica','bold');doc.text('INFORME TÉCNICO DE INSPECCIÓN',105,13,{align:'center'});doc.setFontSize(9);doc.setFont('helvetica','normal');doc.text('División de Vehículos Usados · Inspección Rápida · '+fecha,105,22,{align:'center'});y=40;
   const sec=(title,yy)=>{doc.setFillColor(240,238,233);doc.rect(12,yy-4,186,7,'F');doc.setFontSize(10);doc.setFont('helvetica','bold');doc.setTextColor(27,111,216);doc.text(title,14,yy);return yy+7;};
@@ -2835,7 +2833,6 @@ async function pdfRec(id, enviarCorreo=true){
   // Forzar ranking desde SHEETS_RECS para garantizar consistencia con la dona
   const sheetsRec=SHEETS_RECS[id]||SHEETS_RECS[String(id)];
   ST.ranking=sheetsRec?.ranking||rec.ranking||ST.ranking;
-  console.log('[PDF-RANKING] sheetsRec.ranking=',JSON.stringify(sheetsRec?.ranking),'ST.ranking=',JSON.stringify(ST.ranking));
   // Load hallazgos from Sheets for older records
   try{
     const hResp=await gPost({action:'getHallazgos',id:String(id)});
