@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- VERSION: 12.7 - FIXES: PDF datos vehiculo, gastos dedup -->
+<!-- VERSION: 12.8 - FIXES: PDF datos, identidad taller, gastos -->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -3486,6 +3486,12 @@ function T_renderEtapa(id){
     const ref=document.createElement('div');ref.className='card';
     ref.innerHTML=`<div class="card-hdr" style="background:var(--amber-bg);color:var(--amber-t)">⚠ Hallazgos del inspector de recepción — referencia</div><div class="card-body">${todosHallazgos.map(h=>`<div style="padding:5px 0;border-bottom:1px solid var(--amber-b);font-size:12px;color:var(--amber-t)"><strong>${h.sec}:</strong> ${h.desc}</div>`).join('')}</div>`;
     c.appendChild(ref);
+  }
+  // Alerta de identidad — mostrar si hay discrepancia reportada en recepción
+  if((T_VEH.identFailed||[]).length){
+    const identAlert=document.createElement('div');identAlert.className='card';
+    identAlert.innerHTML=`<div style="background:#FEE2E2;border-left:4px solid #DC2626;padding:10px 14px;border-radius:6px"><div style="font-size:13px;font-weight:700;color:#DC2626">🔴 ALERTA: Verificación de identidad del vehículo</div><div style="font-size:12px;color:#991B1B;margin-top:4px">El inspector de recepción reportó discrepancia en: ${(T_VEH.identFailed||[]).map(f=>({color_ok:'COLOR',chasis_ok:'CHASIS',motor_ok:'MOTOR'})[f.id]||f.id).join(', ')}. Verificar con tarjeta de circulación antes de continuar.</div></div>`;
+    c.appendChild(identAlert);
   }
   // Hallazgos de pintura (solo en piso)
   if(id==='piso'&&T_VEH.hallazgosPintura&&T_VEH.hallazgosPintura.length){
