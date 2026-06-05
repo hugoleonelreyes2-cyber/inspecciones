@@ -2831,6 +2831,8 @@ async function pdfRec(id, enviarCorreo=true){
   window._pdf_gastos=(rec.state?.gastos&&rec.state.gastos.length>0)?rec.state.gastos:(ST.gastos&&ST.gastos.length>0?ST.gastos:[]);
   // Tarjeta img — may already be in IMGS from local, or downloaded from Drive
   window._pdf_gastos=rec.state?.gastos||ST.gastos||[];
+  // Forzar ranking desde Sheets para garantizar consistencia con la dona
+  ST.ranking=rec.ranking||ST.ranking;
   // Load hallazgos from Sheets for older records
   try{
     const hResp=await gPost({action:'getHallazgos',id:String(id)});
