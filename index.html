@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- VERSION: 12.9 - FIXES: gastos PDF auto, datos vehiculo, identidad taller -->
+<!-- VERSION: 13.0 - FIXES: gastos PDF auto, state Drive, identidad taller -->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -1723,6 +1723,15 @@ async function saveRec(existingId){
     // 6. Generar PDF completo con fotos y enviar por correo
     updateProgress('Generando PDF completo con fotos...','Paso 5 de 5 — Casi listo');
     try{
+      window._pdf_modelo=rec.modelo||'';
+      window._pdf_placa=rec.placa||placa||'';
+      window._pdf_color=rec.color||'';
+      window._pdf_km=String(rec.km||'');
+      window._pdf_chasis=rec.chasis||'';
+      window._pdf_nmotor=rec.nmotor||'';
+      window._pdf_inspector=rec.inspector||'';
+      window._pdf_obs=rec.obs||'';
+      window._pdf_gastos=ST.gastos||[];
       // Generar PDF completo (con fotos) y convertir a base64 para adjuntar
       const {jsPDF}=window.jspdf;
       // Usar genPDF que ya incluye todas las fotos del IMGS actual
@@ -1800,7 +1809,7 @@ async function generarPDFBlob(){
     if(!window._pdf_gastos||!window._pdf_gastos.length) window._pdf_gastos=ST.gastos||[];
     const {jsPDF}=window.jspdf;
     const doc=new jsPDF({orientation:'p',unit:'mm',format:'a4'});
-    const modelo=document.getElementById('modelo').value||'Sin modelo',placa=document.getElementById('placa').value||'Sin placa',color=document.getElementById('color').value||'—',inspector=document.getElementById('inspector').value||'—',km=document.getElementById('km').value||'—',chasis=document.getElementById('chasis').value||'—',nmotor=document.getElementById('nmotor').value||'—',fecha=new Date().toLocaleDateString('es-GT',{day:'2-digit',month:'2-digit',year:'numeric'}),r=ST.ranking;
+    const modelo=document.getElementById('modelo').value||window._pdf_modelo||'Sin modelo',placa=document.getElementById('placa').value||window._pdf_placa||'Sin placa',color=document.getElementById('color').value||window._pdf_color||'—',inspector=document.getElementById('inspector').value||window._pdf_inspector||'—',km=document.getElementById('km').value||window._pdf_km||'—',chasis=document.getElementById('chasis').value||window._pdf_chasis||'—',nmotor=document.getElementById('nmotor').value||window._pdf_nmotor||'—',fecha=new Date().toLocaleDateString('es-GT',{day:'2-digit',month:'2-digit',year:'numeric'}),r=ST.ranking;
 
     let y=0;
     doc.setFillColor(27,111,216);doc.rect(0,0,210,32,'F');doc.setTextColor(255,255,255);doc.setFontSize(17);doc.setFont('helvetica','bold');doc.text('INFORME TÉCNICO DE INSPECCIÓN',105,13,{align:'center'});doc.setFontSize(9);doc.setFont('helvetica','normal');doc.text('División de Vehículos Usados · Inspección Rápida · '+fecha,105,22,{align:'center'});y=40;
@@ -2557,6 +2566,25 @@ function viewRec(id){
   const local=(() => { try{return JSON.parse(localStorage.getItem('insp_'+id));}catch(e){return null;} })();
   const rec=sheetsRec||local;
   if(!rec){showToast('⚠ Registro no encontrado — intente reabrir el panel',true);return;}
+  // Si no hay state local, cargar desde Drive en background y actualizar vista
+  if(!local?.state){
+    const folderId=rec.folderVehId||(rec.folderLink?.match(/folders\/([a-zA-Z0-9_-]+)/)?.[1]);
+    if(folderId){
+      gPost({action:'getState',id:String(id),folderId}).then(resp=>{
+        if(resp.status==='OK'&&resp.state){
+          try{
+            const state=JSON.parse(resp.state);
+            const existing=local?{...local}:{};
+            existing.state=state;
+            if(state.imgs) existing.imgs=state.imgs;
+            if(state.photoLinks) existing.photoLinks=state.photoLinks;
+            localStorage.setItem('insp_'+id,JSON.stringify(existing));
+            viewRec(id);
+          }catch(e){}
+        }
+      }).catch(()=>{});
+    }
+  }
 
   const panel=document.getElementById('records-panel');
   const fotoLbls={'photo_0':'Portada web','photo_1':'Frente','photo_2':'Lateral izquierdo','photo_3':'Trasero','photo_4':'Lateral derecho','photo_5':'Tablero encendido','photo_6':'Interior frontal','photo_7':'Interior trasero','photo_tarjeta':'Tarjeta de circulación'};
@@ -3488,6 +3516,12 @@ function T_renderEtapa(id){
     const ref=document.createElement('div');ref.className='card';
     ref.innerHTML=`<div class="card-hdr" style="background:var(--amber-bg);color:var(--amber-t)">⚠ Hallazgos del inspector de recepción — referencia</div><div class="card-body">${todosHallazgos.map(h=>`<div style="padding:5px 0;border-bottom:1px solid var(--amber-b);font-size:12px;color:var(--amber-t)"><strong>${h.sec}:</strong> ${h.desc}</div>`).join('')}</div>`;
     c.appendChild(ref);
+  }
+  // Alerta identidad en taller
+  if((T_VEH.identFailed||[]).length){
+    const identAlert=document.createElement('div');identAlert.className='card';
+    identAlert.innerHTML=`<div style="background:#FEE2E2;border-left:4px solid #DC2626;padding:10px 14px;border-radius:0 6px 6px 0"><div style="font-size:13px;font-weight:700;color:#DC2626">🔴 ALERTA: Verificación de identidad del vehículo</div><div style="font-size:12px;color:#991B1B;margin-top:4px">El inspector reportó discrepancia en: <strong>${(T_VEH.identFailed||[]).map(f=>({color_ok:'COLOR',chasis_ok:'CHASIS',motor_ok:'MOTOR'})[f.id]||f.id).join(', ')}</strong>. Verificar con tarjeta de circulación antes de continuar.</div></div>`;
+    c.appendChild(identAlert);
   }
   // Alerta identidad
   if((T_VEH.identFailed||[]).length){
