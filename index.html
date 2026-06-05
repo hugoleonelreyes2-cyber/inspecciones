@@ -1932,7 +1932,7 @@ async function generarPDFBlob(){
         if(totalDeducc2>0){y+=4;}
       }
     }
-    const obs=document.getElementById('obs').value;if(obs){y+=4;if(y>260){doc.addPage();y=20;}y=sec('OBSERVACIONES',y);doc.setFontSize(8);doc.setFont('helvetica','normal');doc.setTextColor(0);const lines=doc.splitTextToSize(obs,182);doc.text(lines,14,y);y+=lines.length*4+4;}
+    const obs=document.getElementById('obs').value||window._pdf_obs||'';if(obs){y+=4;if(y>260){doc.addPage();y=20;}y=sec('OBSERVACIONES',y);doc.setFontSize(8);doc.setFont('helvetica','normal');doc.setTextColor(0);const lines=doc.splitTextToSize(obs,182);doc.text(lines,14,y);y+=lines.length*4+4;}
     // Fotos
     const tarjetaImg=IMGS['photo_tarjeta']?[['photo_tarjeta',IMGS['photo_tarjeta']]]:[]; const hallazgoImgs=[...tarjetaImg,...Object.entries(IMGS).filter(([k])=>!k.startsWith('photo_')&&k!=='photo_tarjeta')];
     if(hallazgoImgs.length){
@@ -2032,7 +2032,7 @@ function rankingGridPDF(doc, r, x, y, w){
 function genPDF(){
   if(typeof window.jspdf==='undefined'){showToast('⚠ Cargando PDF, reintente');return;}
   const {jsPDF}=window.jspdf;const doc=new jsPDF({orientation:'p',unit:'mm',format:'a4'});
-  const modelo=document.getElementById('modelo').value||'Sin modelo',placa=document.getElementById('placa').value||'Sin placa',color=document.getElementById('color').value||'—',inspector=document.getElementById('inspector').value||'—',km=document.getElementById('km').value||'—',chasis=document.getElementById('chasis').value||'—',nmotor=document.getElementById('nmotor').value||'—',fecha=new Date().toLocaleDateString('es-GT'),r=ST.ranking;
+  const modelo=document.getElementById('modelo').value||window._pdf_modelo||'Sin modelo',placa=document.getElementById('placa').value||window._pdf_placa||'Sin placa',color=document.getElementById('color').value||window._pdf_color||'—',inspector=document.getElementById('inspector').value||window._pdf_inspector||'—',km=document.getElementById('km').value||window._pdf_km||'—',chasis=document.getElementById('chasis').value||window._pdf_chasis||'—',nmotor=document.getElementById('nmotor').value||window._pdf_nmotor||'—',fecha=new Date().toLocaleDateString('es-GT'),r=ST.ranking;
   let y=0;
   doc.setFillColor(27,111,216);doc.rect(0,0,210,32,'F');doc.setTextColor(255,255,255);doc.setFontSize(17);doc.setFont('helvetica','bold');doc.text('INFORME TÉCNICO DE INSPECCIÓN',105,13,{align:'center'});doc.setFontSize(9);doc.setFont('helvetica','normal');doc.text('División de Vehículos Usados · Inspección Rápida · '+fecha,105,22,{align:'center'});y=40;
   const sec=(title,yy)=>{doc.setFillColor(240,238,233);doc.rect(12,yy-4,186,7,'F');doc.setFontSize(10);doc.setFont('helvetica','bold');doc.setTextColor(27,111,216);doc.text(title,14,yy);return yy+7;};
@@ -2175,7 +2175,7 @@ function genPDF(){
     });
     if(gastosTot>0){y+=4;}
   }
-  const obs=document.getElementById('obs').value;if(obs){y+=4;if(y>260){doc.addPage();y=20;}y=sec('OBSERVACIONES',y);doc.setFontSize(8);doc.setFont('helvetica','normal');doc.setTextColor(0);const lines=doc.splitTextToSize(obs,182);doc.text(lines,14,y);y+=lines.length*4+4;}
+  const obs=document.getElementById('obs').value||window._pdf_obs||'';if(obs){y+=4;if(y>260){doc.addPage();y=20;}y=sec('OBSERVACIONES',y);doc.setFontSize(8);doc.setFont('helvetica','normal');doc.setTextColor(0);const lines=doc.splitTextToSize(obs,182);doc.text(lines,14,y);y+=lines.length*4+4;}
 
   // ── FOTOGRAFÍAS DE HALLAZGOS AGRUPADAS POR SECCIÓN ──
   // Fotos — tarjeta primero, luego hallazgos
@@ -2582,6 +2582,7 @@ function viewRec(id){
     <div class="card"><div class="card-title">Estimación de inversión</div><div class="total-cost">${fQ(rec.totalCost||0)}</div></div>
     ${rec.tallerItems?.length?`<div class="taller-summary show"><strong>🔧 Puntos taller (${rec.tallerItems.length})</strong><br>${rec.tallerItems.map(t=>`<div style="font-size:12px;margin-top:4px">• ${t}</div>`).join('')}</div>`:''}
     <div class="card" id="hallazgos-card-${id}"><div class="card-title">Hallazgos</div><div style="font-size:12px;color:var(--t3)">🔄 Cargando hallazgos...</div></div>
+    ${(rec.state?.gastos||[]).filter(g=>g.costo>0).length?`<div class="card"><div class="card-title">Gastos complementarios</div>${(rec.state?.gastos||[]).filter(g=>g.costo>0).map(g=>`<div class="f-item" style="border-left:2px solid var(--red);padding-left:6px"><span><span class="badge b-u">DEDUCCIÓN</span>${g.desc||'Sin descripción'}</span><span class="fc-u">${fQ(g.costo)}</span></div>`).join('')}</div>`:''}
     ${rec.obs&&rec.obs!=='—'?`<div class="card"><div class="card-title">Observaciones</div><div style="font-size:13px;line-height:1.6">${rec.obs}</div></div>`:''}
     ${fotosHtml}
     <div style="display:flex;gap:7px;margin-top:8px">
@@ -2822,6 +2823,14 @@ async function pdfRec(id, enviarCorreo=true){
   await new Promise(r=>setTimeout(r,200));
   window._pdf_vendedor=rec.vendedor||'—';
   window._pdf_tipoVehiculo=rec.tipoVehiculo||'';
+  window._pdf_modelo=rec.modelo||'';
+  window._pdf_placa=rec.placa||'';
+  window._pdf_color=rec.color||'';
+  window._pdf_km=rec.km||'';
+  window._pdf_chasis=rec.chasis||'';
+  window._pdf_nmotor=rec.nmotor||'';
+  window._pdf_inspector=rec.inspector||'';
+  window._pdf_obs=rec.obs||'';
   window._pdf_transmision=rec.transmision||'';
   window._pdf_traccion=rec.traccion||'';
   window._pdf_combustible=rec.combustible||'';
@@ -2848,6 +2857,14 @@ async function pdfRec(id, enviarCorreo=true){
   }
   window._pdf_vendedor=undefined;
   window._pdf_tipoVehiculo=undefined;
+  window._pdf_modelo=undefined;
+  window._pdf_placa=undefined;
+  window._pdf_color=undefined;
+  window._pdf_km=undefined;
+  window._pdf_chasis=undefined;
+  window._pdf_nmotor=undefined;
+  window._pdf_inspector=undefined;
+  window._pdf_obs=undefined;
   window._pdf_hallazgos=undefined;
   window._pdf_transmision=undefined;
   window._pdf_traccion=undefined;
