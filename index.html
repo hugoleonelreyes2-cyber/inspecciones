@@ -2834,6 +2834,7 @@ async function pdfRec(id, enviarCorreo=true){
   // Forzar ranking desde SHEETS_RECS para garantizar consistencia con la dona
   const sheetsRec=SHEETS_RECS[id]||SHEETS_RECS[String(id)];
   ST.ranking=sheetsRec?.ranking||rec.ranking||ST.ranking;
+  console.log('[PDF-RANKING] sheetsRec.ranking=',JSON.stringify(sheetsRec?.ranking),'ST.ranking=',JSON.stringify(ST.ranking));
   // Load hallazgos from Sheets for older records
   try{
     const hResp=await gPost({action:'getHallazgos',id:String(id)});
