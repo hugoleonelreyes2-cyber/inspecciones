@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- VERSION: 13.3 - FIXES: remove editar revision btn -->
+<!-- VERSION: 13.4 - FEATURE: sistema de usuarios y accesos -->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -235,13 +235,43 @@ textarea{resize:vertical;line-height:1.5}
 </head>
 <body>
 
+
+<!-- PANTALLA DE LOGIN -->
+<div id="login-screen" style="display:flex;position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;height:100%;background:var(--bg);z-index:600;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px">
+  <div style="font-size:56px;margin-bottom:12px">🔐</div>
+  <div style="font-size:22px;font-weight:700;color:var(--t);margin-bottom:6px">Sistema de Inspecciones</div>
+  <div style="font-size:13px;color:var(--t3);margin-bottom:36px">División Vehículos Usados — Cofiño</div>
+  <div style="width:100%;max-width:340px">
+    <div style="margin-bottom:14px">
+      <label style="font-size:12px;font-weight:600;color:var(--t2);display:block;margin-bottom:6px">USUARIO</label>
+      <input id="login-user" type="text" placeholder="Nombre completo" autocomplete="username"
+        style="width:100%;padding:12px 14px;border:1px solid var(--b);border-radius:var(--rsm);font-size:14px;font-family:'DM Sans',sans-serif;background:var(--sf);color:var(--t);box-sizing:border-box">
+    </div>
+    <div style="margin-bottom:24px">
+      <label style="font-size:12px;font-weight:600;color:var(--t2);display:block;margin-bottom:6px">PIN</label>
+      <input id="login-pin" type="password" inputmode="numeric" maxlength="6" placeholder="••••"
+        style="width:100%;padding:12px 14px;border:1px solid var(--b);border-radius:var(--rsm);font-size:18px;font-family:'DM Sans',sans-serif;background:var(--sf);color:var(--t);box-sizing:border-box;letter-spacing:4px"
+        onkeydown="if(event.key==='Enter')loginIngresar()">
+    </div>
+    <button onclick="loginIngresar()" id="login-btn"
+      style="width:100%;padding:14px;background:var(--blue);color:#fff;border:none;border-radius:var(--rsm);font-size:15px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;margin-bottom:12px">
+      Ingresar
+    </button>
+    <div id="login-error" style="display:none;background:#FEE2E2;color:#991B1B;padding:10px 14px;border-radius:var(--rsm);font-size:13px;text-align:center"></div>
+  </div>
+</div>
+
 <!-- MENÚ PRINCIPAL -->
 <div id="main-menu" style="display:none;position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;height:100%;background:var(--bg);z-index:500;overflow-y:auto">
   <div style="padding:40px 20px;text-align:center">
     <div style="font-size:56px;margin-bottom:12px">🚗</div>
     <div style="font-size:22px;font-weight:700;color:var(--t);margin-bottom:6px">Sistema de Inspecciones</div>
-    <div style="font-size:13px;color:var(--t3);margin-bottom:40px">División Vehículos Usados — Cofiño</div>
-    <button onclick="openModulo('inspeccion')" style="width:100%;padding:20px;margin-bottom:14px;background:var(--sf);border:1px solid var(--b);border-radius:var(--rlg);cursor:pointer;font-family:'DM Sans',sans-serif;text-align:left;display:flex;align-items:center;gap:16px">
+    <div id="menu-user-info" style="font-size:13px;color:var(--t3);margin-bottom:8px">División Vehículos Usados — Cofiño</div>
+    <div id="menu-sesion-bar" style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:28px">
+      <span id="menu-sesion-user" style="font-size:12px;font-weight:600;color:var(--blue)"></span>
+      <button onclick="loginCerrarSesion()" style="padding:4px 10px;font-size:11px;border:1px solid var(--b);border-radius:20px;background:transparent;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--t3)">Cerrar sesión</button>
+    </div>
+    <button onclick="openModulo('inspeccion')" id="menu-btn-inspeccion" style="width:100%;padding:20px;margin-bottom:14px;background:var(--sf);border:1px solid var(--b);border-radius:var(--rlg);cursor:pointer;font-family:'DM Sans',sans-serif;text-align:left;display:flex;align-items:center;gap:16px">
       <span style="font-size:32px">📋</span>
       <div>
         <div style="font-size:15px;font-weight:600;color:var(--t);margin-bottom:3px">Inspección de recepción</div>
@@ -249,7 +279,7 @@ textarea{resize:vertical;line-height:1.5}
       </div>
       <span style="margin-left:auto;color:var(--t3);font-size:18px">›</span>
     </button>
-    <button onclick="openModulo('taller')" style="width:100%;padding:20px;margin-bottom:14px;background:var(--sf);border:1px solid var(--b);border-radius:var(--rlg);cursor:pointer;font-family:'DM Sans',sans-serif;text-align:left;display:flex;align-items:center;gap:16px">
+    <button onclick="openModulo('taller')" id="menu-btn-taller" style="width:100%;padding:20px;margin-bottom:14px;background:var(--sf);border:1px solid var(--b);border-radius:var(--rlg);cursor:pointer;font-family:'DM Sans',sans-serif;text-align:left;display:flex;align-items:center;gap:16px">
       <span style="font-size:32px">🔧</span>
       <div>
         <div style="font-size:15px;font-weight:600;color:var(--t);margin-bottom:3px">Revisión técnica de taller</div>
@@ -265,7 +295,7 @@ textarea{resize:vertical;line-height:1.5}
       </div>
       <span style="margin-left:auto;color:var(--t3);font-size:18px">›</span>
     </button>
-    <button onclick="openModulo('configuracion')" style="width:100%;padding:20px;margin-bottom:14px;background:var(--sf);border:1px solid var(--b);border-radius:var(--rlg);cursor:pointer;font-family:'DM Sans',sans-serif;text-align:left;display:flex;align-items:center;gap:16px">
+    <button onclick="openModulo('configuracion')" id="menu-btn-config" style="width:100%;padding:20px;margin-bottom:14px;background:var(--sf);border:1px solid var(--b);border-radius:var(--rlg);cursor:pointer;font-family:'DM Sans',sans-serif;text-align:left;display:flex;align-items:center;gap:16px">
       <span style="font-size:32px">⚙️</span>
       <div>
         <div style="font-size:15px;font-weight:600;color:var(--t);margin-bottom:3px">Configuración</div>
@@ -281,7 +311,7 @@ textarea{resize:vertical;line-height:1.5}
   <div style="background:var(--sf);border-bottom:1px solid var(--b);padding:11px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10">
     <button onclick="showMenu()" style="padding:6px 12px;border:1px solid var(--b);border-radius:var(--rsm);background:transparent;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--t2)">☰ Menú</button>
     <div style="font-size:14px;font-weight:600;color:var(--t)">📊 Registros</div>
-    <button onclick="REG_abrirArchivo()" style="padding:6px 12px;border:1px solid var(--b);border-radius:var(--rsm);background:transparent;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--t2)">📦 Archivo</button>
+    <button onclick="REG_abrirArchivoConPermiso()" style="padding:6px 12px;border:1px solid var(--b);border-radius:var(--rsm);background:transparent;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--t2)">📦 Archivo</button>
   </div>
   <div id="reg-app"></div>
 </div>
@@ -2940,9 +2970,10 @@ function init(){
   renderExtSVG();renderIntSVG();loadCosts();
 }
 init();
-// Ocultar inspección al inicio — mostrar menú principal
+// Ocultar inspección al inicio — verificar sesión o mostrar login
 document.getElementById('app').style.display='none';
-document.getElementById('main-menu').style.display='block';
+document.getElementById('main-menu').style.display='none';
+loginVerificarSesion();
 // navegación definida al inicio del script
 
 // Modificar función T_showToast para usar el toast global
@@ -5156,5 +5187,127 @@ async function CFG_renderPanel(){
 
 <!-- TOAST GLOBAL -->
 <div class="toast" id="toast" style="position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:99999;max-width:440px;width:90%"></div>
+
+<script>
+// ── SISTEMA DE SESIÓN ──
+const SESSION_KEY = 'cofi_session';
+let SESION_ACTUAL = null;
+
+async function loginCargarUsuarios() {
+  try {
+    const resp = await gPost({action: 'getTallerConfig'});
+    if (resp.status === 'OK' && resp.config) {
+      const usuarios = [];
+      // Config viene como objeto con arrays, necesitamos leer raw desde Sheets
+      const r2 = await gPost({action: 'getUsuarios'});
+      if (r2.status === 'OK') return r2.data;
+    }
+  } catch(e) {}
+  return [];
+}
+
+async function loginIngresar() {
+  const userInput = (document.getElementById('login-user').value||'').trim().toUpperCase();
+  const pinInput = (document.getElementById('login-pin').value||'').trim();
+  const btn = document.getElementById('login-btn');
+  const errEl = document.getElementById('login-error');
+  if (!userInput || !pinInput) { loginError('Complete usuario y PIN'); return; }
+  btn.textContent = 'Verificando...'; btn.disabled = true;
+  errEl.style.display = 'none';
+  try {
+    const resp = await gPost({action: 'getTallerConfig'});
+    if (resp.status !== 'OK') { loginError('Sin conexión — intente de nuevo'); btn.textContent='Ingresar';btn.disabled=false; return; }
+    // Buscar usuario en Config Taller rows
+    const resp2 = await fetch(SCRIPT_URL, {method:'POST', body: JSON.stringify({action:'getConfigRaw'})});
+    const data2 = await resp2.json();
+    let encontrado = null;
+    if (data2.status === 'OK' && data2.rows) {
+      for (const row of data2.rows) {
+        const key = String(row[0]||'').trim();
+        const val = String(row[1]||'').trim();
+        if (key.startsWith('usr_')) {
+          const nombre = key.substring(4).toUpperCase();
+          if (nombre === userInput) {
+            const parts = val.split('|');
+            const rol = parts[0]||'';
+            const pin = parts[1]||'';
+            if (pin === pinInput) { encontrado = {nombre: nombre, rol: rol}; }
+            else { loginError('PIN incorrecto'); btn.textContent='Ingresar';btn.disabled=false; return; }
+            break;
+          }
+        }
+      }
+    }
+    if (!encontrado) { loginError('Usuario no encontrado'); btn.textContent='Ingresar';btn.disabled=false; return; }
+    loginEstablecerSesion(encontrado);
+  } catch(e) {
+    loginError('Error de conexión'); btn.textContent='Ingresar';btn.disabled=false;
+  }
+}
+
+function loginEstablecerSesion(user) {
+  SESION_ACTUAL = user;
+  localStorage.setItem(SESSION_KEY, JSON.stringify(user));
+  document.getElementById('login-screen').style.display = 'none';
+  loginAplicarPermisos();
+  showMenu();
+}
+
+function loginAplicarPermisos() {
+  if (!SESION_ACTUAL) return;
+  const rol = SESION_ACTUAL.rol;
+  const rolLabel = {admin:'Administrador', inspector:'Inspector', mecanico:'Mecánico'}[rol]||rol;
+  // Mostrar usuario en barra de sesión
+  const userEl = document.getElementById('menu-sesion-user');
+  if (userEl) userEl.textContent = '👤 ' + SESION_ACTUAL.nombre + ' · ' + rolLabel;
+  // Ocultar botones según rol
+  const btnInspeccion = document.getElementById('menu-btn-inspeccion');
+  const btnTaller = document.getElementById('menu-btn-taller');
+  const btnConfig = document.getElementById('menu-btn-config');
+  if (btnInspeccion) btnInspeccion.style.display = (rol==='inspector'||rol==='admin') ? '' : 'none';
+  if (btnTaller) btnTaller.style.display = (rol==='mecanico'||rol==='admin') ? '' : 'none';
+  if (btnConfig) btnConfig.style.display = rol==='admin' ? '' : 'none';
+}
+
+function loginError(msg) {
+  const el = document.getElementById('login-error');
+  el.textContent = msg; el.style.display = 'block';
+  setTimeout(()=>el.style.display='none', 3000);
+}
+
+function loginCerrarSesion() {
+  SESION_ACTUAL = null;
+  localStorage.removeItem(SESSION_KEY);
+  location.reload();
+}
+
+function loginVerificarSesion() {
+  try {
+    const saved = localStorage.getItem(SESSION_KEY);
+    if (saved) {
+      const user = JSON.parse(saved);
+      if (user && user.nombre && user.rol) {
+        SESION_ACTUAL = user;
+        document.getElementById('login-screen').style.display = 'none';
+        loginAplicarPermisos();
+        showMenu();
+        return true;
+      }
+    }
+  } catch(e) {}
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('main-menu').style.display = 'none';
+  return false;
+}
+
+// Verificar Archivo — solo admin
+function REG_abrirArchivoConPermiso() {
+  if (!SESION_ACTUAL || SESION_ACTUAL.rol !== 'admin') {
+    showToast('⚠ Acceso restringido — solo administradores'); return;
+  }
+  REG_abrirArchivo();
+}
+</script>
+
 </body>
 </html>
