@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- VERSION: 13.2 - FIXES: puntos identidad no bloquean si no aplican -->
+<!-- VERSION: 13.3 - FIXES: remove editar revision btn -->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -3863,15 +3863,9 @@ async function T_guardarYEnviar(){
 async function T_guardarRegistro(){
   if(!T_VEH?.placa){showToast('⚠ No hay vehículo cargado');return;}
 
-  // 1. Validar que todos los puntos estén respondidos (excluir ident que no aplican)
-  const _identMapG={'p14':'color_ok','p15':'chasis_ok','p16':'motor_ok'};
-  const _identFailedG=T_VEH?.identFailed||[];
+  // 1. Validar que todos los puntos estén respondidos
   const todosPuntos=Object.values(PUNTOS).flat();
-  const sinResponder=todosPuntos.filter(p=>{
-    if(T_ST[p.id]?.val) return false;
-    if(_identMapG[p.id]&&!_identFailedG.some(f=>f.id===_identMapG[p.id])) return false;
-    return T_ST[p.id]!==undefined;
-  });
+  const sinResponder=todosPuntos.filter(p=>T_ST[p.id]!==undefined && !T_ST[p.id]?.val);
   if(sinResponder.length>0){
     showToast('⚠ Faltan '+sinResponder.length+' punto(s) por responder');
     return;
@@ -4540,7 +4534,6 @@ async function REG_verDetalle(idx){
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
       <button onclick="REG_descargarPDF_revision()" style="padding:10px;background:var(--sf2);color:var(--t);border:1px solid var(--b2);border-radius:var(--rsm);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">📋 PDF Revisión</button>
-      <button onclick="REG_editarRevision()" style="padding:10px;background:var(--blue);color:#fff;border:none;border-radius:var(--rsm);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">✏️ Editar revisión</button>
     </div>
 
     <div id="reg-cot-section">
