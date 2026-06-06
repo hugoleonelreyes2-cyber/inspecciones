@@ -266,8 +266,8 @@ textarea{resize:vertical;line-height:1.5}
   <div style="padding:40px 20px;text-align:center">
     <div style="font-size:56px;margin-bottom:12px">🚗</div>
     <div style="font-size:22px;font-weight:700;color:var(--t);margin-bottom:6px">Sistema de Inspecciones</div>
-    <div id="menu-user-info" style="font-size:13px;color:var(--t3);margin-bottom:8px">División Vehículos Usados — Cofiño</div>
-    <div id="menu-sesion-bar" style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:28px">
+    <div style="font-size:13px;color:var(--t3);margin-bottom:8px">División Vehículos Usados — Cofiño</div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:28px">
       <span id="menu-sesion-user" style="font-size:12px;font-weight:600;color:var(--blue)"></span>
       <button onclick="loginCerrarSesion()" style="padding:4px 10px;font-size:11px;border:1px solid var(--b);border-radius:20px;background:transparent;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--t3)">Cerrar sesión</button>
     </div>
@@ -2969,6 +2969,109 @@ function init(){
   buildQList('capo-apagado-list',CAPO_APAGADO,'capoApagado');buildQList('capo-encendido-list',CAPO_ENCENDIDO,'capoEncendido');buildQList('elec-ext-list',ELEC_EXT,'elecExt');buildQList('elec-int-list',ELEC_INT,'elecInt');buildQList('dyn-list',DYN,'dyn');buildQList('comp-list',COMP,'comp');
   renderExtSVG();renderIntSVG();loadCosts();
 }
+
+// ── SISTEMA DE SESIÓN ──
+const SESSION_KEY = 'cofi_session';
+var SESION_ACTUAL = null;
+
+async function loginIngresar() {
+  const userInput = (document.getElementById('login-user').value||'').trim().toUpperCase();
+  const pinInput = (document.getElementById('login-pin').value||'').trim();
+  const btn = document.getElementById('login-btn');
+  const errEl = document.getElementById('login-error');
+  if (!userInput || !pinInput) { loginError('Complete usuario y PIN'); return; }
+  btn.textContent = 'Verificando...'; btn.disabled = true;
+  errEl.style.display = 'none';
+  try {
+    const resp2 = await gPost({action:'getConfigRaw'});
+    if (!resp2 || resp2.error) { loginError('Error de conexión'); btn.textContent='Ingresar';btn.disabled=false; return; }
+    let encontrado = null;
+    if (resp2.status === 'OK' && resp2.rows) {
+      for (const row of resp2.rows) {
+        const key = String(row[0]||'').trim();
+        const val = String(row[1]||'').trim();
+        if (key.startsWith('usr_')) {
+          const nombre = key.substring(4).toUpperCase();
+          if (nombre === userInput) {
+            const parts = val.split('|');
+            const rol = (parts[0]||'').trim();
+            const pin = (parts[1]||'').trim();
+            if (pin === pinInput) { encontrado = {nombre, rol}; }
+            else { loginError('PIN incorrecto'); btn.textContent='Ingresar';btn.disabled=false; return; }
+            break;
+          }
+        }
+      }
+    }
+    if (!encontrado) { loginError('Usuario no encontrado'); btn.textContent='Ingresar';btn.disabled=false; return; }
+    loginEstablecerSesion(encontrado);
+  } catch(e) {
+    loginError('Error de conexión'); btn.textContent='Ingresar';btn.disabled=false;
+  }
+}
+
+function loginEstablecerSesion(user) {
+  SESION_ACTUAL = user;
+  localStorage.setItem(SESSION_KEY, JSON.stringify(user));
+  document.getElementById('login-screen').style.display = 'none';
+  loginAplicarPermisos();
+  showMenu();
+}
+
+function loginAplicarPermisos() {
+  if (!SESION_ACTUAL) return;
+  const rol = SESION_ACTUAL.rol;
+  const rolLabel = {admin:'Administrador', inspector:'Inspector', mecanico:'Mecánico'}[rol]||rol;
+  const userEl = document.getElementById('menu-sesion-user');
+  if (userEl) userEl.textContent = '👤 ' + SESION_ACTUAL.nombre + ' · ' + rolLabel;
+  const btnInspeccion = document.getElementById('menu-btn-inspeccion');
+  const btnTaller = document.getElementById('menu-btn-taller');
+  const btnConfig = document.getElementById('menu-btn-config');
+  if (btnInspeccion) btnInspeccion.style.display = (rol==='inspector'||rol==='admin') ? '' : 'none';
+  if (btnTaller) btnTaller.style.display = (rol==='mecanico'||rol==='admin') ? '' : 'none';
+  if (btnConfig) btnConfig.style.display = rol==='admin' ? '' : 'none';
+}
+
+function loginError(msg) {
+  const el = document.getElementById('login-error');
+  if (el) { el.textContent = msg; el.style.display = 'block'; setTimeout(()=>el.style.display='none', 3000); }
+}
+
+function loginCerrarSesion() {
+  SESION_ACTUAL = null;
+  localStorage.removeItem(SESSION_KEY);
+  location.reload();
+}
+
+function loginVerificarSesion() {
+  try {
+    const saved = localStorage.getItem(SESSION_KEY);
+    if (saved) {
+      const user = JSON.parse(saved);
+      if (user && user.nombre && user.rol) {
+        SESION_ACTUAL = user;
+        const ls = document.getElementById('login-screen');
+        if (ls) ls.style.display = 'none';
+        loginAplicarPermisos();
+        showMenu();
+        return true;
+      }
+    }
+  } catch(e) {}
+  const ls = document.getElementById('login-screen');
+  const mm = document.getElementById('main-menu');
+  if (ls) ls.style.display = 'flex';
+  if (mm) mm.style.display = 'none';
+  return false;
+}
+
+function REG_abrirArchivoConPermiso() {
+  if (!SESION_ACTUAL || SESION_ACTUAL.rol !== 'admin') {
+    showToast('⚠ Acceso restringido — solo administradores'); return;
+  }
+  REG_abrirArchivo();
+}
+
 init();
 // Ocultar inspección al inicio — verificar sesión o mostrar login
 document.getElementById('app').style.display='none';
@@ -5187,127 +5290,5 @@ async function CFG_renderPanel(){
 
 <!-- TOAST GLOBAL -->
 <div class="toast" id="toast" style="position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:99999;max-width:440px;width:90%"></div>
-
-<script>
-// ── SISTEMA DE SESIÓN ──
-const SESSION_KEY = 'cofi_session';
-let SESION_ACTUAL = null;
-
-async function loginCargarUsuarios() {
-  try {
-    const resp = await gPost({action: 'getTallerConfig'});
-    if (resp.status === 'OK' && resp.config) {
-      const usuarios = [];
-      // Config viene como objeto con arrays, necesitamos leer raw desde Sheets
-      const r2 = await gPost({action: 'getUsuarios'});
-      if (r2.status === 'OK') return r2.data;
-    }
-  } catch(e) {}
-  return [];
-}
-
-async function loginIngresar() {
-  const userInput = (document.getElementById('login-user').value||'').trim().toUpperCase();
-  const pinInput = (document.getElementById('login-pin').value||'').trim();
-  const btn = document.getElementById('login-btn');
-  const errEl = document.getElementById('login-error');
-  if (!userInput || !pinInput) { loginError('Complete usuario y PIN'); return; }
-  btn.textContent = 'Verificando...'; btn.disabled = true;
-  errEl.style.display = 'none';
-  try {
-    const resp = await gPost({action: 'getTallerConfig'});
-    if (resp.status !== 'OK') { loginError('Sin conexión — intente de nuevo'); btn.textContent='Ingresar';btn.disabled=false; return; }
-    // Buscar usuario en Config Taller rows
-    const resp2 = await fetch(SCRIPT_URL, {method:'POST', body: JSON.stringify({action:'getConfigRaw'})});
-    const data2 = await resp2.json();
-    let encontrado = null;
-    if (data2.status === 'OK' && data2.rows) {
-      for (const row of data2.rows) {
-        const key = String(row[0]||'').trim();
-        const val = String(row[1]||'').trim();
-        if (key.startsWith('usr_')) {
-          const nombre = key.substring(4).toUpperCase();
-          if (nombre === userInput) {
-            const parts = val.split('|');
-            const rol = parts[0]||'';
-            const pin = parts[1]||'';
-            if (pin === pinInput) { encontrado = {nombre: nombre, rol: rol}; }
-            else { loginError('PIN incorrecto'); btn.textContent='Ingresar';btn.disabled=false; return; }
-            break;
-          }
-        }
-      }
-    }
-    if (!encontrado) { loginError('Usuario no encontrado'); btn.textContent='Ingresar';btn.disabled=false; return; }
-    loginEstablecerSesion(encontrado);
-  } catch(e) {
-    loginError('Error de conexión'); btn.textContent='Ingresar';btn.disabled=false;
-  }
-}
-
-function loginEstablecerSesion(user) {
-  SESION_ACTUAL = user;
-  localStorage.setItem(SESSION_KEY, JSON.stringify(user));
-  document.getElementById('login-screen').style.display = 'none';
-  loginAplicarPermisos();
-  showMenu();
-}
-
-function loginAplicarPermisos() {
-  if (!SESION_ACTUAL) return;
-  const rol = SESION_ACTUAL.rol;
-  const rolLabel = {admin:'Administrador', inspector:'Inspector', mecanico:'Mecánico'}[rol]||rol;
-  // Mostrar usuario en barra de sesión
-  const userEl = document.getElementById('menu-sesion-user');
-  if (userEl) userEl.textContent = '👤 ' + SESION_ACTUAL.nombre + ' · ' + rolLabel;
-  // Ocultar botones según rol
-  const btnInspeccion = document.getElementById('menu-btn-inspeccion');
-  const btnTaller = document.getElementById('menu-btn-taller');
-  const btnConfig = document.getElementById('menu-btn-config');
-  if (btnInspeccion) btnInspeccion.style.display = (rol==='inspector'||rol==='admin') ? '' : 'none';
-  if (btnTaller) btnTaller.style.display = (rol==='mecanico'||rol==='admin') ? '' : 'none';
-  if (btnConfig) btnConfig.style.display = rol==='admin' ? '' : 'none';
-}
-
-function loginError(msg) {
-  const el = document.getElementById('login-error');
-  el.textContent = msg; el.style.display = 'block';
-  setTimeout(()=>el.style.display='none', 3000);
-}
-
-function loginCerrarSesion() {
-  SESION_ACTUAL = null;
-  localStorage.removeItem(SESSION_KEY);
-  location.reload();
-}
-
-function loginVerificarSesion() {
-  try {
-    const saved = localStorage.getItem(SESSION_KEY);
-    if (saved) {
-      const user = JSON.parse(saved);
-      if (user && user.nombre && user.rol) {
-        SESION_ACTUAL = user;
-        document.getElementById('login-screen').style.display = 'none';
-        loginAplicarPermisos();
-        showMenu();
-        return true;
-      }
-    }
-  } catch(e) {}
-  document.getElementById('login-screen').style.display = 'flex';
-  document.getElementById('main-menu').style.display = 'none';
-  return false;
-}
-
-// Verificar Archivo — solo admin
-function REG_abrirArchivoConPermiso() {
-  if (!SESION_ACTUAL || SESION_ACTUAL.rol !== 'admin') {
-    showToast('⚠ Acceso restringido — solo administradores'); return;
-  }
-  REG_abrirArchivo();
-}
-</script>
-
 </body>
 </html>
