@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- VERSION: 13.4 - FEATURE: sistema de usuarios y accesos -->
+<!-- VERSION: 13.5 - FIXES: inspector sin acceso a registros -->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -287,7 +287,7 @@ textarea{resize:vertical;line-height:1.5}
       </div>
       <span style="margin-left:auto;color:var(--t3);font-size:18px">›</span>
     </button>
-    <button onclick="openModulo('registros')" style="width:100%;padding:20px;margin-bottom:14px;background:var(--sf);border:1px solid var(--b);border-radius:var(--rlg);cursor:pointer;font-family:'DM Sans',sans-serif;text-align:left;display:flex;align-items:center;gap:16px">
+    <button onclick="openModulo('registros')" id="menu-btn-registros" style="width:100%;padding:20px;margin-bottom:14px;background:var(--sf);border:1px solid var(--b);border-radius:var(--rlg);cursor:pointer;font-family:'DM Sans',sans-serif;text-align:left;display:flex;align-items:center;gap:16px">
       <span style="font-size:32px">📊</span>
       <div>
         <div style="font-size:15px;font-weight:600;color:var(--t);margin-bottom:3px">Registros</div>
@@ -3027,7 +3027,9 @@ function loginAplicarPermisos() {
   const btnInspeccion = document.getElementById('menu-btn-inspeccion');
   const btnTaller = document.getElementById('menu-btn-taller');
   const btnConfig = document.getElementById('menu-btn-config');
+  const btnRegistros = document.getElementById('menu-btn-registros');
   if (btnInspeccion) btnInspeccion.style.display = (rol==='inspector'||rol==='admin') ? '' : 'none';
+  if (btnRegistros) btnRegistros.style.display = (rol==='mecanico'||rol==='admin') ? '' : 'none';
   if (btnTaller) btnTaller.style.display = (rol==='mecanico'||rol==='admin') ? '' : 'none';
   if (btnConfig) btnConfig.style.display = rol==='admin' ? '' : 'none';
 }
