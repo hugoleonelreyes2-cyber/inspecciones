@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- VERSION: 14.0 - NUEVO: Módulo Producción, rol lavador, rol vendedor, flujo de estados por vehículo -->
+<!-- VERSION: 14.1 - FIX: módulos ocultos correctamente al iniciar y en showMenu -->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -867,11 +867,15 @@ function showMenu(){
   const app=document.getElementById('app');
   const prod=document.getElementById('produccion-modulo');
   const cons=document.getElementById('consulta-modulo');
+  const reg=document.getElementById('registros-modulo');
+  const cfg=document.getElementById('configuracion-modulo');
   if(menu)menu.style.display='block';
   if(taller)taller.style.display='none';
   if(app)app.style.display='none';
   if(prod)prod.style.display='none';
   if(cons)cons.style.display='none';
+  if(reg)reg.style.display='none';
+  if(cfg)cfg.style.display='none';
   moduloActual='menu';
 }
 function openModulo(mod){
@@ -3159,9 +3163,11 @@ function REG_abrirArchivoConPermiso() {
 }
 
 init();
-// Ocultar inspección al inicio — verificar sesión o mostrar login
+// Ocultar todos los módulos al inicio — verificar sesión o mostrar login
 document.getElementById('app').style.display='none';
 document.getElementById('main-menu').style.display='none';
+document.getElementById('produccion-modulo').style.display='none';
+document.getElementById('consulta-modulo').style.display='none';
 loginVerificarSesion();
 // navegación definida al inicio del script
 
