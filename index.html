@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- VERSION: 14.2 - FIX: SESION_ACTUAL en window scope, PROD_render con fallback -->
+<!-- VERSION: 14.3 - FIX: eliminadas openModulo y showMenu duplicadas del módulo Taller -->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -3171,7 +3171,8 @@ document.getElementById('app').style.display='none';
 document.getElementById('main-menu').style.display='none';
 document.getElementById('produccion-modulo').style.display='none';
 document.getElementById('consulta-modulo').style.display='none';
-loginVerificarSesion();
+// Pequeño delay para asegurar que todo el script esté cargado antes de verificar sesión
+setTimeout(function(){ loginVerificarSesion(); }, 50);
 // navegación definida al inicio del script
 
 // Modificar función T_showToast para usar el toast global
@@ -4569,38 +4570,7 @@ function verRegistrosTaller(){
 }
 
 
-function openModulo(mod){
-  const mods=['registros-modulo','configuracion-modulo','taller-modulo','cotizaciones-modulo','autorizaciones-modulo'];
-  document.getElementById("main-menu").style.display="none";
-  document.getElementById("app").style.display="none";
-  mods.forEach(m=>{const el=document.getElementById(m);if(el)el.style.display="none";});
-  if(mod==="inspeccion"){
-    document.getElementById("app").style.display="block";
-    moduloActual="inspeccion";
-  } else if(mod==="taller"){
-    document.getElementById("taller-modulo").style.display="block";
-    moduloActual="taller";
-    const appEl=document.getElementById("taller-app");
-    appEl.innerHTML='<div id="app"></div>';
-    T_renderBusqueda();
-  } else if(mod==="registros"){
-    document.getElementById("registros-modulo").style.display="block";
-    moduloActual="registros";
-    REG_render();
-  } else if(mod==="configuracion"){
-    document.getElementById("configuracion-modulo").style.display="block";
-    moduloActual="configuracion";
-    CFG_render();
-  }
-}
-
-function showMenu(){
-  const mods=['registros-modulo','configuracion-modulo','taller-modulo','cotizaciones-modulo','autorizaciones-modulo'];
-  document.getElementById("main-menu").style.display="block";
-  document.getElementById("app").style.display="none";
-  mods.forEach(m=>{const el=document.getElementById(m);if(el)el.style.display="none";});
-  moduloActual="menu";
-}
+// openModulo y showMenu definidas arriba — no duplicar aquí
 
 // ══════════════════════════════════════════════════════
 // MÓDULO REGISTROS — Lista integrada + Cotización + Auth
