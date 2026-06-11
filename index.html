@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- VERSION: 14.6 - FIX: validacion guardado excluye preguntas identidad opcionales no aplicadas en recepcion -->
+<!-- VERSION: 14.8 - FIX: SyntaxError resuelto, onclicks PDF usan solo placa via window cache -->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -5369,7 +5369,7 @@ const PROD_ESTADOS = {
   inspeccion:  { label:'Inspección recepción', icon:'📋', color:'var(--blue)',    bg:'var(--blue-bg)',    border:'var(--blue-b)',    orden:1 },
   taller:      { label:'Revisión taller',       icon:'🔧', color:'var(--amber)',   bg:'var(--amber-bg)',   border:'var(--amber-b)',   orden:2 },
   cotizacion:  { label:'Cotización',            icon:'💰', color:'var(--amber)',   bg:'var(--amber-bg)',   border:'var(--amber-b)',   orden:3 },
-  limpieza:    { label:'Limpieza',              icon:'🧹', color:'#7C3AED',       bg:'#F5F3FF',          border:'#DDD6FE',         orden:4 },
+  limpieza:    { label:'Limpieza',              icon:'🚗🫧', color:'#7C3AED',       bg:'#F5F3FF',          border:'#DDD6FE',         orden:4 },
   calidad:     { label:'Control de calidad',    icon:'✅', color:'var(--green)',   bg:'var(--green-bg)',   border:'var(--green-b)',   orden:5 },
   listo:       { label:'Listo para venta',      icon:'🏷️', color:'#065F46',       bg:'#D1FAE5',          border:'#6EE7B7',         orden:6 },
 };
@@ -5401,15 +5401,23 @@ async function PROD_renderAdmin(app){
     const rol = SESION_ACTUAL?.rol;
 
     app.innerHTML = `<div style="padding:14px 16px 96px">
+      <div style="display:flex;gap:6px;margin-bottom:10px;align-items:center">
+        <input id="prod-buscar-placa" type="text" placeholder="Buscar placa..." oninput="PROD_buscarPlaca(this.value)"
+          style="flex:1;padding:8px 11px;border:1px solid var(--b2);border-radius:var(--rsm);font-size:13px;background:var(--sf);color:var(--t);font-family:'DM Sans',sans-serif;text-transform:uppercase"
+          onkeydown="if(event.key==='Escape'){this.value='';PROD_buscarPlaca('');}">
+        <button onclick="document.getElementById('prod-buscar-placa').value='';PROD_buscarPlaca('')"
+          style="padding:8px 10px;border:1px solid var(--b2);border-radius:var(--rsm);background:var(--sf2);color:var(--t3);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif">✕</button>
+      </div>
       <div style="display:flex;gap:7px;margin-bottom:12px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none">
         <button onclick="PROD_filtrar('todos')" id="pfil-todos" style="flex-shrink:0;padding:5px 13px;font-size:11px;font-weight:600;border-radius:20px;border:1px solid var(--blue);background:var(--blue);color:#fff;cursor:pointer;font-family:'DM Sans',sans-serif">Todos</button>
-        <button onclick="PROD_filtrar('limpieza')" id="pfil-limpieza" style="flex-shrink:0;padding:5px 13px;font-size:11px;font-weight:500;border-radius:20px;border:1px solid var(--b2);background:var(--sf);color:var(--t2);cursor:pointer;font-family:'DM Sans',sans-serif">🧹 Limpieza</button>
+        <button onclick="PROD_filtrar('limpieza')" id="pfil-limpieza" style="flex-shrink:0;padding:5px 13px;font-size:11px;font-weight:500;border-radius:20px;border:1px solid var(--b2);background:var(--sf);color:var(--t2);cursor:pointer;font-family:'DM Sans',sans-serif">🚗🫧 Limpieza</button>
         <button onclick="PROD_filtrar('calidad')" id="pfil-calidad" style="flex-shrink:0;padding:5px 13px;font-size:11px;font-weight:500;border-radius:20px;border:1px solid var(--b2);background:var(--sf);color:var(--t2);cursor:pointer;font-family:'DM Sans',sans-serif">✅ Calidad</button>
         <button onclick="PROD_filtrar('listo')" id="pfil-listo" style="flex-shrink:0;padding:5px 13px;font-size:11px;font-weight:500;border-radius:20px;border:1px solid var(--b2);background:var(--sf);color:var(--t2);cursor:pointer;font-family:'DM Sans',sans-serif">🏷️ Listos</button>
       </div>
-      <div id="prod-lista">${PROD_renderLista(lista,'todos')}</div>
+      <div id="prod-lista">${PROD_renderLista(lista,'todos',3)}</div>
     </div>`;
     window._prod_lista_cache = lista;
+    window._prod_filtro_actual = 'todos';
   }catch(e){
     app.innerHTML = `<div style="padding:20px;text-align:center;color:var(--red)">⚠ ${e.message}</div>`;
   }
@@ -5423,15 +5431,37 @@ function PROD_filtrar(filtro){
     b.style.borderColor = activo ? 'var(--blue)' : 'var(--b2)';
     b.style.fontWeight = activo ? '600' : '500';
   });
+  window._prod_filtro_actual = filtro;
+  const busq = (document.getElementById('prod-buscar-placa')?.value||'').trim().toUpperCase();
   const lista = window._prod_lista_cache || [];
-  document.getElementById('prod-lista').innerHTML = PROD_renderLista(lista, filtro);
+  document.getElementById('prod-lista').innerHTML = PROD_renderLista(lista, filtro, busq?999:3, busq);
 }
 
-function PROD_renderLista(lista, filtro){
+function PROD_buscarPlaca(val){
+  const busq = val.trim().toUpperCase();
+  const lista = window._prod_lista_cache || [];
+  const filtro = window._prod_filtro_actual || 'todos';
+  document.getElementById('prod-lista').innerHTML = PROD_renderLista(lista, filtro, busq?999:3, busq);
+}
+
+function PROD_renderLista(lista, filtro, limite, busq){
+  limite = limite || 3;
   let items = lista;
   if(filtro !== 'todos') items = lista.filter(v => v.etapa_actual === filtro);
+  if(busq) items = items.filter(v => (v.placa||'').toUpperCase().includes(busq));
   if(!items.length) return `<div style="text-align:center;padding:40px 20px;color:var(--t3)"><div style="font-size:36px;margin-bottom:8px">📭</div><div style="font-size:13px">Sin vehículos${filtro!=='todos'?' en esta etapa':''}</div></div>`;
-  return items.map(v => PROD_renderTarjeta(v)).join('');
+  const total = items.length;
+  const mostrar = items.slice(0, limite);
+  const resto = total - mostrar.length;
+  return mostrar.map(v => PROD_renderTarjeta(v)).join('') +
+    (resto > 0 ? `<button onclick="PROD_mostrarMas()" style="width:100%;padding:11px;background:var(--sf2);border:1px solid var(--b2);border-radius:var(--r);font-size:13px;font-weight:500;color:var(--t2);cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:4px">Ver ${resto} vehículo${resto>1?'s':''} más ›</button>` : '');
+}
+
+function PROD_mostrarMas(){
+  const lista = window._prod_lista_cache || [];
+  const filtro = window._prod_filtro_actual || 'todos';
+  const busq = (document.getElementById('prod-buscar-placa')?.value||'').trim().toUpperCase();
+  document.getElementById('prod-lista').innerHTML = PROD_renderLista(lista, filtro, 999, busq);
 }
 
 function PROD_renderTarjeta(v){
@@ -5529,7 +5559,7 @@ function PROD_renderHistorial(v){
     { key:'inspeccion', label:'Inspección recepción', icon:'📋', resp: v.resp_inspeccion, fecha: v.fecha_inspeccion },
     { key:'taller',     label:'Revisión taller',       icon:'🔧', resp: v.resp_taller,     fecha: v.fecha_taller },
     { key:'cotizacion', label:'Cotización',            icon:'💰', resp: v.resp_cotizacion, fecha: v.fecha_cotizacion, extra: v.estado_cotizacion },
-    { key:'limpieza',   label:'Limpieza',              icon:'🧹', resp: v.resp_limpieza,   fecha: v.fecha_limpieza, asig: v.resp_limpieza_asig, fechaAsig: v.fecha_limpieza_asig },
+    { key:'limpieza',   label:'Limpieza',              icon:'🚗🫧', resp: v.resp_limpieza,   fecha: v.fecha_limpieza, asig: v.resp_limpieza_asig, fechaAsig: v.fecha_limpieza_asig },
     { key:'calidad',    label:'Control de calidad',    icon:'✅', resp: v.resp_calidad,    fecha: v.fecha_calidad },
     { key:'listo',      label:'Listo para venta',      icon:'🏷️', resp: v.resp_calidad,    fecha: v.fecha_listo },
   ];
@@ -5564,7 +5594,7 @@ function PROD_renderAcciones(v){
   if(etapa === 'inspeccion' || etapa === 'taller' || etapa === 'cotizacion'){
     // Opción de asignar limpieza (puede saltarse taller/cotizacion)
     html += `<div style="background:var(--sf);border:1.5px solid #DDD6FE;border-radius:var(--r);padding:14px;margin-bottom:12px">
-      <div style="font-size:13px;font-weight:600;color:#5B21B6;margin-bottom:10px">🧹 Asignar a limpieza</div>
+      <div style="font-size:13px;font-weight:600;color:#5B21B6;margin-bottom:10px">🚗🫧 Asignar a limpieza</div>
       <div style="font-size:12px;color:var(--t2);margin-bottom:10px">Puede asignar limpieza en cualquier momento, sin necesidad de completar taller o cotización.</div>
       <input id="prod-lavador-nombre" type="text" placeholder="Nombre del lavador" style="width:100%;padding:10px;border:1px solid var(--b);border-radius:var(--rsm);font-size:14px;background:var(--sf);color:var(--t);box-sizing:border-box;margin-bottom:10px">
       <button onclick="PROD_asignarLimpieza('${v.num_revision}')" style="width:100%;padding:12px;background:#7C3AED;color:#fff;border:none;border-radius:var(--r);font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">Asignar limpieza</button>
@@ -5573,7 +5603,7 @@ function PROD_renderAcciones(v){
 
   if(etapa === 'limpieza'){
     html += `<div style="background:#F5F3FF;border:1.5px solid #DDD6FE;border-radius:var(--r);padding:14px;margin-bottom:12px">
-      <div style="font-size:13px;font-weight:600;color:#5B21B6;margin-bottom:6px">🧹 Limpieza en progreso</div>
+      <div style="font-size:13px;font-weight:600;color:#5B21B6;margin-bottom:6px">🚗🫧 Limpieza en progreso</div>
       <div style="font-size:12px;color:var(--t2);margin-bottom:10px">Asignado a: <b>${v.resp_limpieza_asig||'—'}</b> · ${PROD_fmtFecha(v.fecha_limpieza_asig)}</div>
       <button onclick="PROD_completarLimpieza('${v.num_revision}')" style="width:100%;padding:12px;background:#7C3AED;color:#fff;border:none;border-radius:var(--r);font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">✓ Marcar limpieza como completada</button>
     </div>
@@ -5650,7 +5680,7 @@ async function PROD_renderLavador(app){
 
     if(!cola.length){
       app.innerHTML = `<div style="padding:40px 20px;text-align:center;color:var(--t3)">
-        <div style="font-size:48px;margin-bottom:12px">🧹</div>
+        <div style="font-size:48px;margin-bottom:12px">🚗🫧</div>
         <div style="font-size:15px;font-weight:600;color:var(--t);margin-bottom:6px">Sin asignaciones pendientes</div>
         <div style="font-size:13px">No tienes vehículos asignados para lavar.</div>
       </div>`;
@@ -5694,6 +5724,63 @@ async function PROD_lavadorCompletar(numRevision){
 // ══════════════════════════════════════════════════════
 // MÓDULO CONSULTA DE VENDEDORES
 // ══════════════════════════════════════════════════════
+
+
+// ── PDF desde Consulta: Inspección de Recepción ──
+async function CONS_descargarPDFInspeccion(placa){
+  try{
+    // Obtener datos del vehículo desde el caché de la vista de consulta
+    const v = (window._cons_veh_cache||{})[placa] || {};
+    showToast('⏳ Cargando hallazgos...');
+    const hResp = await gPost({action:'getHallazgos', id: v.id||v.ID||''});
+    const hallazgosData = (hResp&&hResp.status==='OK'&&hResp.data) ? hResp.data : [];
+    const {jsPDF} = window.jspdf;
+    const doc = new jsPDF({orientation:'p',unit:'mm',format:'a4'});
+    let y = 20;
+    const sec=(t)=>{ if(y>265){doc.addPage();y=20;} doc.setFillColor(240,238,233);doc.rect(12,y-4,186,7,'F');doc.setFontSize(10);doc.setFont('helvetica','bold');doc.setTextColor(27,111,216);doc.text(t,14,y);doc.setTextColor(0,0,0);doc.setFont('helvetica','normal');y+=10; };
+    doc.setFillColor(27,111,216);doc.rect(0,0,210,30,'F');doc.setTextColor(255,255,255);
+    doc.setFontSize(15);doc.setFont('helvetica','bold');doc.text('INFORME DE INSPECCION DE RECEPCION',105,13,{align:'center'});
+    doc.setFontSize(9);doc.setFont('helvetica','normal');doc.text('Division de Vehiculos Usados - Cofino',105,22,{align:'center'});
+    doc.setTextColor(0,0,0); y=38;
+    sec('DATOS DEL VEHICULO');
+    const pairs=[['Placa:',v.placa||placa||'-'],['Modelo:',v.modelo||'-'],['Color:',v.color||'-'],['Km:',v.km||'-'],['Chasis:',v.chasis||'-'],['Motor:',v.nmotor||v.motor||'-'],['Inspector:',v.inspector||'-'],['Fecha:',PROD_fmtFecha(v.fecha)||'-'],['Vendedor:',v.vendedor||'-']];
+    pairs.forEach(function(pair){ doc.setFont('helvetica','bold');doc.setFontSize(9);doc.text(pair[0],14,y);doc.setFont('helvetica','normal');doc.text(String(pair[1]).toUpperCase(),50,y);y+=5; });
+    y+=4;
+    if(hallazgosData.length){
+      sec('HALLAZGOS DETECTADOS ('+hallazgosData.length+')');
+      hallazgosData.forEach(function(h,i){
+        if(y>270){doc.addPage();y=20;}
+        doc.setFont('helvetica','bold');doc.setFontSize(9);
+        var txt=doc.splitTextToSize((i+1)+'. '+(h[2]||'')+(h[3]?' - '+h[3]:''),180);
+        doc.text(txt,14,y);y+=txt.length*5+2;
+        if(h[5]&&h[5]!=='-'){doc.setFont('helvetica','normal');var obs=doc.splitTextToSize('   '+h[5],175);doc.text(obs,14,y);y+=obs.length*4+2;}
+      });
+    } else {
+      sec('HALLAZGOS'); doc.setFontSize(9);doc.text('Sin hallazgos registrados.',14,y);y+=6;
+    }
+    doc.save('Inspeccion_Recepcion_'+(placa||'veh')+'.pdf');
+    showToast('PDF descargado',false);
+  }catch(e){ showToast('Error: '+e.message); }
+}
+
+// ── PDF desde Consulta: Revisión Técnica de Taller ──
+function CONS_descargarPDFTaller(placa){
+  const v=(window._cons_veh_cache||{})[placa]||{};
+  const prod=(window._cons_prod_cache||{})[placa]||{};
+  REG_detalle={
+    placa:placa,
+    numRevision:v.num_revision||'',
+    modelo:v.modelo||'',
+    inspector:v.inspector||'',
+    mecanico:prod.resp_taller||v.mecanico||'',
+    fecha:v.fecha||'',
+    totalHallazgos:v.totalHallazgos||0,
+    estado:v.estado||'',
+    chasis:v.chasis||'',
+    totalAutorizado:0
+  };
+  REG_descargarPDF_revision();
+}
 
 function CONS_render(){
   const app = document.getElementById('consulta-app');
@@ -5760,6 +5847,10 @@ async function CONS_verDetalle(idx){
 }
 
 function CONS_renderDetalle(app, v, cot, prod){
+  // Guardar v y prod en cache para PDF
+  if(!window._cons_veh_cache) window._cons_veh_cache={};
+  if(!window._cons_prod_cache) window._cons_prod_cache={};
+  if(v&&v.placa){ window._cons_veh_cache[v.placa]=v; window._cons_prod_cache[v.placa]=prod; }
   const et = PROD_ESTADOS[prod.etapa_actual||'inspeccion'];
   const autorizados = cot ? (cot.items||[]).filter((_,i)=>new Set((cot.autorizados||[]).map(Number)).has(i)) : [];
   const pendientes  = cot ? (cot.items||[]).filter((_,i)=>!new Set((cot.autorizados||[]).map(Number)).has(i)) : [];
@@ -5794,7 +5885,10 @@ function CONS_renderDetalle(app, v, cot, prod){
       <div style="font-size:12px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">📋 Inspección de recepción</div>
       <div style="font-size:13px;color:var(--t)">Inspector: <b>${v.inspector||prod.resp_inspeccion||'—'}</b></div>
       <div style="font-size:12px;color:var(--t2)">Fecha: ${PROD_fmtFecha(v.fecha||prod.fecha_inspeccion)}</div>
-      ${v.folderLink?`<a href="${v.folderLink}" target="_blank" style="display:inline-block;margin-top:8px;padding:7px 12px;background:var(--blue-bg);color:var(--blue-t);border:1px solid var(--blue-b);border-radius:var(--rsm);font-size:12px;font-weight:600;text-decoration:none">📸 Ver fotos en Drive</a>`:''}
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+        ${v.folderLink?`<a href="${v.folderLink}" target="_blank" style="padding:7px 12px;background:var(--blue-bg);color:var(--blue-t);border:1px solid var(--blue-b);border-radius:var(--rsm);font-size:12px;font-weight:600;text-decoration:none">📸 Ver fotos en Drive</a>`:''}
+        <button onclick="CONS_descargarPDFInspeccion('${v.placa}')" style="padding:7px 12px;background:var(--sf2);color:var(--t);border:1px solid var(--b2);border-radius:var(--rsm);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">📋 PDF Inspección</button>
+      </div>
     </div>
 
     <!-- Revisión técnica taller -->
@@ -5803,7 +5897,8 @@ function CONS_renderDetalle(app, v, cot, prod){
       ${prod.resp_taller ? `
         <div style="font-size:13px;color:var(--t)">Mecánico: <b>${prod.resp_taller}</b></div>
         <div style="font-size:12px;color:var(--t2)">Fecha: ${PROD_fmtFecha(prod.fecha_taller)}</div>
-        <div style="font-size:12px;color:var(--t2)">Hallazgos: ${v.totalHallazgos||'—'}</div>` :
+        <div style="font-size:12px;color:var(--t2)">Hallazgos: ${v.totalHallazgos||'—'}</div>
+        <button onclick="CONS_descargarPDFTaller('${v.placa}')" style="display:block;width:100%;margin-top:8px;padding:8px 12px;background:var(--sf2);color:var(--t);border:1px solid var(--b2);border-radius:var(--rsm);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">🔧 PDF Revisión Taller</button>` :
         `<div style="font-size:12px;color:var(--t3)">Pendiente</div>`}
     </div>
 
@@ -5824,7 +5919,7 @@ function CONS_renderDetalle(app, v, cot, prod){
 
     <!-- Limpieza y Calidad -->
     <div style="background:var(--sf);border:1px solid var(--b);border-radius:var(--r);padding:12px;margin-bottom:12px">
-      <div style="font-size:12px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">🧹 Limpieza y ✅ Control de calidad</div>
+      <div style="font-size:12px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">🚗🫧 Limpieza y ✅ Control de calidad</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
         <div style="padding:10px;background:${prod.resp_limpieza?'var(--green-bg)':'var(--sf2)'};border:1px solid ${prod.resp_limpieza?'var(--green-b)':'var(--b)'};border-radius:var(--rsm)">
           <div style="font-size:10px;font-weight:600;color:var(--t3);margin-bottom:4px">LIMPIEZA</div>
