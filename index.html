@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- VERSION: 14.5 - FIX: renombrada variable totalVisible para evitar conflicto con const total existente -->
+<!-- VERSION: 14.6 - FIX: validacion guardado excluye preguntas identidad opcionales no aplicadas en recepcion -->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -4100,7 +4100,9 @@ async function T_guardarRegistro(){
   if(!T_VEH?.placa){showToast('⚠ No hay vehículo cargado');return;}
 
   // 1. Validar que todos los puntos estén respondidos
-  const todosPuntos=Object.values(PUNTOS).flat();
+  const _iMapVal={"p14":"color_ok","p15":"chasis_ok","p16":"motor_ok"};
+  const _iFailVal=T_VEH?.identFailed||[];
+  const todosPuntos=Object.values(PUNTOS).flat().filter(p=>!_iMapVal[p.id]||_iFailVal.some(f=>f.id===_iMapVal[p.id]));
   const sinResponder=todosPuntos.filter(p=>T_ST[p.id]!==undefined && !T_ST[p.id]?.val);
   if(sinResponder.length>0){
     showToast('⚠ Faltan '+sinResponder.length+' punto(s) por responder');
