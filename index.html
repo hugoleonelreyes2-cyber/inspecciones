@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- VERSION: 14.3 - FIX: eliminadas openModulo y showMenu duplicadas del módulo Taller -->
+<!-- VERSION: 14.5 - FIX: renombrada variable totalVisible para evitar conflicto con const total existente -->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -1352,7 +1352,8 @@ function buildQList(contId,questions,stateKey){
   <div class="rl">Medida de la llanta</div>
   <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px">
     <input type="text" id="llm-${q.id}" placeholder="Ej. 265/65R17" oninput="bLL('${q.id}')" style="flex:1">
-    <button class="foto-btn" onclick="document.getElementById('llc-${q.id}').click()" style="margin-top:0;flex-shrink:0">📸 Leer medida</button>
+    <button class="foto-btn" onclick="showPhotoMenu('llc-cam-${q.id}','llc-${q.id}')" style="margin-top:0;flex-shrink:0">📸 Leer medida</button>
+    <input type="file" id="llc-cam-${q.id}" class="cam-input" accept="image/*" capture="environment" onchange="ocrLlanta(this,'${q.id}')">
     <input type="file" id="llc-${q.id}" class="cam-input" accept="image/*" onchange="ocrLlanta(this,'${q.id}')">
   </div>
   <div class="llanta-result" id="llr-${q.id}"></div>
@@ -3706,10 +3707,15 @@ function T_renderEtapa(id){
 
   const etapa=ETAPAS.find(e=>e.id===id);
   const puntos=PUNTOS[id]||[];
-  const resp=puntos.filter(p=>T_ST[p.id]?.val).length;
+  // Calcular total visible: excluir preguntas de identidad que no aplican
+  const _identMapCnt={'p14':'color_ok','p15':'chasis_ok','p16':'motor_ok'};
+  const _identFailedCnt=T_VEH?.identFailed||[];
+  const puntosVisibles=puntos.filter(p=>!_identMapCnt[p.id]||_identFailedCnt.some(f=>f.id===_identMapCnt[p.id]));
+  const resp=puntosVisibles.filter(p=>T_ST[p.id]?.val).length;
+  const totalVisible=puntosVisibles.length;
 
   const hdr=document.createElement('div');hdr.className='card';hdr.style='margin-bottom:12px';
-  hdr.innerHTML=`<div style="display:flex;align-items:center;gap:12px;padding:12px 14px"><span style="font-size:26px">${etapa.ico}</span><div><div style="font-size:15px;font-weight:600;color:var(--t)">${etapa.label}</div><div style="font-size:11px;color:var(--t3);margin-top:2px">${etapa.sub}</div></div><span style="margin-left:auto;font-size:12px;font-family:'DM Mono',monospace;color:var(--t3)">${resp}/${puntos.length}</span></div>`;
+  hdr.innerHTML=`<div style="display:flex;align-items:center;gap:12px;padding:12px 14px"><span style="font-size:26px">${etapa.ico}</span><div><div style="font-size:15px;font-weight:600;color:var(--t)">${etapa.label}</div><div style="font-size:11px;color:var(--t3);margin-top:2px">${etapa.sub}</div></div><span style="margin-left:auto;font-size:12px;font-family:'DM Mono',monospace;color:var(--t3)">${resp}/${totalVisible}</span></div>`;
   c.appendChild(hdr);
 
   // Hallazgos inspector referencia — mostrar en todas las etapas
