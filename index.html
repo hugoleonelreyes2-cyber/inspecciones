@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- VERSION: 14.1 - FIX: módulos ocultos correctamente al iniciar y en showMenu -->
+<!-- VERSION: 14.2 - FIX: SESION_ACTUAL en window scope, PROD_render con fallback -->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -3042,6 +3042,7 @@ function init(){
 // ── SISTEMA DE SESIÓN ──
 const SESSION_KEY = 'cofi_session';
 var SESION_ACTUAL = null;
+window.SESION_ACTUAL = null;
 
 async function loginIngresar() {
   const userInput = (document.getElementById('login-user').value||'').trim().toUpperCase();
@@ -3081,6 +3082,7 @@ async function loginIngresar() {
 
 function loginEstablecerSesion(user) {
   SESION_ACTUAL = user;
+  window.SESION_ACTUAL = user;
   localStorage.setItem(SESSION_KEY, JSON.stringify(user));
   document.getElementById('login-screen').style.display = 'none';
   loginAplicarPermisos();
@@ -3140,6 +3142,7 @@ function loginVerificarSesion() {
       const user = JSON.parse(saved);
       if (user && user.nombre && user.rol) {
         SESION_ACTUAL = user;
+        window.SESION_ACTUAL = user;
         const ls = document.getElementById('login-screen');
         if (ls) ls.style.display = 'none';
         loginAplicarPermisos();
@@ -5401,7 +5404,8 @@ function PROD_fmtFecha(f){ if(!f||f==='—')return'—'; try{ const d=new Date(f
 function PROD_render(){
   const app = document.getElementById('prod-app');
   if(!app) return;
-  const rol = SESION_ACTUAL?.rol;
+  const sesion = SESION_ACTUAL || window.SESION_ACTUAL;
+  const rol = sesion?.rol;
   if(rol === 'lavador'){
     PROD_renderLavador(app);
   } else {
