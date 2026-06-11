@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- VERSION: 13.5 - FIXES: inspector sin acceso a registros -->
+<!-- VERSION: 14.0 - NUEVO: Módulo Producción, rol lavador, rol vendedor, flujo de estados por vehículo -->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -303,6 +303,22 @@ textarea{resize:vertical;line-height:1.5}
       </div>
       <span style="margin-left:auto;color:var(--t3);font-size:18px">›</span>
     </button>
+    <button onclick="openModulo('produccion')" id="menu-btn-produccion" style="width:100%;padding:20px;margin-bottom:14px;background:var(--sf);border:1px solid var(--b);border-radius:var(--rlg);cursor:pointer;font-family:'DM Sans',sans-serif;text-align:left;display:flex;align-items:center;gap:16px">
+      <span style="font-size:32px">🏭</span>
+      <div>
+        <div style="font-size:15px;font-weight:600;color:var(--t);margin-bottom:3px">Producción</div>
+        <div style="font-size:12px;color:var(--t3)">Limpieza, control de calidad y flujo de estados</div>
+      </div>
+      <span style="margin-left:auto;color:var(--t3);font-size:18px">›</span>
+    </button>
+    <button onclick="openModulo('consulta')" id="menu-btn-consulta" style="width:100%;padding:20px;margin-bottom:14px;background:var(--sf);border:1px solid var(--b);border-radius:var(--rlg);cursor:pointer;font-family:'DM Sans',sans-serif;text-align:left;display:flex;align-items:center;gap:16px">
+      <span style="font-size:32px">🔍</span>
+      <div>
+        <div style="font-size:15px;font-weight:600;color:var(--t);margin-bottom:3px">Consulta de vehículos</div>
+        <div style="font-size:12px;color:var(--t3)">Estado del proceso y documentos por vehículo</div>
+      </div>
+      <span style="margin-left:auto;color:var(--t3);font-size:18px">›</span>
+    </button>
   </div>
 </div>
 
@@ -340,6 +356,26 @@ textarea{resize:vertical;line-height:1.5}
 <!-- MÓDULO TALLER -->
 <div id="taller-modulo" style="display:none;position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;height:100%;background:var(--bg);z-index:490;overflow-y:auto">
   <div id="taller-app"></div>
+</div>
+
+<!-- MÓDULO PRODUCCIÓN -->
+<div id="produccion-modulo" style="display:none;position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;height:100%;background:var(--bg);z-index:490;overflow-y:auto">
+  <div style="background:var(--sf);border-bottom:1px solid var(--b);padding:11px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10">
+    <button onclick="showMenu()" style="padding:6px 12px;border:1px solid var(--b);border-radius:var(--rsm);background:transparent;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--t2)">&#9776; Menú</button>
+    <div style="font-size:14px;font-weight:600;color:var(--t)">&#127981; Producción</div>
+    <div style="width:60px"></div>
+  </div>
+  <div id="prod-app"></div>
+</div>
+
+<!-- MÓDULO CONSULTA VENDEDORES -->
+<div id="consulta-modulo" style="display:none;position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;height:100%;background:var(--bg);z-index:490;overflow-y:auto">
+  <div style="background:var(--sf);border-bottom:1px solid var(--b);padding:11px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10">
+    <button onclick="showMenu()" style="padding:6px 12px;border:1px solid var(--b);border-radius:var(--rsm);background:transparent;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--t2)">&#9776; Menú</button>
+    <div style="font-size:14px;font-weight:600;color:var(--t)">&#128269; Consulta Vehículos</div>
+    <div style="width:60px"></div>
+  </div>
+  <div id="consulta-app"></div>
 </div>
 
 <div class="app" id="app">
@@ -829,26 +865,55 @@ function showMenu(){
   const menu=document.getElementById('main-menu');
   const taller=document.getElementById('taller-modulo');
   const app=document.getElementById('app');
+  const prod=document.getElementById('produccion-modulo');
+  const cons=document.getElementById('consulta-modulo');
   if(menu)menu.style.display='block';
   if(taller)taller.style.display='none';
   if(app)app.style.display='none';
+  if(prod)prod.style.display='none';
+  if(cons)cons.style.display='none';
   moduloActual='menu';
 }
 function openModulo(mod){
   const menu=document.getElementById('main-menu');
   const taller=document.getElementById('taller-modulo');
   const app=document.getElementById('app');
+  const prod=document.getElementById('produccion-modulo');
+  const cons=document.getElementById('consulta-modulo');
+  const reg=document.getElementById('registros-modulo');
+  const cfg=document.getElementById('configuracion-modulo');
+  // Hide all first
   if(menu)menu.style.display='none';
+  if(taller)taller.style.display='none';
+  if(app)app.style.display='none';
+  if(prod)prod.style.display='none';
+  if(cons)cons.style.display='none';
+  if(reg)reg.style.display='none';
+  if(cfg)cfg.style.display='none';
   if(mod==='inspeccion'){
-    if(taller)taller.style.display='none';
     if(app)app.style.display='block';
     moduloActual='inspeccion';
   } else if(mod==='taller'){
-    if(app)app.style.display='none';
     if(taller)taller.style.display='block';
     moduloActual='taller';
     const appEl=document.getElementById('taller-app');
     if(appEl){appEl.innerHTML='<div id="app"></div>';T_renderBusqueda();}
+  } else if(mod==='registros'){
+    if(reg)reg.style.display='block';
+    moduloActual='registros';
+    REG_render();
+  } else if(mod==='configuracion'){
+    if(cfg)cfg.style.display='block';
+    moduloActual='configuracion';
+    CFG_render();
+  } else if(mod==='produccion'){
+    if(prod)prod.style.display='block';
+    moduloActual='produccion';
+    PROD_render();
+  } else if(mod==='consulta'){
+    if(cons)cons.style.display='block';
+    moduloActual='consulta';
+    CONS_render();
   }
 }
 
@@ -3021,17 +3086,36 @@ function loginEstablecerSesion(user) {
 function loginAplicarPermisos() {
   if (!SESION_ACTUAL) return;
   const rol = SESION_ACTUAL.rol;
-  const rolLabel = {admin:'Administrador', inspector:'Inspector', mecanico:'Mecánico'}[rol]||rol;
+  const rolLabels = {admin:'Administrador', inspector:'Inspector', mecanico:'Mecánico', lavador:'Lavador', vendedor:'Vendedor', produccion:'Producción'};
+  const rolLabel = rolLabels[rol]||rol;
   const userEl = document.getElementById('menu-sesion-user');
   if (userEl) userEl.textContent = '👤 ' + SESION_ACTUAL.nombre + ' · ' + rolLabel;
-  const btnInspeccion = document.getElementById('menu-btn-inspeccion');
-  const btnTaller = document.getElementById('menu-btn-taller');
-  const btnConfig = document.getElementById('menu-btn-config');
-  const btnRegistros = document.getElementById('menu-btn-registros');
-  if (btnInspeccion) btnInspeccion.style.display = (rol==='inspector'||rol==='admin') ? '' : 'none';
-  if (btnRegistros) btnRegistros.style.display = (rol==='mecanico'||rol==='admin') ? '' : 'none';
-  if (btnTaller) btnTaller.style.display = (rol==='mecanico'||rol==='admin') ? '' : 'none';
-  if (btnConfig) btnConfig.style.display = rol==='admin' ? '' : 'none';
+  const btnInspeccion  = document.getElementById('menu-btn-inspeccion');
+  const btnTaller      = document.getElementById('menu-btn-taller');
+  const btnConfig      = document.getElementById('menu-btn-config');
+  const btnRegistros   = document.getElementById('menu-btn-registros');
+  const btnProduccion  = document.getElementById('menu-btn-produccion');
+  const btnConsulta    = document.getElementById('menu-btn-consulta');
+  // Inspección: inspector y admin
+  if (btnInspeccion)  btnInspeccion.style.display  = (rol==='inspector'||rol==='admin') ? '' : 'none';
+  // Taller: mecánico y admin
+  if (btnTaller)      btnTaller.style.display      = (rol==='mecanico'||rol==='admin') ? '' : 'none';
+  // Registros: mecánico y admin
+  if (btnRegistros)   btnRegistros.style.display   = (rol==='mecanico'||rol==='admin') ? '' : 'none';
+  // Configuración: solo admin
+  if (btnConfig)      btnConfig.style.display      = rol==='admin' ? '' : 'none';
+  // Producción: admin, lavador, produccion
+  if (btnProduccion)  btnProduccion.style.display  = (rol==='admin'||rol==='lavador'||rol==='produccion') ? '' : 'none';
+  // Consulta: vendedor y admin
+  if (btnConsulta)    btnConsulta.style.display    = (rol==='vendedor'||rol==='admin') ? '' : 'none';
+  // Si es lavador, ir directo a su cola
+  if (rol === 'lavador') {
+    setTimeout(()=>openModulo('produccion'), 100);
+  }
+  // Si es vendedor, ir directo a consulta
+  if (rol === 'vendedor') {
+    setTimeout(()=>openModulo('consulta'), 100);
+  }
 }
 
 function loginError(msg) {
@@ -5288,6 +5372,487 @@ async function CFG_renderPanel(){
     app.innerHTML=`<div style="padding:20px;text-align:center;color:var(--red)">⚠ ${e.message}</div>`;
   }
 }
+
+// ══════════════════════════════════════════════════════
+// MÓDULO PRODUCCIÓN — Estados del flujo de preparación
+// ══════════════════════════════════════════════════════
+
+// Estados del pipeline de producción
+const PROD_ESTADOS = {
+  inspeccion:  { label:'Inspección recepción', icon:'📋', color:'var(--blue)',    bg:'var(--blue-bg)',    border:'var(--blue-b)',    orden:1 },
+  taller:      { label:'Revisión taller',       icon:'🔧', color:'var(--amber)',   bg:'var(--amber-bg)',   border:'var(--amber-b)',   orden:2 },
+  cotizacion:  { label:'Cotización',            icon:'💰', color:'var(--amber)',   bg:'var(--amber-bg)',   border:'var(--amber-b)',   orden:3 },
+  limpieza:    { label:'Limpieza',              icon:'🧹', color:'#7C3AED',       bg:'#F5F3FF',          border:'#DDD6FE',         orden:4 },
+  calidad:     { label:'Control de calidad',    icon:'✅', color:'var(--green)',   bg:'var(--green-bg)',   border:'var(--green-b)',   orden:5 },
+  listo:       { label:'Listo para venta',      icon:'🏷️', color:'#065F46',       bg:'#D1FAE5',          border:'#6EE7B7',         orden:6 },
+};
+
+// Helpers
+function PROD_fechaHoy(){ return new Date().toLocaleDateString('es-GT',{day:'2-digit',month:'2-digit',year:'numeric'}); }
+function PROD_fmtFecha(f){ if(!f||f==='—')return'—'; try{ const d=new Date(f); if(isNaN(d))return f; return d.toLocaleDateString('es-GT',{day:'2-digit',month:'2-digit',year:'numeric'}); }catch(e){return f;} }
+
+// Render principal del módulo según rol
+function PROD_render(){
+  const app = document.getElementById('prod-app');
+  if(!app) return;
+  const rol = SESION_ACTUAL?.rol;
+  if(rol === 'lavador'){
+    PROD_renderLavador(app);
+  } else {
+    PROD_renderAdmin(app);
+  }
+}
+
+// ── VISTA ADMIN/PRODUCCIÓN — Cola completa con filtros ──
+async function PROD_renderAdmin(app){
+  app.innerHTML = '<div style="padding:24px;text-align:center;color:var(--t2)">Cargando vehículos...</div>';
+  try{
+    const r = await gPost({action:'getProduccion'});
+    if(r.error) throw new Error(r.error);
+    const lista = r.data || [];
+    const rol = SESION_ACTUAL?.rol;
+
+    app.innerHTML = `<div style="padding:14px 16px 96px">
+      <div style="display:flex;gap:7px;margin-bottom:12px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none">
+        <button onclick="PROD_filtrar('todos')" id="pfil-todos" style="flex-shrink:0;padding:5px 13px;font-size:11px;font-weight:600;border-radius:20px;border:1px solid var(--blue);background:var(--blue);color:#fff;cursor:pointer;font-family:'DM Sans',sans-serif">Todos</button>
+        <button onclick="PROD_filtrar('limpieza')" id="pfil-limpieza" style="flex-shrink:0;padding:5px 13px;font-size:11px;font-weight:500;border-radius:20px;border:1px solid var(--b2);background:var(--sf);color:var(--t2);cursor:pointer;font-family:'DM Sans',sans-serif">🧹 Limpieza</button>
+        <button onclick="PROD_filtrar('calidad')" id="pfil-calidad" style="flex-shrink:0;padding:5px 13px;font-size:11px;font-weight:500;border-radius:20px;border:1px solid var(--b2);background:var(--sf);color:var(--t2);cursor:pointer;font-family:'DM Sans',sans-serif">✅ Calidad</button>
+        <button onclick="PROD_filtrar('listo')" id="pfil-listo" style="flex-shrink:0;padding:5px 13px;font-size:11px;font-weight:500;border-radius:20px;border:1px solid var(--b2);background:var(--sf);color:var(--t2);cursor:pointer;font-family:'DM Sans',sans-serif">🏷️ Listos</button>
+      </div>
+      <div id="prod-lista">${PROD_renderLista(lista,'todos')}</div>
+    </div>`;
+    window._prod_lista_cache = lista;
+  }catch(e){
+    app.innerHTML = `<div style="padding:20px;text-align:center;color:var(--red)">⚠ ${e.message}</div>`;
+  }
+}
+
+function PROD_filtrar(filtro){
+  document.querySelectorAll('[id^="pfil-"]').forEach(b=>{
+    const activo = b.id === 'pfil-'+filtro;
+    b.style.background = activo ? 'var(--blue)' : 'var(--sf)';
+    b.style.color = activo ? '#fff' : 'var(--t2)';
+    b.style.borderColor = activo ? 'var(--blue)' : 'var(--b2)';
+    b.style.fontWeight = activo ? '600' : '500';
+  });
+  const lista = window._prod_lista_cache || [];
+  document.getElementById('prod-lista').innerHTML = PROD_renderLista(lista, filtro);
+}
+
+function PROD_renderLista(lista, filtro){
+  let items = lista;
+  if(filtro !== 'todos') items = lista.filter(v => v.etapa_actual === filtro);
+  if(!items.length) return `<div style="text-align:center;padding:40px 20px;color:var(--t3)"><div style="font-size:36px;margin-bottom:8px">📭</div><div style="font-size:13px">Sin vehículos${filtro!=='todos'?' en esta etapa':''}</div></div>`;
+  return items.map(v => PROD_renderTarjeta(v)).join('');
+}
+
+function PROD_renderTarjeta(v){
+  const et = PROD_ESTADOS[v.etapa_actual] || PROD_ESTADOS.inspeccion;
+  const diasEnEtapa = v.fecha_etapa ? Math.floor((Date.now()-new Date(v.fecha_etapa))/(1000*60*60*24)) : 0;
+  const alertaDias = diasEnEtapa >= 3;
+  return `<div style="background:var(--sf);border:1px solid var(--b);border-left:4px solid ${et.color};border-radius:var(--r);padding:13px 14px;margin-bottom:9px;box-shadow:var(--sh)">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:6px">
+      <div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:16px;font-weight:700;color:var(--t)">${v.placa||'—'}</span>
+          <span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--t3);background:var(--sf2);padding:2px 7px;border-radius:4px;border:1px solid var(--b)">${v.num_revision||'—'}</span>
+        </div>
+        <div style="font-size:12px;color:var(--t2);margin-top:2px">${v.modelo||'—'}</div>
+      </div>
+      <span style="font-size:10px;padding:3px 8px;border-radius:20px;font-weight:600;background:${et.bg};color:${et.color};border:1px solid ${et.border};white-space:nowrap">${et.icon} ${et.label}</span>
+    </div>
+    ${PROD_renderPipeline(v)}
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;padding-top:8px;border-top:1px solid var(--b)">
+      <span style="font-size:11px;color:${alertaDias?'var(--red)':'var(--t3)'}">
+        ${alertaDias?'⚠ ':''}${diasEnEtapa}d en etapa${v.resp_etapa?' · '+v.resp_etapa:''}
+      </span>
+      <button onclick="PROD_verDetalle('${v.num_revision}')" style="padding:5px 12px;font-size:11px;font-weight:600;border:1px solid var(--blue-b);border-radius:var(--rsm);background:var(--blue-bg);color:var(--blue-t);cursor:pointer;font-family:'DM Sans',sans-serif">Ver detalle →</button>
+    </div>
+  </div>`;
+}
+
+function PROD_renderPipeline(v){
+  const etapas = ['inspeccion','taller','cotizacion','limpieza','calidad','listo'];
+  const etapaActual = v.etapa_actual || 'inspeccion';
+  const idxActual = etapas.indexOf(etapaActual);
+  return `<div style="display:flex;align-items:center;gap:2px;margin-top:8px;overflow-x:auto;scrollbar-width:none">
+    ${etapas.map((et,i)=>{
+      const e = PROD_ESTADOS[et];
+      const done = i < idxActual;
+      const active = i === idxActual;
+      const bg = done ? 'var(--green)' : active ? e.color : 'var(--b2)';
+      const fc = (done||active) ? '#fff' : 'var(--t3)';
+      return `<div style="flex:1;min-width:28px;text-align:center">
+        <div style="width:24px;height:24px;border-radius:50%;background:${bg};color:${fc};font-size:10px;display:flex;align-items:center;justify-content:center;margin:0 auto;font-weight:700">${done?'✓':i+1}</div>
+      </div>${i<etapas.length-1?`<div style="flex:2;height:2px;background:${done?'var(--green)':'var(--b2)'}"></div>`:''}`;
+    }).join('')}
+  </div>`;
+}
+
+// ── DETALLE DE VEHÍCULO EN PRODUCCIÓN ──
+async function PROD_verDetalle(numRevision){
+  const app = document.getElementById('prod-app');
+  app.innerHTML = '<div style="padding:24px;text-align:center;color:var(--t2)">Cargando...</div>';
+  try{
+    const r = await gPost({action:'getProduccionDetalle', numRevision});
+    if(r.error) throw new Error(r.error);
+    const v = r.data || {};
+    PROD_renderDetallePantalla(app, v);
+  }catch(e){
+    app.innerHTML = `<div style="padding:20px;text-align:center;color:var(--red)">⚠ ${e.message}</div>`;
+  }
+}
+
+function PROD_renderDetallePantalla(app, v){
+  const et = PROD_ESTADOS[v.etapa_actual] || PROD_ESTADOS.inspeccion;
+  const rol = SESION_ACTUAL?.rol;
+  const etapas = ['inspeccion','taller','cotizacion','limpieza','calidad','listo'];
+  const idxActual = etapas.indexOf(v.etapa_actual || 'inspeccion');
+
+  app.innerHTML = `<div style="padding:14px 16px 96px">
+    <!-- Header -->
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+      <button onclick="PROD_render()" style="padding:6px 12px;border:1px solid var(--b);border-radius:var(--rsm);background:var(--sf);font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--t2)">← Volver</button>
+      <div style="flex:1">
+        <div style="font-size:17px;font-weight:700;color:var(--t)">${v.placa||'—'} <span style="font-size:12px;font-weight:400;color:var(--t3)">${v.num_revision||''}</span></div>
+        <div style="font-size:12px;color:var(--t2)">${v.modelo||'—'}</div>
+      </div>
+      <span style="font-size:10px;padding:4px 9px;border-radius:20px;font-weight:600;background:${et.bg};color:${et.color};border:1px solid ${et.border}">${et.icon} ${et.label}</span>
+    </div>
+
+    <!-- Pipeline visual -->
+    <div style="background:var(--sf);border:1px solid var(--b);border-radius:var(--r);padding:12px;margin-bottom:12px">
+      ${PROD_renderPipeline(v)}
+    </div>
+
+    <!-- Historial de etapas -->
+    <div style="background:var(--sf);border:1px solid var(--b);border-radius:var(--r);padding:12px;margin-bottom:12px">
+      <div style="font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Historial de etapas</div>
+      ${PROD_renderHistorial(v)}
+    </div>
+
+    <!-- Acciones según etapa y rol -->
+    ${(rol==='admin'||rol==='produccion') ? PROD_renderAcciones(v) : ''}
+  </div>`;
+}
+
+function PROD_renderHistorial(v){
+  const etapas = [
+    { key:'inspeccion', label:'Inspección recepción', icon:'📋', resp: v.resp_inspeccion, fecha: v.fecha_inspeccion },
+    { key:'taller',     label:'Revisión taller',       icon:'🔧', resp: v.resp_taller,     fecha: v.fecha_taller },
+    { key:'cotizacion', label:'Cotización',            icon:'💰', resp: v.resp_cotizacion, fecha: v.fecha_cotizacion, extra: v.estado_cotizacion },
+    { key:'limpieza',   label:'Limpieza',              icon:'🧹', resp: v.resp_limpieza,   fecha: v.fecha_limpieza, asig: v.resp_limpieza_asig, fechaAsig: v.fecha_limpieza_asig },
+    { key:'calidad',    label:'Control de calidad',    icon:'✅', resp: v.resp_calidad,    fecha: v.fecha_calidad },
+    { key:'listo',      label:'Listo para venta',      icon:'🏷️', resp: v.resp_calidad,    fecha: v.fecha_listo },
+  ];
+  const etapaActual = v.etapa_actual || 'inspeccion';
+  const orden = Object.fromEntries(Object.entries(PROD_ESTADOS).map(([k,e])=>[k,e.orden]));
+  const idxActual = orden[etapaActual] || 1;
+
+  return etapas.map(e=>{
+    const eOrden = orden[e.key] || 1;
+    const done = eOrden < idxActual;
+    const active = e.key === etapaActual;
+    const pending = eOrden > idxActual;
+    const color = done ? 'var(--green)' : active ? PROD_ESTADOS[e.key]?.color||'var(--blue)' : 'var(--b2)';
+    const textColor = pending ? 'var(--t3)' : 'var(--t)';
+    return `<div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--b);opacity:${pending?0.5:1}">
+      <div style="width:22px;height:22px;border-radius:50%;background:${color};color:#fff;font-size:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;font-weight:700">${done?'✓':e.icon}</div>
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:600;color:${textColor}">${e.label}</div>
+        ${e.key==='limpieza'&&e.asig ? `<div style="font-size:11px;color:var(--t3)">Asignado a: <b>${e.asig}</b> · ${PROD_fmtFecha(e.fechaAsig)}</div>` : ''}
+        ${e.resp ? `<div style="font-size:11px;color:var(--t2)">Realizado por: <b>${e.resp}</b></div>` : ''}
+        ${e.fecha ? `<div style="font-size:11px;color:var(--t3)">${PROD_fmtFecha(e.fecha)}</div>` : ''}
+        ${e.extra ? `<div style="font-size:10px;padding:2px 7px;border-radius:10px;display:inline-block;margin-top:2px;background:${e.extra==='Autorizada'?'var(--green-bg)':'var(--amber-bg)'};color:${e.extra==='Autorizada'?'var(--green-t)':'var(--amber-t)'};">${e.extra}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function PROD_renderAcciones(v){
+  const etapa = v.etapa_actual || 'inspeccion';
+  let html = '';
+
+  if(etapa === 'inspeccion' || etapa === 'taller' || etapa === 'cotizacion'){
+    // Opción de asignar limpieza (puede saltarse taller/cotizacion)
+    html += `<div style="background:var(--sf);border:1.5px solid #DDD6FE;border-radius:var(--r);padding:14px;margin-bottom:12px">
+      <div style="font-size:13px;font-weight:600;color:#5B21B6;margin-bottom:10px">🧹 Asignar a limpieza</div>
+      <div style="font-size:12px;color:var(--t2);margin-bottom:10px">Puede asignar limpieza en cualquier momento, sin necesidad de completar taller o cotización.</div>
+      <input id="prod-lavador-nombre" type="text" placeholder="Nombre del lavador" style="width:100%;padding:10px;border:1px solid var(--b);border-radius:var(--rsm);font-size:14px;background:var(--sf);color:var(--t);box-sizing:border-box;margin-bottom:10px">
+      <button onclick="PROD_asignarLimpieza('${v.num_revision}')" style="width:100%;padding:12px;background:#7C3AED;color:#fff;border:none;border-radius:var(--r);font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">Asignar limpieza</button>
+    </div>`;
+  }
+
+  if(etapa === 'limpieza'){
+    html += `<div style="background:#F5F3FF;border:1.5px solid #DDD6FE;border-radius:var(--r);padding:14px;margin-bottom:12px">
+      <div style="font-size:13px;font-weight:600;color:#5B21B6;margin-bottom:6px">🧹 Limpieza en progreso</div>
+      <div style="font-size:12px;color:var(--t2);margin-bottom:10px">Asignado a: <b>${v.resp_limpieza_asig||'—'}</b> · ${PROD_fmtFecha(v.fecha_limpieza_asig)}</div>
+      <button onclick="PROD_completarLimpieza('${v.num_revision}')" style="width:100%;padding:12px;background:#7C3AED;color:#fff;border:none;border-radius:var(--r);font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">✓ Marcar limpieza como completada</button>
+    </div>
+    <div style="background:var(--sf);border:1.5px solid var(--green-b);border-radius:var(--r);padding:14px;margin-bottom:12px">
+      <div style="font-size:13px;font-weight:600;color:var(--green-t);margin-bottom:10px">✅ Pasar a Control de Calidad</div>
+      <input id="prod-calidad-nombre" type="text" placeholder="Nombre del responsable de calidad" style="width:100%;padding:10px;border:1px solid var(--b);border-radius:var(--rsm);font-size:14px;background:var(--sf);color:var(--t);box-sizing:border-box;margin-bottom:10px">
+      <button onclick="PROD_completarCalidad('${v.num_revision}')" style="width:100%;padding:12px;background:var(--green);color:#fff;border:none;border-radius:var(--r);font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">✅ Aprobar control de calidad → Listo para venta</button>
+    </div>`;
+  }
+
+  if(etapa === 'calidad'){
+    html += `<div style="background:var(--sf);border:1.5px solid var(--green-b);border-radius:var(--r);padding:14px;margin-bottom:12px">
+      <div style="font-size:13px;font-weight:600;color:var(--green-t);margin-bottom:10px">✅ Control de Calidad</div>
+      <input id="prod-calidad-nombre" type="text" placeholder="Nombre del responsable de calidad" style="width:100%;padding:10px;border:1px solid var(--b);border-radius:var(--rsm);font-size:14px;background:var(--sf);color:var(--t);box-sizing:border-box;margin-bottom:10px">
+      <button onclick="PROD_completarCalidad('${v.num_revision}')" style="width:100%;padding:12px;background:var(--green);color:#fff;border:none;border-radius:var(--r);font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">✅ Aprobar → Listo para venta</button>
+    </div>`;
+  }
+
+  if(etapa === 'listo'){
+    html += `<div style="background:#D1FAE5;border:1.5px solid #6EE7B7;border-radius:var(--r);padding:14px;margin-bottom:12px;text-align:center">
+      <div style="font-size:24px;margin-bottom:6px">🏷️</div>
+      <div style="font-size:15px;font-weight:700;color:#065F46">Vehículo listo para venta</div>
+      <div style="font-size:12px;color:#065F46;margin-top:4px">Completado el ${PROD_fmtFecha(v.fecha_listo)}</div>
+    </div>`;
+  }
+
+  return html;
+}
+
+async function PROD_asignarLimpieza(numRevision){
+  const nombre = (document.getElementById('prod-lavador-nombre')?.value||'').trim();
+  if(!nombre){ showToast('⚠ Ingrese el nombre del lavador'); return; }
+  showToast('☁ Guardando...', false);
+  try{
+    const r = await gPost({action:'prodAsignarLimpieza', numRevision, lavador:nombre, fecha:PROD_fechaHoy(), responsable:SESION_ACTUAL?.nombre||'—'});
+    if(r.error) throw new Error(r.error);
+    showToast('✅ Limpieza asignada a '+nombre, false);
+    PROD_verDetalle(numRevision);
+  }catch(e){ showToast('⚠ '+e.message); }
+}
+
+async function PROD_completarLimpieza(numRevision){
+  if(!confirm('¿Confirmar limpieza como completada?')) return;
+  showToast('☁ Guardando...', false);
+  try{
+    const r = await gPost({action:'prodCompletarLimpieza', numRevision, responsable:SESION_ACTUAL?.nombre||'—', fecha:PROD_fechaHoy()});
+    if(r.error) throw new Error(r.error);
+    showToast('✅ Limpieza completada', false);
+    PROD_verDetalle(numRevision);
+  }catch(e){ showToast('⚠ '+e.message); }
+}
+
+async function PROD_completarCalidad(numRevision){
+  const nombre = (document.getElementById('prod-calidad-nombre')?.value||'').trim();
+  if(!nombre){ showToast('⚠ Ingrese el nombre del responsable de calidad'); return; }
+  if(!confirm('¿Confirmar control de calidad aprobado? El vehículo pasará a "Listo para venta".')) return;
+  showToast('☁ Guardando...', false);
+  try{
+    const r = await gPost({action:'prodCompletarCalidad', numRevision, responsable:nombre, fecha:PROD_fechaHoy()});
+    if(r.error) throw new Error(r.error);
+    showToast('✅ Vehículo listo para venta', false);
+    PROD_verDetalle(numRevision);
+  }catch(e){ showToast('⚠ '+e.message); }
+}
+
+// ── VISTA LAVADOR — Cola personal de asignaciones ──
+async function PROD_renderLavador(app){
+  app.innerHTML = '<div style="padding:24px;text-align:center;color:var(--t2)">Cargando tu cola...</div>';
+  try{
+    const nombre = SESION_ACTUAL?.nombre||'';
+    const r = await gPost({action:'getColaLavador', lavador:nombre});
+    if(r.error) throw new Error(r.error);
+    const cola = (r.data||[]).sort((a,b)=> new Date(a.fecha_limpieza_asig||0)-new Date(b.fecha_limpieza_asig||0));
+
+    if(!cola.length){
+      app.innerHTML = `<div style="padding:40px 20px;text-align:center;color:var(--t3)">
+        <div style="font-size:48px;margin-bottom:12px">🧹</div>
+        <div style="font-size:15px;font-weight:600;color:var(--t);margin-bottom:6px">Sin asignaciones pendientes</div>
+        <div style="font-size:13px">No tienes vehículos asignados para lavar.</div>
+      </div>`;
+      return;
+    }
+
+    app.innerHTML = `<div style="padding:14px 16px 96px">
+      <div style="background:var(--blue-bg);border:1px solid var(--blue-b);border-radius:var(--rsm);padding:10px 13px;margin-bottom:14px;font-size:12px;color:var(--blue-t)">
+        Tienes <b>${cola.length}</b> vehículo(s) asignado(s). Ordenados por fecha de ingreso — empieza por el primero.
+      </div>
+      ${cola.map((v,i)=>`
+        <div style="background:var(--sf);border:1px solid var(--b);border-left:4px solid ${i===0?'#7C3AED':'var(--b2)'};border-radius:var(--r);padding:13px 14px;margin-bottom:9px;box-shadow:var(--sh)">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+            <span style="font-size:13px;font-weight:700;color:var(--t)">${v.placa||'—'}</span>
+            <span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--t3);background:var(--sf2);padding:2px 6px;border-radius:4px;border:1px solid var(--b)">${v.num_revision||'—'}</span>
+            ${i===0?'<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:#7C3AED;color:#fff;font-weight:600">Primero</span>':''}
+          </div>
+          <div style="font-size:12px;color:var(--t2);margin-bottom:4px">${v.modelo||'—'}</div>
+          <div style="font-size:11px;color:var(--t3);margin-bottom:10px">Asignado: ${PROD_fmtFecha(v.fecha_limpieza_asig)}</div>
+          <button onclick="PROD_lavadorCompletar('${v.num_revision}')" style="width:100%;padding:11px;background:#7C3AED;color:#fff;border:none;border-radius:var(--r);font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">✓ Marcar como terminado</button>
+        </div>`).join('')}
+    </div>`;
+  }catch(e){
+    app.innerHTML = `<div style="padding:20px;text-align:center;color:var(--red)">⚠ ${e.message}</div>`;
+  }
+}
+
+async function PROD_lavadorCompletar(numRevision){
+  if(!confirm('¿Confirmar que terminaste la limpieza de este vehículo?')) return;
+  showToast('☁ Registrando...', false);
+  try{
+    const r = await gPost({action:'prodCompletarLimpieza', numRevision, responsable:SESION_ACTUAL?.nombre||'—', fecha:PROD_fechaHoy()});
+    if(r.error) throw new Error(r.error);
+    showToast('✅ Limpieza registrada como completada', false);
+    const app = document.getElementById('prod-app');
+    PROD_renderLavador(app);
+  }catch(e){ showToast('⚠ '+e.message); }
+}
+
+
+// ══════════════════════════════════════════════════════
+// MÓDULO CONSULTA DE VENDEDORES
+// ══════════════════════════════════════════════════════
+
+function CONS_render(){
+  const app = document.getElementById('consulta-app');
+  if(!app) return;
+  app.innerHTML = `<div style="padding:14px 16px 96px">
+    <div style="margin-bottom:16px">
+      <div style="font-size:13px;font-weight:500;color:var(--t2);margin-bottom:8px">Buscar por placa, modelo o N° revisión</div>
+      <div style="display:flex;gap:8px">
+        <input id="cons-buscar" type="text" placeholder="Ej. P123ABC o REV-0042"
+          style="flex:1;padding:11px 13px;border:1.5px solid var(--blue);border-radius:var(--rsm);font-size:14px;background:var(--sf);color:var(--t);font-family:'DM Sans',sans-serif"
+          onkeydown="if(event.key==='Enter')CONS_buscar()">
+        <button onclick="CONS_buscar()" style="padding:11px 18px;background:var(--blue);color:#fff;border:none;border-radius:var(--rsm);font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">Buscar</button>
+      </div>
+    </div>
+    <div id="cons-resultados"></div>
+  </div>`;
+}
+
+async function CONS_buscar(){
+  const query = (document.getElementById('cons-buscar')?.value||'').trim();
+  const res = document.getElementById('cons-resultados');
+  if(!query){ showToast('⚠ Ingrese placa o N° revisión'); return; }
+  res.innerHTML = '<div style="text-align:center;padding:20px;color:var(--t2)">🔍 Buscando...</div>';
+  try{
+    const r = await gPost({action:'consultaVendedor', query});
+    if(r.error) throw new Error(r.error);
+    const lista = r.data || [];
+    if(!lista.length){
+      res.innerHTML = `<div style="text-align:center;padding:30px;color:var(--t3)"><div style="font-size:32px;margin-bottom:8px">🔍</div><div>Sin resultados para "${query}"</div></div>`;
+      return;
+    }
+    res.innerHTML = lista.map((v,i)=>`
+      <div style="background:var(--sf);border:1px solid var(--b);border-radius:var(--r);padding:13px 14px;margin-bottom:9px;box-shadow:var(--sh)">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+          <span style="font-size:15px;font-weight:700;color:var(--t)">${v.placa||'—'}</span>
+          <span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--t3);background:var(--sf2);padding:2px 6px;border-radius:4px;border:1px solid var(--b)">${v.num_revision||'—'}</span>
+        </div>
+        <div style="font-size:12px;color:var(--t2);margin-bottom:6px">${v.modelo||'—'}</div>
+        <button onclick="CONS_verDetalle(${i})" style="width:100%;padding:10px;background:var(--blue);color:#fff;border:none;border-radius:var(--rsm);font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">Ver detalle completo →</button>
+      </div>`).join('');
+    window._cons_lista = lista;
+  }catch(e){
+    res.innerHTML = `<div style="padding:20px;text-align:center;color:var(--red)">⚠ ${e.message}</div>`;
+  }
+}
+
+async function CONS_verDetalle(idx){
+  const v = (window._cons_lista||[])[idx];
+  if(!v) return;
+  const app = document.getElementById('consulta-app');
+  app.innerHTML = '<div style="padding:24px;text-align:center;color:var(--t2)">Cargando detalle...</div>';
+  try{
+    // Cargar cotización, inspección y producción en paralelo
+    const [rCot, rProd] = await Promise.all([
+      gPost({action:'getCotizacion', placa:v.placa, numRevision:v.num_revision||''}),
+      gPost({action:'getProduccionDetalle', numRevision:v.num_revision||v.placa})
+    ]);
+    const cot = rCot.data || null;
+    const prod = rProd.data || {};
+    CONS_renderDetalle(app, v, cot, prod);
+  }catch(e){
+    app.innerHTML = `<div style="padding:20px;text-align:center;color:var(--red)">⚠ ${e.message}</div>`;
+  }
+}
+
+function CONS_renderDetalle(app, v, cot, prod){
+  const et = PROD_ESTADOS[prod.etapa_actual||'inspeccion'];
+  const autorizados = cot ? (cot.items||[]).filter((_,i)=>new Set((cot.autorizados||[]).map(Number)).has(i)) : [];
+  const pendientes  = cot ? (cot.items||[]).filter((_,i)=>!new Set((cot.autorizados||[]).map(Number)).has(i)) : [];
+  const totalAuth   = autorizados.reduce((s,it)=>s+(parseFloat(it.total)||0),0);
+  const totalPend   = pendientes.reduce((s,it)=>s+(parseFloat(it.total)||0),0);
+
+  app.innerHTML = `<div style="padding:14px 16px 96px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+      <button onclick="CONS_render()" style="padding:6px 12px;border:1px solid var(--b);border-radius:var(--rsm);background:var(--sf);font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--t2)">← Volver</button>
+      <div>
+        <div style="font-size:16px;font-weight:700;color:var(--t)">${v.placa||'—'} <span style="font-size:12px;font-weight:400;color:var(--t3)">${v.num_revision||''}</span></div>
+        <div style="font-size:12px;color:var(--t2)">${v.modelo||'—'}</div>
+      </div>
+    </div>
+
+    <!-- Estado actual -->
+    <div style="background:${et.bg};border:1px solid ${et.border};border-radius:var(--r);padding:12px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px">
+      <span style="font-size:24px">${et.icon}</span>
+      <div>
+        <div style="font-size:13px;font-weight:600;color:${et.color}">Estado actual: ${et.label}</div>
+        ${prod.resp_etapa?`<div style="font-size:11px;color:var(--t2)">Responsable: ${prod.resp_etapa}</div>`:''}
+      </div>
+    </div>
+
+    <!-- Pipeline -->
+    <div style="background:var(--sf);border:1px solid var(--b);border-radius:var(--r);padding:12px;margin-bottom:12px">
+      ${PROD_renderPipeline(prod)}
+    </div>
+
+    <!-- Inspección de recepción -->
+    <div style="background:var(--sf);border:1px solid var(--b);border-radius:var(--r);padding:12px;margin-bottom:12px">
+      <div style="font-size:12px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">📋 Inspección de recepción</div>
+      <div style="font-size:13px;color:var(--t)">Inspector: <b>${v.inspector||prod.resp_inspeccion||'—'}</b></div>
+      <div style="font-size:12px;color:var(--t2)">Fecha: ${PROD_fmtFecha(v.fecha||prod.fecha_inspeccion)}</div>
+      ${v.folderLink?`<a href="${v.folderLink}" target="_blank" style="display:inline-block;margin-top:8px;padding:7px 12px;background:var(--blue-bg);color:var(--blue-t);border:1px solid var(--blue-b);border-radius:var(--rsm);font-size:12px;font-weight:600;text-decoration:none">📸 Ver fotos en Drive</a>`:''}
+    </div>
+
+    <!-- Revisión técnica taller -->
+    <div style="background:var(--sf);border:1px solid var(--b);border-radius:var(--r);padding:12px;margin-bottom:12px">
+      <div style="font-size:12px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">🔧 Revisión técnica de taller</div>
+      ${prod.resp_taller ? `
+        <div style="font-size:13px;color:var(--t)">Mecánico: <b>${prod.resp_taller}</b></div>
+        <div style="font-size:12px;color:var(--t2)">Fecha: ${PROD_fmtFecha(prod.fecha_taller)}</div>
+        <div style="font-size:12px;color:var(--t2)">Hallazgos: ${v.totalHallazgos||'—'}</div>` :
+        `<div style="font-size:12px;color:var(--t3)">Pendiente</div>`}
+    </div>
+
+    <!-- Cotizaciones -->
+    <div style="background:var(--sf);border:1px solid var(--b);border-radius:var(--r);padding:12px;margin-bottom:12px">
+      <div style="font-size:12px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">💰 Cotizaciones</div>
+      ${cot ? `
+        ${autorizados.length ? `
+          <div style="font-size:12px;font-weight:600;color:var(--green-t);margin-bottom:6px">✅ Trabajos autorizados — Q ${totalAuth.toLocaleString('es-GT',{minimumFractionDigits:2})}</div>
+          ${autorizados.map(it=>`<div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid var(--b)"><span>${it.descripcion}</span><span style="font-family:'DM Mono',monospace;color:var(--green-t)">Q ${parseFloat(it.total||0).toLocaleString()}</span></div>`).join('')}
+          <button onclick="REG_detalle={placa:'${v.placa}',numRevision:'${v.num_revision||''}',modelo:'${(v.modelo||'').replace(/'/g,"\\'")}',inspector:'${(v.inspector||'').replace(/'/g,"\\'")}',mecanico:'${(v.mecanico||prod.resp_taller||'').replace(/'/g,"\\'")}',fecha:'${v.fecha||''}',totalHallazgos:${v.totalHallazgos||0},estado:'${v.estado||''}',chasis:'${v.chasis||''}',totalAutorizado:${totalAuth}};REG_descargarPDF_autorizado()" style="width:100%;margin-top:10px;padding:10px;background:var(--green-bg);color:var(--green);border:1px solid var(--green-b);border-radius:var(--rsm);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">📄 Descargar PDF Autorizado</button>` : ''}
+        ${pendientes.length ? `
+          <div style="font-size:12px;font-weight:600;color:var(--amber-t);margin-bottom:6px;margin-top:${autorizados.length?'12px':'0'}">⏳ Trabajos pendientes de autorizar — Q ${totalPend.toLocaleString('es-GT',{minimumFractionDigits:2})}</div>
+          ${pendientes.map(it=>`<div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid var(--b)"><span>${it.descripcion}</span><span style="font-family:'DM Mono',monospace;color:var(--amber-t)">Q ${parseFloat(it.total||0).toLocaleString()}</span></div>`).join('')}
+          <button onclick="REG_detalle={placa:'${v.placa}',numRevision:'${v.num_revision||''}',modelo:'${(v.modelo||'').replace(/'/g,"\\'")}',inspector:'${(v.inspector||'').replace(/'/g,"\\'")}',mecanico:'${(v.mecanico||prod.resp_taller||'').replace(/'/g,"\\'")}',fecha:'${v.fecha||''}',totalHallazgos:${v.totalHallazgos||0},estado:'${v.estado||''}',chasis:'${v.chasis||''}',totalAutorizado:0};REG_descargarPDF_pendiente()" style="width:100%;margin-top:10px;padding:10px;background:var(--amber-bg);color:var(--amber-t);border:1px solid var(--amber-b);border-radius:var(--rsm);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">📄 Descargar PDF Pendiente</button>` : ''}
+        ` : '<div style="font-size:12px;color:var(--t3)">Sin cotización registrada</div>'}
+    </div>
+
+    <!-- Limpieza y Calidad -->
+    <div style="background:var(--sf);border:1px solid var(--b);border-radius:var(--r);padding:12px;margin-bottom:12px">
+      <div style="font-size:12px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">🧹 Limpieza y ✅ Control de calidad</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div style="padding:10px;background:${prod.resp_limpieza?'var(--green-bg)':'var(--sf2)'};border:1px solid ${prod.resp_limpieza?'var(--green-b)':'var(--b)'};border-radius:var(--rsm)">
+          <div style="font-size:10px;font-weight:600;color:var(--t3);margin-bottom:4px">LIMPIEZA</div>
+          <div style="font-size:12px;color:var(--t)">${prod.resp_limpieza||'Pendiente'}</div>
+          ${prod.fecha_limpieza?`<div style="font-size:11px;color:var(--t3)">${PROD_fmtFecha(prod.fecha_limpieza)}</div>`:''}
+        </div>
+        <div style="padding:10px;background:${prod.resp_calidad?'var(--green-bg)':'var(--sf2)'};border:1px solid ${prod.resp_calidad?'var(--green-b)':'var(--b)'};border-radius:var(--rsm)">
+          <div style="font-size:10px;font-weight:600;color:var(--t3);margin-bottom:4px">CONTROL CALIDAD</div>
+          <div style="font-size:12px;color:var(--t)">${prod.resp_calidad||'Pendiente'}</div>
+          ${prod.fecha_calidad?`<div style="font-size:11px;color:var(--t3)">${PROD_fmtFecha(prod.fecha_calidad)}</div>`:''}
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
 </script>
 
 <!-- TOAST GLOBAL -->
