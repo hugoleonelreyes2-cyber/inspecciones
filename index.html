@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- VERSION: 14.8 - FIX: SyntaxError resuelto, onclicks PDF usan solo placa via window cache -->
+<!-- VERSION: 15.0 - FIX: PDF inspección desde consulta usa pdfRec() existente, mismo PDF que Registros -->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -5729,39 +5729,40 @@ async function PROD_lavadorCompletar(numRevision){
 // ── PDF desde Consulta: Inspección de Recepción ──
 async function CONS_descargarPDFInspeccion(placa){
   try{
-    // Obtener datos del vehículo desde el caché de la vista de consulta
-    const v = (window._cons_veh_cache||{})[placa] || {};
-    showToast('⏳ Cargando hallazgos...');
-    const hResp = await gPost({action:'getHallazgos', id: v.id||v.ID||''});
-    const hallazgosData = (hResp&&hResp.status==='OK'&&hResp.data) ? hResp.data : [];
-    const {jsPDF} = window.jspdf;
-    const doc = new jsPDF({orientation:'p',unit:'mm',format:'a4'});
-    let y = 20;
-    const sec=(t)=>{ if(y>265){doc.addPage();y=20;} doc.setFillColor(240,238,233);doc.rect(12,y-4,186,7,'F');doc.setFontSize(10);doc.setFont('helvetica','bold');doc.setTextColor(27,111,216);doc.text(t,14,y);doc.setTextColor(0,0,0);doc.setFont('helvetica','normal');y+=10; };
-    doc.setFillColor(27,111,216);doc.rect(0,0,210,30,'F');doc.setTextColor(255,255,255);
-    doc.setFontSize(15);doc.setFont('helvetica','bold');doc.text('INFORME DE INSPECCION DE RECEPCION',105,13,{align:'center'});
-    doc.setFontSize(9);doc.setFont('helvetica','normal');doc.text('Division de Vehiculos Usados - Cofino',105,22,{align:'center'});
-    doc.setTextColor(0,0,0); y=38;
-    sec('DATOS DEL VEHICULO');
-    const pairs=[['Placa:',v.placa||placa||'-'],['Modelo:',v.modelo||'-'],['Color:',v.color||'-'],['Km:',v.km||'-'],['Chasis:',v.chasis||'-'],['Motor:',v.nmotor||v.motor||'-'],['Inspector:',v.inspector||'-'],['Fecha:',PROD_fmtFecha(v.fecha)||'-'],['Vendedor:',v.vendedor||'-']];
-    pairs.forEach(function(pair){ doc.setFont('helvetica','bold');doc.setFontSize(9);doc.text(pair[0],14,y);doc.setFont('helvetica','normal');doc.text(String(pair[1]).toUpperCase(),50,y);y+=5; });
-    y+=4;
-    if(hallazgosData.length){
-      sec('HALLAZGOS DETECTADOS ('+hallazgosData.length+')');
-      hallazgosData.forEach(function(h,i){
-        if(y>270){doc.addPage();y=20;}
-        doc.setFont('helvetica','bold');doc.setFontSize(9);
-        var txt=doc.splitTextToSize((i+1)+'. '+(h[2]||'')+(h[3]?' - '+h[3]:''),180);
-        doc.text(txt,14,y);y+=txt.length*5+2;
-        if(h[5]&&h[5]!=='-'){doc.setFont('helvetica','normal');var obs=doc.splitTextToSize('   '+h[5],175);doc.text(obs,14,y);y+=obs.length*4+2;}
-      });
-    } else {
-      sec('HALLAZGOS'); doc.setFontSize(9);doc.text('Sin hallazgos registrados.',14,y);y+=6;
-    }
-    doc.save('Inspeccion_Recepcion_'+(placa||'veh')+'.pdf');
-    showToast('PDF descargado',false);
-  }catch(e){ showToast('Error: '+e.message); }
+    showToast('⏳ Buscando inspección...');
+    const rInsp = await gPost({action:'getInspections'});
+    if(!rInsp||!rInsp.data||rInsp.data.length<2) throw new Error('No se pudo conectar');
+    const headers = rInsp.data[0];
+    const rows = rInsp.data.slice(1);
+    const get = (row,h) => row[headers.indexOf(h)]||'';
+    const row = rows.find(r => String(get(r,'Placa')).toUpperCase() === placa.toUpperCase());
+    if(!row) throw new Error('No se encontró inspección para '+placa);
+    const id = get(row,'ID');
+    if(!id) throw new Error('ID de inspección no encontrado');
+    // Construir el rec igual que hace openRecords para que pdfRec lo encuentre en SHEETS_RECS
+    let local=null;
+    try{local=JSON.parse(localStorage.getItem('insp_'+id));}catch(e){}
+    SHEETS_RECS[id]={
+      id, placa:get(row,'Placa'), modelo:get(row,'Modelo'), color:get(row,'Color'),
+      km:get(row,'Km'), chasis:get(row,'Chasis'), nmotor:get(row,'Motor'),
+      transmision:get(row,'Transmision'), traccion:get(row,'Traccion'),
+      combustible:get(row,'Combustible'), techo:get(row,'Techo'),
+      llavePresencia:get(row,'Llave Presencia'), vendedor:get(row,'Vendedor'),
+      inspector:get(row,'Inspector'), fecha:REG_formatFecha(get(row,'Fecha')),
+      obs:get(row,'Observaciones')||'', vtype:local?.vtype||'',
+      tipoVehiculo:get(row,'Tipo Vehiculo')||get(row,'Tipo Vehículo')||'',
+      ranking:{global:+get(row,'Ranking General')||0,exterior:+get(row,'Ranking Exterior')||0,interior:+get(row,'Ranking Interior')||0,mecanica:+get(row,'Ranking Mecánica')||0,electrico:+get(row,'Ranking Eléctrico')||0,dinamica:+get(row,'Ranking Prueba')||0},
+      totalCost:parseFloat(get(row,'Costo Total'))||0,
+      tallerItems:get(row,'Puntos Taller')&&get(row,'Puntos Taller')!=='Ninguno'?get(row,'Puntos Taller').split(' | '):[],
+      folderLink:get(row,'Carpeta Drive')||'', folderVehId:get(row,'Folder Veh ID')||'',
+      photoLinks:local?.photoLinks||null, state:local?.state||null,
+      svc:local?.svc||null, llantas:local?.llantas||null
+    };
+    // Llamar exactamente el mismo generador de PDF que usa el módulo de Registros
+    await pdfRec(id, false);
+  }catch(e){ showToast('⚠ '+e.message); }
 }
+
 
 // ── PDF desde Consulta: Revisión Técnica de Taller ──
 function CONS_descargarPDFTaller(placa){
