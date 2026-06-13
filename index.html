@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- VERSION: 15.1 - FIX: progress overlay visible desde consulta (z-index 99998), pasos en CONS_descargarPDFInspeccion -->
+<!-- VERSION: 15.2 - ADD: header más grande, reorden sección vehículo (tarjeta circulación primero) -->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -14,10 +14,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--t);min-he
 .app{max-width:480px;margin:0 auto;min-height:100vh;background:var(--bg)}
 .hdr{background:var(--sf);border-bottom:1px solid var(--b);padding:11px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;box-shadow:var(--sh)}
 .hdr-brand{display:flex;flex-direction:column;gap:1px}
-.hdr-title{font-size:15px;font-weight:600;color:var(--t);letter-spacing:-.3px}
-.hdr-sub{font-size:10px;color:var(--t3);font-family:'DM Mono',monospace}
+.hdr-title{font-size:17px;font-weight:600;color:var(--t);letter-spacing:-.3px}
+.hdr-sub{font-size:12px;color:var(--t3);font-family:'DM Mono',monospace}
 .hdr-acts{display:flex;gap:5px}
-.hbtn{padding:5px 9px;font-size:11px;font-weight:500;border-radius:var(--rsm);cursor:pointer;border:1px solid var(--b2);background:var(--sf);color:var(--t2);font-family:'DM Sans',sans-serif}
+.hbtn{padding:7px 12px;font-size:13px;font-weight:500;border-radius:var(--rsm);cursor:pointer;border:1px solid var(--b2);background:var(--sf);color:var(--t2);font-family:'DM Sans',sans-serif}
 .hbtn.pri{background:var(--blue);color:#fff;border-color:var(--blue)}
 .prog-wrap{background:var(--sf);border-bottom:1px solid var(--b);padding:7px 16px 0}
 .prog-steps{display:flex;gap:3px;padding-bottom:7px;overflow-x:auto;scrollbar-width:none}
@@ -394,6 +394,27 @@ textarea{resize:vertical;line-height:1.5}
   <div class="sec-desc">Complete los datos y el historial de servicios antes de salir a la inspección.</div>
   <div class="field"><label class="lbl">Inspector <span class="req">*</span></label><input type="text" id="inspector" placeholder="Nombre completo"></div>
   <div class="field"><label class="lbl">Vendedor que ingresa <span class="req">*</span></label><input type="text" id="vendedor" placeholder="Nombre completo del vendedor"></div>
+  <div id="alerta-modelo-box" style="display:none;margin-top:10px;background:#FFF3CD;border:1.5px solid #FFCC00;border-radius:10px;padding:12px 14px">
+    <div style="font-size:12px;font-weight:700;color:#856404;margin-bottom:6px">⚠ ALERTA DE MODELO — Revisar con atención</div>
+    <div id="alerta-modelo-texto" style="font-size:12px;color:#664d03;line-height:1.6"></div>
+  </div>
+  <div class="field">
+    <label class="lbl">Leer tarjeta de circulación</label>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <button class="ocr-btn" onclick="document.getElementById('ocr-cam').click()">📷 Tomar foto</button>
+      <button class="ocr-btn" onclick="document.getElementById('ocr-gal').click()">🖼 Cargar imagen</button>
+    </div>
+    <input type="file" id="ocr-cam" class="cam-input" accept="image/*" capture="environment" onchange="handleOCR(this)">
+    <input type="file" id="ocr-gal" class="cam-input" accept="image/*" onchange="handleOCR(this)">
+    <div class="ocr-st" id="ocr-st"></div>
+  </div>
+  <div class="field"><label class="lbl">Placa <span class="req">*</span></label><input type="text" id="placa" placeholder="Ej. P123ABC"></div>
+  <div class="field"><label class="lbl">Marca / Modelo / Año</label><input type="text" id="modelo" placeholder="Ej. Toyota Hilux 2022" oninput="autoSeleccionarTipo(this.value);verificarAlertaModelo()" onblur="autoSeleccionarTipo(this.value);verificarAlertaModelo()"></div>
+  <div class="field"><label class="lbl">Kilometraje</label><input type="number" id="km" placeholder="0"></div>
+  <div class="field"><label class="lbl">Color</label><input type="text" id="color" placeholder="Ej. Blanco Perla"></div>
+  <div class="field"><label class="lbl">Número de chasis</label><input type="text" id="chasis" placeholder="Según documento"></div>
+  <div class="field"><label class="lbl">Número de motor</label><input type="text" id="nmotor" placeholder="Según documento"></div>
+  <div class="field"><label class="lbl">Tipo de vehículo <span class="req">*</span></label><div class="vtype-grid" id="vtype-grid"></div></div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:2px">
     <div class="field" style="margin-top:0">
       <label class="lbl">Transmisión</label>
@@ -435,27 +456,6 @@ textarea{resize:vertical;line-height:1.5}
       <button class="sbtn" id="btn-llp-no" onclick="setLlavePresencia('no',this)">✗ No tiene</button>
     </div>
   </div>
-  <div id="alerta-modelo-box" style="display:none;margin-top:10px;background:#FFF3CD;border:1.5px solid #FFCC00;border-radius:10px;padding:12px 14px">
-    <div style="font-size:12px;font-weight:700;color:#856404;margin-bottom:6px">⚠ ALERTA DE MODELO — Revisar con atención</div>
-    <div id="alerta-modelo-texto" style="font-size:12px;color:#664d03;line-height:1.6"></div>
-  </div>
-  <div class="field">
-    <label class="lbl">Leer tarjeta de circulación</label>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-      <button class="ocr-btn" onclick="document.getElementById('ocr-cam').click()">📷 Tomar foto</button>
-      <button class="ocr-btn" onclick="document.getElementById('ocr-gal').click()">🖼 Cargar imagen</button>
-    </div>
-    <input type="file" id="ocr-cam" class="cam-input" accept="image/*" capture="environment" onchange="handleOCR(this)">
-    <input type="file" id="ocr-gal" class="cam-input" accept="image/*" onchange="handleOCR(this)">
-    <div class="ocr-st" id="ocr-st"></div>
-  </div>
-  <div class="field"><label class="lbl">Placa <span class="req">*</span></label><input type="text" id="placa" placeholder="Ej. P123ABC"></div>
-  <div class="field"><label class="lbl">Marca / Modelo / Año</label><input type="text" id="modelo" placeholder="Ej. Toyota Hilux 2022" oninput="autoSeleccionarTipo(this.value);verificarAlertaModelo()" onblur="autoSeleccionarTipo(this.value);verificarAlertaModelo()"></div>
-  <div class="field"><label class="lbl">Kilometraje</label><input type="number" id="km" placeholder="0"></div>
-  <div class="field"><label class="lbl">Color</label><input type="text" id="color" placeholder="Ej. Blanco Perla"></div>
-  <div class="field"><label class="lbl">Número de chasis</label><input type="text" id="chasis" placeholder="Según documento"></div>
-  <div class="field"><label class="lbl">Número de motor</label><input type="text" id="nmotor" placeholder="Según documento"></div>
-  <div class="field"><label class="lbl">Tipo de vehículo <span class="req">*</span></label><div class="vtype-grid" id="vtype-grid"></div></div>
   <div class="svc-card">
     <div class="svc-card-title">🔧 Historial de servicios</div>
     <div class="alert a-blue" style="margin-bottom:10px">Consulte el historial en el sistema antes de salir al vehículo.</div>
