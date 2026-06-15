@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- VERSION: 16.2 - FIX: REG_renderLista preserva foco del input al filtrar, no reconstruye DOM completo -->
+<!-- VERSION: 16.3 - FIX: filtrarRegistros usa String() para evitar TypeError en r.modelo no-string -->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -2761,9 +2761,9 @@ function filtrarRegistros(query){
     renderInspRecs(all.slice(0,3), list, all.length);
   } else {
     const filtered=all.filter(r=>
-      (r.placa||'').toUpperCase().includes(q)||
-      (r.modelo||'').toUpperCase().includes(q)||
-      (r.inspector||'').toUpperCase().includes(q)
+      String(r.placa||'').toUpperCase().includes(q)||
+      String(r.modelo||'').toUpperCase().includes(q)||
+      String(r.inspector||'').toUpperCase().includes(q)
     );
     renderInspRecs(filtered, list, filtered.length);
   }
