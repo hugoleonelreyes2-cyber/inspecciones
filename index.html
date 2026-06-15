@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- VERSION: 16.0 - FIX: sección llantas visible en panel de costos con tabla editable -->
+<!-- VERSION: 16.1 - FIX: botón guardar llantas en sección llantas del panel de costos -->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -2467,11 +2467,12 @@ function renderAdminCosts(){
   <div class="asec-title">Llantas — medidas y precios</div>
   <div class="alert a-blue" style="margin-bottom:6px;font-size:10px">Precio unitario por llanta. El sistema calcula automáticamente el costo x4.</div>
   <table class="cost-tbl"><thead><tr><th>Medida</th><th>Precio unit.</th><th>Precio x4</th><th></th></tr></thead><tbody id="llantas-tbl-body"></tbody></table>
-  <div style="display:flex;gap:6px;margin-top:6px;margin-bottom:12px">
+  <div style="display:flex;gap:6px;margin-top:6px">
     <input id="new-llanta-medida" type="text" placeholder="Ej. 265/65R17" style="flex:1;padding:6px 8px;font-size:12px;border:1px solid var(--b2);border-radius:var(--rsm);background:var(--sf);color:var(--t);font-family:'DM Sans',sans-serif;text-transform:uppercase">
     <input id="new-llanta-precio" type="number" placeholder="Precio" style="width:80px;padding:6px 8px;font-size:12px;border:1px solid var(--b2);border-radius:var(--rsm);background:var(--sf);color:var(--t);font-family:'DM Sans',sans-serif">
     <button onclick="addLlanta()" style="padding:6px 10px;background:var(--green);color:#fff;border:none;border-radius:var(--rsm);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">+ Agregar</button>
   </div>
+  <button onclick="saveCosts()" style="width:100%;margin-top:8px;margin-bottom:12px;padding:10px;background:var(--green);color:#fff;border:none;border-radius:var(--r);font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">💾 Guardar llantas</button>
   <div class="asec-title">Correos de notificación</div>
   <div class="alert a-blue" style="margin-bottom:8px">Al guardar una inspección se enviará un resumen automático a estos correos.</div>
   <table class="cost-tbl"><thead><tr><th>Destinatario</th><th>Correo electrónico</th></tr></thead><tbody id="emails-tbl-body"></tbody></table>
