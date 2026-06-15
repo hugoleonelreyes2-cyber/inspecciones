@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- VERSION: 15.5 - FIX: arrays COSTS sincronizados con CK (55 valores), lampara_halogena/led correctamente indexados -->
+<!-- VERSION: 15.6 - FIX: botón guardar costos en panel, loadCosts migra arrays cortos, saveCosts no cierra panel -->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -2423,7 +2423,9 @@ function renderAdminCosts(){
   CK.forEach((k,i)=>{h+=`<tr><td style="font-size:10px">${k.replace(/_/g,' ')}</td><td><input type="number" value="${data.S[i]||0}" onchange="COSTS['${adminVT}'].S[${i}]=+this.value" style="width:64px"></td><td><input type="number" value="${data.L[i]||0}" onchange="COSTS['${adminVT}'].L[${i}]=+this.value" style="width:64px"></td></tr>`;});
   h+=`</tbody></table><div class="asec-title">Servicios — ${VTYPES.find(v=>v.k===adminVT)?.l}</div><table class="cost-tbl"><thead><tr><th>Servicio</th><th>Costo</th></tr></thead><tbody>`;
   ['1KG','2KG','3KG','4KG','1KD','2KD','3KD','4KD'].forEach((s,i)=>{h+=`<tr><td>${s}</td><td><input type="number" value="${SVC_COSTS[adminVT]?.[i]||0}" onchange="SVC_COSTS['${adminVT}'][${i}]=+this.value" style="width:90px"></td></tr>`;});
-  h+=`</tbody></table><div class="asec-title">Correos de notificación</div>
+  h+=`</tbody></table>
+  <button class="save-costs-btn" onclick="saveCosts()" style="margin-bottom:12px">💾 Guardar tabla de costos</button>
+  <div class="asec-title">Correos de notificación</div>
   <div class="alert a-blue" style="margin-bottom:8px">Al guardar una inspección se enviará un resumen automático a estos correos.</div>
   <table class="cost-tbl"><thead><tr><th>Destinatario</th><th>Correo electrónico</th></tr></thead><tbody id="emails-tbl-body"></tbody></table>
   <button class="save-costs-btn" onclick="saveEmailsToSheets()">✓ Guardar correos en Google Sheets</button>`;
@@ -2466,8 +2468,29 @@ async function saveEmailsToSheets(){
     showToast('✅ Correos guardados en Google Sheets',false);
   }catch(e){showToast('⚠ Error al guardar correos',true);}
 }
-function saveCosts(){try{localStorage.setItem('ce',JSON.stringify(costsExt));localStorage.setItem('ci',JSON.stringify(costsInt));localStorage.setItem('cv',JSON.stringify(COSTS));localStorage.setItem('sv',JSON.stringify(SVC_COSTS));localStorage.setItem('ll',JSON.stringify(LLANTAS));}catch(e){}showToast('✅ Costos guardados',false);closeAdmin();}
-function loadCosts(){try{const ce=localStorage.getItem('ce');if(ce)costsExt=JSON.parse(ce);const ci=localStorage.getItem('ci');if(ci)costsInt=JSON.parse(ci);const cv=localStorage.getItem('cv');if(cv)Object.assign(COSTS,JSON.parse(cv));const sv=localStorage.getItem('sv');if(sv)Object.assign(SVC_COSTS,JSON.parse(sv));const ll=localStorage.getItem('ll');if(ll)Object.assign(LLANTAS,JSON.parse(ll));}catch(e){}}
+function saveCosts(){try{localStorage.setItem('ce',JSON.stringify(costsExt));localStorage.setItem('ci',JSON.stringify(costsInt));localStorage.setItem('cv',JSON.stringify(COSTS));localStorage.setItem('sv',JSON.stringify(SVC_COSTS));localStorage.setItem('ll',JSON.stringify(LLANTAS));showToast('✅ Costos guardados',false);}catch(e){showToast('⚠ Error al guardar costos');}}
+function loadCosts(){try{
+  const ce=localStorage.getItem('ce');if(ce)costsExt=JSON.parse(ce);
+  const ci=localStorage.getItem('ci');if(ci)costsInt=JSON.parse(ci);
+  const cv=localStorage.getItem('cv');if(cv){
+    const saved=JSON.parse(cv);
+    // Migrar arrays guardados: si tienen menos valores que CK, rellenar con 0
+    Object.keys(saved).forEach(vt=>{
+      if(saved[vt]&&saved[vt].S&&saved[vt].L){
+        while(saved[vt].S.length<CK.length) saved[vt].S.push(0);
+        while(saved[vt].L.length<CK.length) saved[vt].L.push(0);
+        // Preservar valores existentes en COSTS si saved tiene 0 y COSTS tiene valor
+        if(COSTS[vt]){
+          saved[vt].S=saved[vt].S.map((v,i)=>v!==0?v:(COSTS[vt].S[i]||0));
+          saved[vt].L=saved[vt].L.map((v,i)=>v!==0?v:(COSTS[vt].L[i]||0));
+        }
+      }
+    });
+    Object.assign(COSTS,saved);
+  }
+  const sv=localStorage.getItem('sv');if(sv)Object.assign(SVC_COSTS,JSON.parse(sv));
+  const ll=localStorage.getItem('ll');if(ll)Object.assign(LLANTAS,JSON.parse(ll));
+}catch(e){console.warn('loadCosts error:',e);}}
 
 // Menú de opciones de foto
 function showPhotoMenu(camId, galId){
