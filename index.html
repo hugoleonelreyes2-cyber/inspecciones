@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- VERSION: 16.3 - FIX: filtrarRegistros usa String() para evitar TypeError en r.modelo no-string -->
+<!-- VERSION: 16.4 - FIX: selección manual de tipo vehículo no se sobreescribe por autodetección -->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -984,7 +984,7 @@ const COMP=[
   {id:'llanta_rep',l:'¿Tiene llanta de repuesto en buen estado?',costKey:'llanta_repuesto',taller:false}
 ];
 
-let ST={vtype:null,transmision:null,traccion:null,combustible:null,techo:null,llavePresencia:null,gastos:[],extD:{},intD:{},ident:{},capoApagado:{},capoEncendido:{},elecExt:{},elecInt:{},dyn:{},comp:{},svc:{historial:null,combustible:null,tipo:null,costo:0,omitio:null,componente:''},llave:null,herram:null,photos:new Set(),totalCost:0,urgCost:0,recCost:0,tallerItems:[],ranking:{},_editingId:null,llantas:{medida:'',precio_unit:0,precio_x4:0}};
+let ST={vtype:null,_vtypeManual:false,transmision:null,traccion:null,combustible:null,techo:null,llavePresencia:null,gastos:[],extD:{},intD:{},ident:{},capoApagado:{},capoEncendido:{},elecExt:{},elecInt:{},dyn:{},comp:{},svc:{historial:null,combustible:null,tipo:null,costo:0,omitio:null,componente:''},llave:null,herram:null,photos:new Set(),totalCost:0,urgCost:0,recCost:0,tallerItems:[],ranking:{},_editingId:null,llantas:{medida:'',precio_unit:0,precio_x4:0}};
 let extActivePiece=null,intActivePiece=null;
 
 
@@ -1066,6 +1066,8 @@ function autoSeleccionarTipo(modeloStr) {
     chip.style.display = 'none';
     return;
   }
+  // Si el usuario ya eligió manualmente, no sobreescribir
+  if (ST._vtypeManual) return;
   const btns = document.querySelectorAll('.vtype-btn');
   btns.forEach(b => b.classList.remove('sel'));
   btns.forEach(b => {
@@ -3125,7 +3127,7 @@ async function pdfRec(id, enviarCorreo=true){
 // ── INIT ──
 function init(){
   const ps=document.getElementById('prog-steps');LABELS.forEach((l,i)=>{const b=document.createElement('button');b.className='pstep'+(i===0?' active':'');b.textContent=l;b.onclick=()=>jumpTo(i);ps.appendChild(b);});
-  const vg=document.getElementById('vtype-grid');VTYPES.forEach(v=>{const b=document.createElement('button');b.className='vtype-btn';b.textContent=v.l;b.dataset.k=v.k;b.onclick=()=>{document.querySelectorAll('.vtype-btn').forEach(x=>x.classList.remove('sel'));b.classList.add('sel');ST.vtype=v.k;renderExtSVG();renderIntSVG();};vg.appendChild(b);});
+  const vg=document.getElementById('vtype-grid');VTYPES.forEach(v=>{const b=document.createElement('button');b.className='vtype-btn';b.textContent=v.l;b.dataset.k=v.k;b.onclick=()=>{document.querySelectorAll('.vtype-btn').forEach(x=>x.classList.remove('sel'));b.classList.add('sel');ST.vtype=v.k;ST._vtypeManual=true;const chip=document.getElementById('vtype-auto-chip');if(chip){chip.style.cssText='font-size:11px;margin-top:6px;padding:5px 9px;border-radius:var(--rsm);color:var(--blue-t);background:var(--blue-bg);border:1px solid var(--blue-b)';chip.style.display='block';chip.textContent='✎ Tipo ajustado manualmente: '+(v.l||v.k);}renderExtSVG();renderIntSVG();};vg.appendChild(b);});
   const pg=document.getElementById('photo-grid');PHOTOS.forEach((p,idx)=>{
     const slotId='photo-slot-'+idx;const camId='photo-cam-'+idx;const imgKey='photo_'+idx;
     const d=document.createElement('div');d.className='pslot'+(p.portada?' portada':'');d.id=slotId;
