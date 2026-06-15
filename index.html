@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- VERSION: 16.4 - FIX: selección manual de tipo vehículo no se sobreescribe por autodetección -->
+<!-- VERSION: 16.5 - ADD: costos sincronizados con Google Sheets via saveCostsConfig/getCostsConfig -->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -2518,29 +2518,83 @@ async function saveEmailsToSheets(){
     showToast('✅ Correos guardados en Google Sheets',false);
   }catch(e){showToast('⚠ Error al guardar correos',true);}
 }
-function saveCosts(){try{localStorage.setItem('ce',JSON.stringify(costsExt));localStorage.setItem('ci',JSON.stringify(costsInt));localStorage.setItem('cv',JSON.stringify(COSTS));localStorage.setItem('sv',JSON.stringify(SVC_COSTS));localStorage.setItem('ll',JSON.stringify(LLANTAS));showToast('✅ Costos guardados',false);}catch(e){showToast('⚠ Error al guardar costos');}}
-function loadCosts(){try{
-  const ce=localStorage.getItem('ce');if(ce)costsExt=JSON.parse(ce);
-  const ci=localStorage.getItem('ci');if(ci)costsInt=JSON.parse(ci);
-  const cv=localStorage.getItem('cv');if(cv){
-    const saved=JSON.parse(cv);
-    // Migrar arrays guardados: si tienen menos valores que CK, rellenar con 0
-    Object.keys(saved).forEach(vt=>{
-      if(saved[vt]&&saved[vt].S&&saved[vt].L){
-        while(saved[vt].S.length<CK.length) saved[vt].S.push(0);
-        while(saved[vt].L.length<CK.length) saved[vt].L.push(0);
-        // Preservar valores existentes en COSTS si saved tiene 0 y COSTS tiene valor
-        if(COSTS[vt]){
-          saved[vt].S=saved[vt].S.map((v,i)=>v!==0?v:(COSTS[vt].S[i]||0));
-          saved[vt].L=saved[vt].L.map((v,i)=>v!==0?v:(COSTS[vt].L[i]||0));
-        }
-      }
-    });
-    Object.assign(COSTS,saved);
+async function saveCosts(){
+  const payload={
+    ce:costsExt, ci:costsInt, cv:COSTS,
+    sv:SVC_COSTS, ll:LLANTAS
+  };
+  // Guardar localmente como fallback
+  try{
+    localStorage.setItem('ce',JSON.stringify(costsExt));
+    localStorage.setItem('ci',JSON.stringify(costsInt));
+    localStorage.setItem('cv',JSON.stringify(COSTS));
+    localStorage.setItem('sv',JSON.stringify(SVC_COSTS));
+    localStorage.setItem('ll',JSON.stringify(LLANTAS));
+  }catch(e){}
+  // Guardar en Sheets
+  try{
+    showToast('⏳ Guardando en Sheets...');
+    await gPost({action:'saveCostsConfig', costs: payload});
+    showToast('✅ Costos guardados en Sheets',false);
+  }catch(e){
+    showToast('⚠ Guardado local OK — sin conexión a Sheets');
   }
-  const sv=localStorage.getItem('sv');if(sv)Object.assign(SVC_COSTS,JSON.parse(sv));
-  const ll=localStorage.getItem('ll');if(ll)Object.assign(LLANTAS,JSON.parse(ll));
-}catch(e){console.warn('loadCosts error:',e);}}
+}
+function loadCosts(){
+  // Primero aplicar localStorage como base inmediata
+  try{
+    const ce=localStorage.getItem('ce');if(ce)costsExt=JSON.parse(ce);
+    const ci=localStorage.getItem('ci');if(ci)costsInt=JSON.parse(ci);
+    const cv=localStorage.getItem('cv');if(cv){
+      const saved=JSON.parse(cv);
+      Object.keys(saved).forEach(vt=>{
+        if(saved[vt]&&saved[vt].S&&saved[vt].L){
+          while(saved[vt].S.length<CK.length) saved[vt].S.push(0);
+          while(saved[vt].L.length<CK.length) saved[vt].L.push(0);
+          if(COSTS[vt]){
+            saved[vt].S=saved[vt].S.map((v,i)=>v!==0?v:(COSTS[vt].S[i]||0));
+            saved[vt].L=saved[vt].L.map((v,i)=>v!==0?v:(COSTS[vt].L[i]||0));
+          }
+        }
+      });
+      Object.assign(COSTS,saved);
+    }
+    const sv=localStorage.getItem('sv');if(sv)Object.assign(SVC_COSTS,JSON.parse(sv));
+    const ll=localStorage.getItem('ll');if(ll)Object.assign(LLANTAS,JSON.parse(ll));
+  }catch(e){console.warn('loadCosts local error:',e);}
+  // Luego cargar desde Sheets (fuente maestra) y actualizar en segundo plano
+  gPost({action:'getCostsConfig'}).then(resp=>{
+    if(resp&&resp.status==='OK'&&resp.costs){
+      const d=resp.costs;
+      try{
+        if(d.ce) costsExt=d.ce;
+        if(d.ci) costsInt=d.ci;
+        if(d.cv){
+          const saved=d.cv;
+          Object.keys(saved).forEach(vt=>{
+            if(saved[vt]&&saved[vt].S&&saved[vt].L){
+              while(saved[vt].S.length<CK.length) saved[vt].S.push(0);
+              while(saved[vt].L.length<CK.length) saved[vt].L.push(0);
+              if(COSTS[vt]){
+                saved[vt].S=saved[vt].S.map((v,i)=>v!==0?v:(COSTS[vt].S[i]||0));
+                saved[vt].L=saved[vt].L.map((v,i)=>v!==0?v:(COSTS[vt].L[i]||0));
+              }
+            }
+          });
+          Object.assign(COSTS,saved);
+        }
+        if(d.sv) Object.assign(SVC_COSTS,d.sv);
+        if(d.ll) Object.assign(LLANTAS,d.ll);
+        // Actualizar localStorage con los datos de Sheets
+        localStorage.setItem('ce',JSON.stringify(costsExt));
+        localStorage.setItem('ci',JSON.stringify(costsInt));
+        localStorage.setItem('cv',JSON.stringify(COSTS));
+        localStorage.setItem('sv',JSON.stringify(SVC_COSTS));
+        localStorage.setItem('ll',JSON.stringify(LLANTAS));
+      }catch(e){console.warn('loadCosts Sheets parse error:',e);}
+    }
+  }).catch(()=>{/* sin conexión, usar localStorage */});
+}
 
 // Menú de opciones de foto
 function showPhotoMenu(camId, galId){
