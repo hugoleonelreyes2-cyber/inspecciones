@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- VERSION: 17.0 - FIX: botón fotos se inyecta al DOM cuando llega link de Drive -->
+<!-- VERSION: 17.1 - FIX: genPDF usa window._pdf_* primero para encabezado correcto desde Consulta -->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -2224,13 +2224,13 @@ function rankingGridPDF(doc, r, x, y, w){
 function genPDF(){
   if(typeof window.jspdf==='undefined'){showToast('⚠ Cargando PDF, reintente');return;}
   const {jsPDF}=window.jspdf;const doc=new jsPDF({orientation:'p',unit:'mm',format:'a4'});
-  const modelo=document.getElementById('modelo').value||window._pdf_modelo||'Sin modelo',placa=document.getElementById('placa').value||window._pdf_placa||'Sin placa',color=document.getElementById('color').value||window._pdf_color||'—',inspector=document.getElementById('inspector').value||window._pdf_inspector||'—',km=document.getElementById('km').value||window._pdf_km||'—',chasis=document.getElementById('chasis').value||window._pdf_chasis||'—',nmotor=document.getElementById('nmotor').value||window._pdf_nmotor||'—',fecha=new Date().toLocaleDateString('es-GT'),r=ST.ranking;
+  const modelo=window._pdf_modelo||document.getElementById('modelo').value||'Sin modelo',placa=window._pdf_placa||document.getElementById('placa').value||'Sin placa',color=window._pdf_color||document.getElementById('color').value||'—',inspector=window._pdf_inspector||document.getElementById('inspector').value||'—',km=window._pdf_km||document.getElementById('km').value||'—',chasis=window._pdf_chasis||document.getElementById('chasis').value||'—',nmotor=window._pdf_nmotor||document.getElementById('nmotor').value||'—',fecha=new Date().toLocaleDateString('es-GT'),r=ST.ranking;
   let y=0;
   doc.setFillColor(27,111,216);doc.rect(0,0,210,32,'F');doc.setTextColor(255,255,255);doc.setFontSize(17);doc.setFont('helvetica','bold');doc.text('INFORME TÉCNICO DE INSPECCIÓN',105,13,{align:'center'});doc.setFontSize(9);doc.setFont('helvetica','normal');doc.text('División de Vehículos Usados · Inspección Rápida · '+fecha,105,22,{align:'center'});y=40;
   const sec=(title,yy)=>{doc.setFillColor(240,238,233);doc.rect(12,yy-4,186,7,'F');doc.setFontSize(10);doc.setFont('helvetica','bold');doc.setTextColor(27,111,216);doc.text(title,14,yy);return yy+7;};
   y=sec('DATOS DEL VEHÍCULO',y);doc.setTextColor(0);doc.setFontSize(9);
-  const vendedor=document.getElementById('vendedor')?.value||window._pdf_vendedor||'—';
-  const categoria=VTYPES.find(v=>v.k===ST.vtype)?.l||window._pdf_tipoVehiculo||'—';
+  const vendedor=window._pdf_vendedor||document.getElementById('vendedor')?.value||'—';
+  const categoria=window._pdf_tipoVehiculo||VTYPES.find(v=>v.k===ST.vtype)?.l||'—';
   const datosCol1=[[' Vehículo:',modelo],[' Placa:',placa],[' Color:',color],[' Km:',km+' km'],[' Chasis:',chasis]];
   const transmisionPDF2=ST.transmision?(ST.transmision==='automatica'?'Automatica':'Mecanica'):(window._pdf_transmision||'—');
   const traccionPDF2=ST.traccion||window._pdf_traccion||'—';
