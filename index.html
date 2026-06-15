@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- VERSION: 16.5 - ADD: costos sincronizados con Google Sheets via saveCostsConfig/getCostsConfig -->
+<!-- VERSION: 16.7 - ADD: pregunta cremallera_dyn en pestaña Prueba -->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -943,7 +943,7 @@ function buscarLlanta(m){const k=m.trim().toUpperCase().replace(/\s/g,'');return
 const TOTAL=8,LABELS=['Vehículo','Llegada','Exterior','Interior','Mecánica','Eléctrico','Prueba','Resumen'];
 let cur=0;
 const VTYPES=[{k:'SUV_COFIÑO',l:'SUV Marcas Cofiño'},{k:'SUV_EXTERNA',l:'SUV Marca Externa'},{k:'SUV_COFIÑO_ALTA',l:'SUV Cofiño Gama Alta'},{k:'SUV_EXTERNA_ALTA',l:'SUV Externa Gama Alta'},{k:'PICKUP_COFIÑO_NORMAL',l:'Pickup Cofiño Normal'},{k:'PICKUP_COFIÑO_ALTA',l:'Pickup Cofiño Alta'},{k:'PICKUP_EXTERNA_NORMAL',l:'Pickup Externa Normal'},{k:'PICKUP_EXTERNA_ALTA',l:'Pickup Externa Alta'},{k:'CAMIONETA_COFIÑO',l:'Camioneta Grande Cofiño'},{k:'CAMIONETA_COFIÑO_ALTA',l:'Camioneta Grande Cofiño Alta'},{k:'CAMIONETA_EXTERNA_ALTA',l:'Camioneta Grande Externa Alta'},{k:'SEDAN_COFIÑO',l:'Sedán Marcas Cofiño'},{k:'SEDAN_EXTERNA',l:'Sedán Marcas Externas'},{k:'PANEL_INTERNA',l:'Panel Marca Interna'},{k:'PANEL_EXTERNA',l:'Panel Marca Externa'}];
-const PHOTOS=[{l:'Portada web (3/4 del. izq.)',portada:true},{l:'Frente',portada:false},{l:'Lateral izquierdo',portada:false},{l:'Trasero',portada:false},{l:'Lateral derecho',portada:false},{l:'Tablero encendido',portada:false},{l:'Interior frontal',portada:false},{l:'Interior trasero',portada:false}];
+const PHOTOS=[{l:'Portada web (3/4 del. izq.)',portada:true},{l:'Frente',portada:false},{l:'Lateral izquierdo',portada:false},{l:'Trasero',portada:false},{l:'Lateral derecho',portada:false},{l:'Tablero encendido',portada:false},{l:'Interior frontal',portada:false},{l:'Interior trasero',portada:false},{l:'Compartimiento motor',portada:false},{l:'Baúl / maletero',portada:false}];
 const ND_TEXT={1:'Tamaño moneda — daño leve',2:'Tamaño tarjeta — visible, corregir antes de venta',3:'Mayor que regla escolar o >50% de la pieza'};
 
 // ── COSTOS SERVICIO ──
@@ -965,7 +965,7 @@ const CAPO_APAGADO=[{id:'nivel_aceite',l:'¿El nivel de aceite está en rango no
 const CAPO_ENCENDIDO=[{id:'arranque',l:'¿El motor arranca sin dificultad ni ruidos extraños?',costKey:'ruido_anormal',taller:true},{id:'sonido_motor',l:'¿El motor suena parejo, sin golpes ni vibraciones fuertes?',costKey:'ralenti',taller:true},{id:'humo_escape',l:'¿Hay humo saliendo del escape? (blanco, negro o azul)',costKey:null,taller:true,invertida:true},{id:'goteos',l:'¿Se observan manchas o goteos de líquido debajo del vehículo?',costKey:null,taller:true,invertida:true}];
 const ELEC_EXT=[{id:'luces_del',l:'¿Las luces delanteras altas y bajas funcionan?',costKey:'bombilla_del_halogena',taller:false,soloMalBien:true,hasTipoBombilla:true,tipoBombillaDel:true},{id:'luces_tra',l:'¿Las luces traseras y de freno funcionan?',costKey:'bombilla_tra_halogena',taller:false,soloMalBien:true,hasTipoBombilla:true,tipoBombillaDel:false},{id:'direccionales',l:'¿Las direccionales delanteras y traseras funcionan?',costKey:'direccionales',taller:false},{id:'luz_reversa',l:'¿La luz de reversa enciende al meter reversa?',costKey:'luz_reversa',taller:false},{id:'claxon',l:'¿El claxon funciona?',costKey:'claxon',taller:false},{id:'limpiavisas',l:'¿Los limpiavisas y aspersores funcionan?',costKey:'limpiavisas',taller:false},{id:'llantas_estado',l:'¿El labrado de las llantas supera los 2mm en los 4 aros? (Por debajo requiere cambio)',costKey:'ballestas',taller:false,hasLlanta:true,soloMal:true},{id:'freno_mano',l:'¿El freno de mano se siente firme al jalar?',costKey:'freno_estac',taller:true}];
 const ELEC_INT=[{id:'tablero_alertas',l:'¿El tablero no muestra luces de alerta activas?',costKey:null,taller:true},{id:'ac_est',l:'¿El aire acondicionado enfría correctamente estacionado?',costKey:'ac',taller:false},{id:'vidrios_el',l:'¿Los vidrios eléctricos suben y bajan sin atascarse?',costKey:'vidrios_elec',taller:false},{id:'cierre_central',l:'¿El cierre central de puertas funciona desde el control?',costKey:'cerradura',taller:false},{id:'espejos_el',l:'¿Los espejos eléctricos se ajustan correctamente?',costKey:'retrovisores',taller:false},{id:'radio_pantalla',l:'¿La radio o pantalla multimedia enciende y funciona?',costKey:'radio',taller:false},{id:'camara_retro',l:'¿La cámara de retroceso muestra imagen clara?',costKey:'radio',taller:false},{id:'cinturones',l:'¿Los cinturones se extienden y retraen correctamente?',costKey:'cinturones',taller:true}];
-const DYN=[{id:'acel',l:'¿El vehículo acelera de forma suave y progresiva?',costKey:'prob_acelerar',taller:true},{id:'cambios_dyn',l:'¿Los cambios de velocidad se sienten suaves?',costKey:'calidad_cambios_AT',taller:true},{id:'frenado_recto',l:'¿El vehículo frena recto sin jalar hacia un lado?',costKey:'defic_frenado',taller:true},{id:'pedal_freno',l:'¿El pedal de freno se siente firme, no hundido ni esponjoso?',costKey:'defic_frenado',taller:true},{id:'baches',l:'¿Al pasar por baches no se escuchan golpes en la suspensión?',costKey:'ruido_susp',taller:false},{id:'vibraciones',l:'¿No presenta vibraciones anormales en el volante o piso?',costKey:'ruido_cojinetes',taller:true},{id:'ruidos_marcha',l:'¿No se escuchan ruidos extraños durante la conducción?',costKey:'ruido_anormal',taller:true},{id:'direccion_dyn',l:'¿El volante va centrado y no jala hacia ningún lado?',costKey:'dir_resistencia',taller:false},{id:'ac_dyn',l:'¿El A/C sigue enfriando durante la conducción?',costKey:'ac',taller:false},{id:'temperatura',l:'¿El indicador de temperatura se mantiene en rango normal?',costKey:null,taller:true},{id:'potencia',l:'¿No presenta pérdida de potencia en pendientes?',costKey:'prob_acelerar',taller:true}];
+const DYN=[{id:'acel',l:'¿El vehículo acelera de forma suave y progresiva?',costKey:'prob_acelerar',taller:true},{id:'cambios_dyn',l:'¿Los cambios de velocidad se sienten suaves?',costKey:'calidad_cambios_AT',taller:true},{id:'frenado_recto',l:'¿El vehículo frena recto sin jalar hacia un lado?',costKey:'defic_frenado',taller:true},{id:'pedal_freno',l:'¿El pedal de freno se siente firme, no hundido ni esponjoso?',costKey:'defic_frenado',taller:true},{id:'baches',l:'¿Al pasar por baches no se escuchan golpes en la suspensión?',costKey:'ruido_susp',taller:false},{id:'vibraciones',l:'¿No presenta vibraciones anormales en el volante o piso?',costKey:'ruido_cojinetes',taller:true,costLabel:'Diagnóstico cojinetes / balanceo / alineación'},{id:'ruidos_marcha',l:'¿No se escuchan ruidos extraños durante la conducción?',costKey:'ruido_anormal',taller:true},{id:'direccion_dyn',l:'¿El volante va centrado y no jala hacia ningún lado?',costKey:'dir_resistencia',taller:false},{id:'cremallera_dyn',l:'¿La cremallera de dirección presenta desajuste al girar bruscamente o en camino irregular?',costKey:'ruido_cremallera',taller:true,invertida:true},{id:'ac_dyn',l:'¿El A/C sigue enfriando durante la conducción?',costKey:'ac',taller:false},{id:'temperatura',l:'¿El indicador de temperatura se mantiene en rango normal?',costKey:null,taller:true},{id:'potencia',l:'¿No presenta pérdida de potencia en pendientes?',costKey:'prob_acelerar',taller:true}];
 const COMP=[
   {id:'llave_copia',l:'¿El vehículo cuenta con llave de repuesto?',costKey:'llave',taller:false,
    opciones:[
@@ -1395,7 +1395,7 @@ async function handleFotoHallazgo(input,okId,imgKey){
 function buildQList(contId,questions,stateKey){
   const cont=document.getElementById(contId);if(!cont)return;cont.innerHTML='';
   questions.forEach(q=>{
-    ST[stateKey][q.id]={l:q.l,val:null,costKey:q.costKey,taller:q.taller||false,invertida:q.invertida||false,costo:0,hasLlanta:q.hasLlanta||false,hasTipoBombilla:q.hasTipoBombilla||false,tipoBombilla:null,tipoBombillaDel:q.tipoBombillaDel!==undefined?q.tipoBombillaDel:true};
+    ST[stateKey][q.id]={l:q.l,val:null,costKey:q.costKey,taller:q.taller||false,invertida:q.invertida||false,costo:0,hasLlanta:q.hasLlanta||false,hasTipoBombilla:q.hasTipoBombilla||false,tipoBombilla:null,tipoBombillaDel:q.tipoBombillaDel!==undefined?q.tipoBombillaDel:true,costLabel:q.costLabel||null};
     const div=document.createElement('div');div.className='sc-grp';div.id='qg_'+q.id;
     const btns=q.opciones?`<div class="srow" style="flex-direction:column;gap:5px">${q.opciones.map(o=>`<button class="sbtn" onclick="setQ(this,'${q.id}','${stateKey}','${o.val}','${o.cls}')" style="text-align:left;padding:9px 12px">${o.lbl}</button>`).join('')}</div>`:
       q.soloMalBien?`<div class="srow"><button class="sbtn" onclick="setQ(this,'${q.id}','${stateKey}','Bien','s-bien')">✓ Funcionan correctamente</button><button class="sbtn" onclick="setQ(this,'${q.id}','${stateKey}','Mal','s-mal')">✗ Quemada(s)</button><button class="sbtn" onclick="setQ(this,'${q.id}','${stateKey}','NA','s-na')">— N/A</button></div>`:
@@ -1516,7 +1516,8 @@ function setQ(btn,id,sk,val,cls){
     if(item.taller&&isVBad){tallerEl.className='alert-taller show';g.classList.add('has-alert');chipEl.innerHTML=c>0?`<span class="cost-chip chip-urg">Q ${c.toLocaleString()} estimado</span>`:'<span class="cost-chip chip-alert">⚠ Diagnóstico en taller</span>';}
     else{g.classList.add('has-iss');
       if(item.hasTipoBombilla&&!item.tipoBombilla) chipEl.innerHTML='<span class="cost-chip chip-reg">Seleccione tipo de bombilla</span>';
-      else chipEl.innerHTML=c>0?`<span class="cost-chip chip-urg">Q ${c.toLocaleString()}</span>`:'<span class="cost-chip chip-reg">Solo registro</span>';}
+      else if(item.hasLlanta) chipEl.innerHTML='<span class="cost-chip chip-reg">Ingrese medida de llanta</span>';
+      else chipEl.innerHTML=c>0?`<span class="cost-chip chip-urg">Q ${c.toLocaleString()}${item.costLabel?' — '+item.costLabel:''}</span>`:'<span class="cost-chip chip-reg">Solo registro</span>';}
     if(fotoEl)fotoEl.classList.remove('hidden');if(llEl&&isVBad)llEl.classList.remove('hidden');
   }else{item.costo=0;}
   updCtr(sk);calcCosts();
@@ -1694,7 +1695,7 @@ function buildSummary(){
   const fotoHallazgosHtml=()=>{
     const keys=Object.keys(IMGS);
     if(!keys.length)return'';
-    const fotoLbls={'photo_0':'Portada web','photo_1':'Frente','photo_2':'Lateral izquierdo','photo_3':'Trasero','photo_4':'Lateral derecho','photo_5':'Tablero encendido','photo_6':'Interior frontal','photo_7':'Interior trasero','photo_tarjeta':'Tarjeta de circulación'};
+    const fotoLbls={'photo_0':'Portada web','photo_1':'Frente','photo_2':'Lateral izquierdo','photo_3':'Trasero','photo_4':'Lateral derecho','photo_5':'Tablero encendido','photo_6':'Interior frontal','photo_7':'Interior trasero','photo_8':'Compartimiento motor','photo_9':'Baúl / maletero','photo_tarjeta':'Tarjeta de circulación'};
     return`<div class="card"><div class="card-title">Fotografías registradas (${keys.length})</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:7px">${keys.map(k=>{const lbl=fotoLbls[k]||k.replace('hallazgo_ext_','Ext: ').replace('hallazgo_int_','Int: ').replace('hallazgo_','').replace(/_/g,' ');return`<div style="border-radius:var(--rsm);overflow:hidden;border:1px solid var(--b)"><img src="${IMGS[k]}" style="width:100%;aspect-ratio:4/3;object-fit:cover;display:block"><div style="padding:3px 6px;font-size:9px;color:var(--t2);background:var(--sf2);border-top:1px solid var(--b)">${lbl}</div></div>`;}).join('')}</div></div>`;
   };
   document.getElementById('sum-content').innerHTML=`
@@ -2841,7 +2842,7 @@ function viewRec(id){
   if(!rec){showToast('⚠ Registro no encontrado — intente reabrir el panel',true);return;}
 
   const panel=document.getElementById('records-panel');
-  const fotoLbls={'photo_0':'Portada web','photo_1':'Frente','photo_2':'Lateral izquierdo','photo_3':'Trasero','photo_4':'Lateral derecho','photo_5':'Tablero encendido','photo_6':'Interior frontal','photo_7':'Interior trasero','photo_tarjeta':'Tarjeta de circulación'};
+  const fotoLbls={'photo_0':'Portada web','photo_1':'Frente','photo_2':'Lateral izquierdo','photo_3':'Trasero','photo_4':'Lateral derecho','photo_5':'Tablero encendido','photo_6':'Interior frontal','photo_7':'Interior trasero','photo_8':'Compartimiento motor','photo_9':'Baúl / maletero','photo_tarjeta':'Tarjeta de circulación'};
 
   const fotosHtml=(()=>{
     const links=rec.photoLinks&&Object.keys(rec.photoLinks).length;
