@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- VERSION: 16.8 - ADD: galería fotos inspección en Consulta Vehículos -->
+<!-- VERSION: 16.9 - FIX: botón fotos usa link directo carpeta Drive de inspección -->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -5934,6 +5934,10 @@ async function CONS_descargarPDFInspeccion(placa){
     if(!row){hideProgress();showToast('⚠ No se encontró inspección para '+placa);return;}
     const id = get(row,'ID');
     if(!id){hideProgress();showToast('⚠ ID de inspección no encontrado');return;}
+    // Guardar link de carpeta Drive para el botón de fotos
+    if(!window._cons_insp_folder) window._cons_insp_folder={};
+    const _fl=get(row,'Carpeta Drive');
+    if(_fl) window._cons_insp_folder[placa]=_fl;
     updateProgress('Preparando datos...','Paso 3 de 4 — Cargando estado del vehículo');
     let local=null;
     try{local=JSON.parse(localStorage.getItem('insp_'+id));}catch(e){}
@@ -6131,7 +6135,22 @@ function CONS_renderDetalle(app, v, cot, prod){
   // Guardar v y prod en cache para PDF
   if(!window._cons_veh_cache) window._cons_veh_cache={};
   if(!window._cons_prod_cache) window._cons_prod_cache={};
-  if(v&&v.placa){ window._cons_veh_cache[v.placa]=v; window._cons_prod_cache[v.placa]=prod; }
+  if(!window._cons_insp_folder) window._cons_insp_folder={};
+  if(v&&v.placa){
+    window._cons_veh_cache[v.placa]=v;
+    window._cons_prod_cache[v.placa]=prod;
+    // Cargar folderLink desde Inspecciones en segundo plano si no está cacheado
+    if(!window._cons_insp_folder[v.placa]){
+      gPost({action:'getInspections'}).then(function(rInsp){
+        if(!rInsp||!rInsp.data||rInsp.data.length<2) return;
+        var hdr=rInsp.data[0];
+        var row=rInsp.data.slice(1).find(function(r){return String(r[hdr.indexOf('Placa')]||'').toUpperCase()===v.placa.toUpperCase();});
+        if(!row) return;
+        var fl=row[hdr.indexOf('Carpeta Drive')]||'';
+        if(fl) window._cons_insp_folder[v.placa]=fl;
+      }).catch(function(){});
+    }
+  }
   const et = PROD_ESTADOS[prod.etapa_actual||'inspeccion'];
   const autorizados = cot ? (cot.items||[]).filter((_,i)=>new Set((cot.autorizados||[]).map(Number)).has(i)) : [];
   const pendientes  = cot ? (cot.items||[]).filter((_,i)=>!new Set((cot.autorizados||[]).map(Number)).has(i)) : [];
@@ -6167,7 +6186,7 @@ function CONS_renderDetalle(app, v, cot, prod){
       <div style="font-size:13px;color:var(--t)">Inspector: <b>${v.inspector||prod.resp_inspeccion||'—'}</b></div>
       <div style="font-size:12px;color:var(--t2)">Fecha: ${PROD_fmtFecha(v.fecha||prod.fecha_inspeccion)}</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
-        <button onclick="CONS_verFotosInspeccion('${v.placa}')" style="padding:7px 12px;background:var(--blue-bg);color:var(--blue-t);border:1px solid var(--blue-b);border-radius:var(--rsm);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">📷 Ver fotos</button>
+        ${window._cons_insp_folder&&window._cons_insp_folder[v.placa]?`<a href="${window._cons_insp_folder[v.placa]}" target="_blank" style="padding:7px 12px;background:var(--blue-bg);color:var(--blue-t);border:1px solid var(--blue-b);border-radius:var(--rsm);font-size:12px;font-weight:600;text-decoration:none">📷 Ver fotos en Drive</a>`:''}
         <button onclick="CONS_descargarPDFInspeccion('${v.placa}')" style="padding:7px 12px;background:var(--sf2);color:var(--t);border:1px solid var(--b2);border-radius:var(--rsm);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">📋 PDF Inspección</button>
       </div>
     </div>
