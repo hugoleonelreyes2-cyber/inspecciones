@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- VERSION: 15.9 - FIX: ext costos vuelven a costsExt general, solo vidrios/espejos con clave propia -->
+<!-- VERSION: 16.0 - FIX: sección llantas visible en panel de costos con tabla editable -->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -2464,6 +2464,14 @@ function renderAdminCosts(){
   ['1KG','2KG','3KG','4KG','1KD','2KD','3KD','4KD'].forEach((s,i)=>{h+=`<tr><td>${s}</td><td><input type="number" value="${SVC_COSTS[adminVT]?.[i]||0}" onchange="SVC_COSTS['${adminVT}'][${i}]=+this.value" style="width:90px"></td></tr>`;});
   h+=`</tbody></table>
   <button class="save-costs-btn" onclick="saveCosts()" style="margin-bottom:12px">💾 Guardar tabla de costos</button>
+  <div class="asec-title">Llantas — medidas y precios</div>
+  <div class="alert a-blue" style="margin-bottom:6px;font-size:10px">Precio unitario por llanta. El sistema calcula automáticamente el costo x4.</div>
+  <table class="cost-tbl"><thead><tr><th>Medida</th><th>Precio unit.</th><th>Precio x4</th><th></th></tr></thead><tbody id="llantas-tbl-body"></tbody></table>
+  <div style="display:flex;gap:6px;margin-top:6px;margin-bottom:12px">
+    <input id="new-llanta-medida" type="text" placeholder="Ej. 265/65R17" style="flex:1;padding:6px 8px;font-size:12px;border:1px solid var(--b2);border-radius:var(--rsm);background:var(--sf);color:var(--t);font-family:'DM Sans',sans-serif;text-transform:uppercase">
+    <input id="new-llanta-precio" type="number" placeholder="Precio" style="width:80px;padding:6px 8px;font-size:12px;border:1px solid var(--b2);border-radius:var(--rsm);background:var(--sf);color:var(--t);font-family:'DM Sans',sans-serif">
+    <button onclick="addLlanta()" style="padding:6px 10px;background:var(--green);color:#fff;border:none;border-radius:var(--rsm);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">+ Agregar</button>
+  </div>
   <div class="asec-title">Correos de notificación</div>
   <div class="alert a-blue" style="margin-bottom:8px">Al guardar una inspección se enviará un resumen automático a estos correos.</div>
   <table class="cost-tbl"><thead><tr><th>Destinatario</th><th>Correo electrónico</th></tr></thead><tbody id="emails-tbl-body"></tbody></table>
