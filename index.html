@@ -6393,6 +6393,13 @@ function VAL_mostrarFicha() {
 function VAL_dibujarCurva(curva) {
   const canvas = document.getElementById('val-curva-chart');
   if (!canvas || !curva.length) return;
+  if (typeof Chart === 'undefined') {
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js';
+    s.onload = () => VAL_dibujarCurva(curva);
+    document.head.appendChild(s);
+    return;
+  }
   if (canvas._chartInst) { canvas._chartInst.destroy(); }
   canvas._chartInst = new Chart(canvas, {
     type: 'line',
