@@ -6314,6 +6314,27 @@ function VAL_mostrarFicha() {
   const factores = d.factores || [];
   const curva = d.curva_depreciacion || [];
 
+  const conf = d.confianza_linea || null;
+  const confBadge = conf ? (()=>{
+    const colores = {
+      alta:  { bg:'var(--green-bg)',  border:'var(--green-b)',  texto:'var(--green-t)',  icono:'✓' },
+      media: { bg:'var(--amber-bg)', border:'var(--amber-b)', texto:'var(--amber-t)', icono:'⚠' },
+      baja:  { bg:'var(--red-bg)',   border:'var(--red-b)',   texto:'var(--red-t)',   icono:'🔴' },
+    };
+    const c = colores[conf.nivel] || colores.media;
+    const etiqueta = { alta:'Confianza alta', media:'Confianza media', baja:'Confianza baja' }[conf.nivel] || conf.nivel;
+    let html = `<div style="background:${c.bg};border:1px solid ${c.border};border-radius:var(--rsm);padding:10px 13px;margin-bottom:10px">
+      <div style="display:flex;align-items:center;gap:7px;margin-bottom:${conf.mensaje?'6px':'0'}">
+        <span style="font-size:13px">${c.icono}</span>
+        <span style="font-size:12px;font-weight:600;color:${c.texto}">${etiqueta} · ${conf.n_ventas_historicas} venta(s) históricas en Cofiño</span>
+      </div>`;
+    if (conf.mensaje) {
+      html += `<div style="font-size:11px;color:${c.texto};line-height:1.5">${conf.mensaje}</div>`;
+    }
+    html += `</div>`;
+    return html;
+  })() : '';
+
   const fmtQ = n => 'Q ' + Math.round(n).toLocaleString('es-GT');
 
   // Ocultar zona de carga y mostrar ficha
@@ -6343,6 +6364,8 @@ function VAL_mostrarFicha() {
         </div>
       </div>
     </div>
+
+    ${confBadge}
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
       <div style="background:var(--sf2);border-radius:var(--rsm);padding:10px 13px">
