@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- VERSION: 17.7 - FIX: VAL_mostrarFicha querySelector robusto con id val-zona-carga -->
+<!-- VERSION: 17.7 - FIX: val-zona-carga id + querySelector robusto -->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -6317,9 +6317,8 @@ function VAL_mostrarFicha() {
   const fmtQ = n => 'Q ' + Math.round(n).toLocaleString('es-GT');
 
   // Ocultar zona de carga y mostrar ficha
-  const zonaCard = zona.querySelector('#val-zona-carga');
-  if (zonaCard) zonaCard.style.display = 'none';
-  else { const fc = zona.querySelector('div:first-child'); if(fc && fc.id !== 'val-ficha') fc.style.display = 'none'; }
+  const _zc = document.getElementById('val-zona-carga');
+  if (_zc) _zc.style.display = 'none';
   contenedor.style.display = 'block';
 
   const posActual = curva.find(c => c.es_posicion_actual) || {};
@@ -6448,7 +6447,7 @@ function VAL_limpiar() {
   VAL_data = null;
   const zona = document.getElementById('val-content');
   if (!zona) return;
-  const zonaCard2 = zona.querySelector('#val-zona-carga'); if (zonaCard2) zonaCard2.style.display = '';
+  const _zc2 = document.getElementById('val-zona-carga'); if (_zc2) _zc2.style.display = '';
   const ficha = document.getElementById('val-ficha');
   if (ficha) { ficha.style.display = 'none'; ficha.innerHTML = ''; }
 }
