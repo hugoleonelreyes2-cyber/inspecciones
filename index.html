@@ -648,7 +648,7 @@ textarea{resize:vertical;line-height:1.5}
   <div class="sec-title">Valuación del vehículo</div>
   <div class="sec-desc">Estimación de precio generada por el modelo XGBoost de Cofiño.</div>
   <div id="val-content">
-    <div style="background:var(--sf2);border:1px dashed var(--b2);border-radius:var(--r);padding:24px 16px;text-align:center;color:var(--t3)">
+    <div id="val-zona-carga" style="background:var(--sf2);border:1px dashed var(--b2);border-radius:var(--r);padding:24px 16px;text-align:center;color:var(--t3)">
       <div style="font-size:32px;margin-bottom:8px">📊</div>
       <div style="font-size:14px;font-weight:500;color:var(--t2);margin-bottom:6px">Carga el JSON de valuación</div>
       <div style="font-size:12px;color:var(--t3);margin-bottom:14px">Descarga el JSON del notebook y cárgalo aquí para ver la ficha completa.</div>
@@ -6338,19 +6338,14 @@ function VAL_mostrarFicha() {
   const fmtQ = n => 'Q ' + Math.round(n).toLocaleString('es-GT');
 
   // Ocultar zona de carga y mostrar ficha
-  zona.querySelector('div:first-child').style.display = 'none';
+  const zonaCard = zona.querySelector('#val-zona-carga');
+  if (zonaCard) zonaCard.style.display = 'none';
+  else { const fc = zona.querySelector('div:first-child'); if(fc && fc.id !== 'val-ficha') fc.style.display = 'none'; }
   contenedor.style.display = 'block';
 
   const posActual = curva.find(c => c.es_posicion_actual) || {};
   const depProximo = curva.length > 1 ? (posActual.precio_Q || 0) - ((curva.find(c => c.anio === (posActual.anio || 0) + 1) || {}).precio_Q || 0) : 0;
-
-  // Precio nuevo: usar Venta_nuevo ingresado por el usuario si existe, si no usar curva año 0
-  const factorVentaNuevo = factores.find(f => f.variable === 'Venta nuevo');
-  const precioNuevoRef = factorVentaNuevo && parseFloat(factorVentaNuevo.valor_ingresado) > 0
-    ? parseFloat(factorVentaNuevo.valor_ingresado)
-    : (curva[0]?.precio_Q || 0);
-  const depTotal = precioNuevoRef - (posActual.precio_Q || 0);
-  const retencionReal = precioNuevoRef > 0 ? ((posActual.precio_Q || 0) / precioNuevoRef * 100).toFixed(1) : (posActual.retencion_pct || '—');
+  const depTotal = curva.length > 0 ? (curva[0].precio_Q || 0) - (posActual.precio_Q || 0) : 0;
 
   contenedor.innerHTML = `
     <div style="background:var(--sf);border:1px solid var(--b);border-radius:var(--r);padding:14px 16px;margin-bottom:10px">
@@ -6377,11 +6372,11 @@ function VAL_mostrarFicha() {
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
       <div style="background:var(--sf2);border-radius:var(--rsm);padding:10px 13px">
         <div style="font-size:11px;color:var(--t3)">Precio nuevo ref.</div>
-        <div style="font-size:16px;font-weight:600">${fmtQ(precioNuevoRef)}</div>
+        <div style="font-size:16px;font-weight:600">${fmtQ(curva[0]?.precio_Q||0)}</div>
       </div>
       <div style="background:var(--sf2);border-radius:var(--rsm);padding:10px 13px">
         <div style="font-size:11px;color:var(--t3)">Retención actual</div>
-        <div style="font-size:16px;font-weight:600">${retencionReal}%</div>
+        <div style="font-size:16px;font-weight:600">${posActual.retencion_pct||'—'}%</div>
       </div>
       <div style="background:var(--sf2);border-radius:var(--rsm);padding:10px 13px">
         <div style="font-size:11px;color:var(--t3)">Depreciación total</div>
@@ -6408,7 +6403,7 @@ function VAL_mostrarFicha() {
       </div>
       <div style="background:var(--sf);border:1px solid var(--b);border-radius:var(--r);padding:12px 14px">
         <div style="font-size:11px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Variables del modelo</div>
-        ${[['Precio nuevo ingresado', fmtQ(precioNuevoRef)],['Precio base modelo', fmtQ(e.precio_base_modelo_Q||0)],['Ajuste neto SHAP', (()=>{const n=e.precio_Q-(e.precio_base_modelo_Q||0);return (n>=0?'+ ':'-\u00a0')+fmtQ(Math.abs(n));})()]].map(([l,val])=>`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:0.5px solid var(--b);font-size:12px"><span style="color:var(--t2)">${l}</span><span style="font-weight:500">${val}</span></div>`).join('')}
+        ${[['Precio nuevo ref.', fmtQ(e.precio_base_modelo_Q||0)],['Ajuste neto SHAP', (()=>{const n=e.precio_Q-(e.precio_base_modelo_Q||0);return (n>=0?'+ ':'-\u00a0')+fmtQ(Math.abs(n));})()]].map(([l,val])=>`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:0.5px solid var(--b);font-size:12px"><span style="color:var(--t2)">${l}</span><span style="font-weight:500">${val}</span></div>`).join('')}
         ${factores.slice(0,5).map(f=>`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:0.5px solid var(--b);font-size:12px"><span style="color:var(--t2)">${f.variable}</span><span style="font-weight:500;color:${f.impacto_Q>=0?'var(--green-t)':'var(--red-t)'}">${f.impacto_Q>=0?'+':''} ${fmtQ(f.impacto_Q)}</span></div>`).join('')}
       </div>
     </div>
@@ -6476,7 +6471,7 @@ function VAL_limpiar() {
   VAL_data = null;
   const zona = document.getElementById('val-content');
   if (!zona) return;
-  zona.querySelector('div:first-child').style.display = '';
+  const zonaCard2 = zona.querySelector('#val-zona-carga'); if (zonaCard2) zonaCard2.style.display = '';
   const ficha = document.getElementById('val-ficha');
   if (ficha) { ficha.style.display = 'none'; ficha.innerHTML = ''; }
 }
